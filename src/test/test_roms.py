@@ -48,10 +48,14 @@ class RomsTest(unittest.TestCase):
         assert np.allclose(a_avg,result_test)
 
     def test_angle_rotation(self):
-        points = np.vectorize(complex)([-0.018352,-0.0112236],[0.0125479,0.0101799])
-        angles = np.array([-0.700610370006,-0.66005638354])
+        points = np.vectorize(complex)([-0.018,-0.013],[0.013,0.012])
+        angles = np.array([-0.7,-0.3])
         r = rm.rotate_complex_by_angle(points,angles)
-        result_test = np.array([0.00653817652156+0.00291860800465j, -0.00680340220893+0.0211650552343j ], dtype=complex)
+
+        # (-0.018+0.013j) * e^(sqrt(-1) * -0.7) = (-0.00539233+0.02153887j)
+        # (-0.013+0.012j) * e^(sqrt(-1) * -0.3) = (-0.00887313+0.01530580j)
+
+        result_test = np.array([-0.00539233+0.02153887j, -0.00887313+0.01530580j ], dtype=complex)
 
         assert np.allclose(r,result_test)
 
