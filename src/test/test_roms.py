@@ -1,5 +1,8 @@
 import unittest
 import numpy as np
+import os
+import math
+
 from src.roms import roms as rm
 
 class RomsTest(unittest.TestCase):
@@ -58,6 +61,41 @@ class RomsTest(unittest.TestCase):
         result_test = np.array([-0.00539233+0.02153887j, -0.00887313+0.01530580j ], dtype=complex)
 
         assert np.allclose(r,result_test)
+
+    def test_uv_size(self):
+        #URL = 'http://testbedapps-dev.sura.org/thredds/dodsC/alldata/Estuarine_Hypoxia/noaa/cbofs2/synoptic/Output_Avg/ocean_avg_synoptic_seg22.nc'
+        URL = os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/ocean_avg_synoptic_seg22.nc"))
+
+        # From file
+        # http://testbedapps-dev.sura.org/thredds/dodsC/alldata/Estuarine_Hypoxia/noaa/cbofs2/synoptic/Output_Avg/ocean_avg_synoptic_seg22.nc.ascii?u[0:1:0][0:1:0][100:1:101][99:1:102],v[0:1:0][0:1:0][99:1:101][100:1:102],angle[100:1:102][100:1:103]
+        #
+        # U / V
+        # ---------------------------------------------------------------------------------------------------------------
+        #      rho     | 0.00103918 |         rho         | -0.00214493 |          rho        | 0.02839777 |    rho
+        # ---------------------------------------------------------------------------------------------------------------
+        #  0.00497477  |            |     0.00125827      |             |      -0.00457699    |            | 0.00461918
+        # ---------------------------------------------------------------------------------------------------------------
+        #      rho     | 0.01185319 |        (rho)        | 0.01215537  |         (rho)       | 0.01831482 |    rho
+        #              |            | -0.6600563835401998 |             | -0.6384198811416639 |            |
+        # ---------------------------------------------------------------------------------------------------------------
+        #  -0.01828926 |            |     -0.01866616     |             |     -0.01803783     |            | -0.01132555
+        # ---------------------------------------------------------------------------------------------------------------
+        #      rho     | 0.01286777 |         rho         | 0.01294046  |          rho        | 0.01156001 |    rho
+        # ---------------------------------------------------------------------------------------------------------------
+
+        uv_rho = rm.uv_to_rho(URL)
+        #print uv_rho[95:105,95:105]
+        left_rho_u = 0.5 * (0.01185319 + 0.01215537)
+        left_rho_v = 0.5 * (0.00125827 + -0.01866616)
+        right_rho_u = 0.5 * (0.01215537 + 0.01831482)
+        right_rho_v = 0.5 * (-0.00457699 + -0.01803783)
+
+        left_rho  = (complex)(left_rho_u,left_rho_v)# * math.e**(1j * -0.6600563835401998)
+        right_rho = (complex)(right_rho_u,right_rho_v)# *  math.e**(1j * -0.6384198811416639)
+
+        print left_rho
+        print right_rho
+
 
 if __name__ == '__main__':
     unittest.main()
