@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from src import roms as rm
+from src.roms import roms as rm
 
 class RomsTest(unittest.TestCase):
 

@@ -1,3 +1,7 @@
+import os.path
+import threading
+from profilehooks import profile
+
 import matplotlib.pyplot as plt
 from matplotlib import tri
 
@@ -25,8 +29,8 @@ from gridfield.algebra import Apply, Restrict, Wrap, Bind
 #       coordinate dimension: t,z,y,x
 #
 #       When Averaging U and V into the RHO grid:
-#       * We lose the first 2 and last 2 columns of the model output
-#       * We lose the first 2 and last 2 rows of the model output
+#       * We lose the first and last column of rho, U and V
+#       * We lose the first and last row of rho, U and V
 
 def subset_with_gridfields():
     URL = 'http://testbedapps-dev.sura.org/thredds/dodsC/alldata/Estuarine_Hypoxia/noaa/cbofs2/synoptic/Output_Avg/ocean_avg_synoptic_seg22.nc'
@@ -48,10 +52,8 @@ def subset_with_gridfields():
     v_grid.setImplicit0Cells(v_elements)
 
 
-def uv_to_rho():
-    #URL = 'http://testbedapps-dev.sura.org/thredds/dodsC/alldata/Estuarine_Hypoxia/noaa/cbofs2/synoptic/Output_Avg/ocean_avg_synoptic_seg22.nc'
-    URL = '/home/dev/Development/paegan/src/test/resources/files/ocean_avg_synoptic_seg22.nc'
-    nc = netCDF4.Dataset(URL)
+def uv_to_rho(file):
+    nc = netCDF4.Dataset(file)
 
     lat_rho=nc.variables['lat_rho']
     lon_rho=nc.variables['lon_rho']
@@ -64,7 +66,6 @@ def uv_to_rho():
     # Store shape for use below
     [rho_x,rho_y] = lat_rho.shape
 
-
     # Only pull the U and V values that can contribute to the averaging (see diagram).
     # This means we lost the first and last row and the first and last column.
 
@@ -75,6 +76,7 @@ def uv_to_rho():
     # Don't skip any columns of U
     u_xi = range(0, xi_u)   # X
     u_data = nc.variables['u'][0,0, u_eta , u_xi ]
+    u_data = u_data + 2
 
     # V
     [eta_v, xi_v] = nc.variables['lat_v'].shape
@@ -84,40 +86,34 @@ def uv_to_rho():
     v_xi = range(1, xi_v - 1)   # X
     v_data = nc.variables['v'][0,0, v_eta , v_xi ]
 
+    # Get the angles
     angle = nc.variables['angle'][:,:]
 
-    # Create a holder for the output at RHO points.
-    # We lose 4 columns and 4 rows from the averaging onto RHO points.
     # Create empty rho matrix to store complex U + Vj
     U = np.empty(lat_rho.shape, dtype=complex )
-    # Fill with nan
+    # And fill it with with nan values
     U[:] = np.nan
 
     # Fill rho points with averages (if we can do the calculation)
-    # We need to transpose the U vectors because we average by column and
-    # The average function averages by row.  Transpose the output back to 
-    # The original.
+    # Thread]
+    #t1 = AverageAdjacents(u_data)
+    #t2 = AverageAdjacents(v_data, True)
+    #t1.start(); t2.start()
+    #t1.join();  t2.join()
+    #u_avg = t1.data
+    #v_avg = t2.data
+    # Don't thread
     u_avg = average_adjacents(u_data)
-    v_avg = average_adjacents(v_data, True)
+    v_avg = average_adjacents(v_data,True)
+
     # Fill in RHO cells per diagram above.  Skip first row and first
     # column of RHOs and leave them as numpy.nan values.  Also skip the 
     # last row and column.
     U[1:rho_x-1, 1:rho_y-1] = np.vectorize(complex)(u_avg,v_avg)
+    return U
     
     # We need the rotated point, so rotate by the "angle"
-    U = rotate_complex_by_angle(U,angle)
-
-    """
-    print u_avg[100,100]
-    print v_avg[100,100]
-    print angle[100,100]
-    print U[100,100]
-
-    print u_avg[101,101]
-    print v_avg[101,101]
-    print angle[101,101]
-    print U[101,101]
-    """
+    #return rotate_complex_by_angle(U,angle)
 
 def rotate_complex_by_angle(points,angles):
     """
@@ -134,8 +130,8 @@ def rotate_complex_by_angle(points,angles):
 
 def average_adjacents(a, by_column=False):
     """
-        Sums adjacent values in a column.  Optional by_row parameter
-        will sum adjacement row values.
+        Sums adjacent values in a column.  Optional by_column parameter
+        will sum adjacement column values.
 
         For a row that looks like this:
         [ 2, 4, 6, 8, 10, 12 ]
@@ -187,8 +183,9 @@ def average_adjacents(a, by_column=False):
                    [ 15.,  17.,  19.,  21.,  23.]])
 
     """
-
     if by_column:
+        # Easier to transpose, sum by row, and transpose back.
+        #sumd = 0.5 * (a[1:m,:] + a[0:m-1,:])
         return average_adjacents(a.T).T
 
     try:
@@ -197,11 +194,38 @@ def average_adjacents(a, by_column=False):
         [m,n] = [1,a.size]
 
     if m == 1:
-        sumd = 0.5 * (a[0:n-1] + a[1:n])
+        sumd = 0.5 * (a[0:n-1] + a[1:n]) # Single row
     else:
-        #sumd = 0.5 * (a[1:m,:] + a[0:m-1,:]) # By column
-        sumd = 0.5 * (a[:,1:n] + a[:,0:n-1]) # By row
+        sumd = 0.5 * (a[:,0:n-1] + a[:,1:n]) # By row
 
     return sumd
 
-uv_to_rho()
+# Threaded instance for speed testing on enormous grids.
+class AverageAdjacents(threading.Thread):
+    def __init__(self, data, by_column=False):
+        threading.Thread.__init__(self)
+        self.by_column = by_column
+        self.data = data
+    def data():
+        return self.out
+    def run(self):
+        if self.by_column:
+            # Easier to transpose, sum by row, and transpose back.
+            #sumd = 0.5 * (a[1:m,:] + a[0:m-1,:])
+            t3 = AverageAdjacents(self.data.T)
+            t3.start(); t3.join()
+            self.data = t3.data.T
+            return
+
+        try:
+            [m,n] = self.data.shape
+        except ValueError:
+            [m,n] = [1,self.data.size]
+
+        if m == 1:
+            sumd = 0.5 * (self.data[0:n-1] + self.data[1:n]) # Single row
+        else:
+            sumd = 0.5 * (self.data[:,0:n-1] + self.data[:,1:n]) # By row
+
+        self.data = sumd
+        return
