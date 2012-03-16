@@ -1,16 +1,7 @@
 import os.path
 import threading
-from profilehooks import profile
-
-import matplotlib.pyplot as plt
-from matplotlib import tri
-
 import numpy as np
 import netCDF4
-
-from gridfield import *
-import gridfield.core as gf
-from gridfield.algebra import Apply, Restrict, Wrap, Bind
 
 #       ---------------------------------
 #       rho | u | rho | u | rho | u | rho
@@ -32,26 +23,6 @@ from gridfield.algebra import Apply, Restrict, Wrap, Bind
 #       * We lose the first and last column of rho, U and V
 #       * We lose the first and last row of rho, U and V
 
-def subset_with_gridfields():
-    URL = 'http://testbedapps-dev.sura.org/thredds/dodsC/alldata/Estuarine_Hypoxia/noaa/cbofs2/synoptic/Output_Avg/ocean_avg_synoptic_seg22.nc'
-
-    nc = netCDF4.Dataset(URL)
-
-    lat_u=nc.variables['lon_u']
-    lon_u=nc.variables['lat_u']
-
-    lat_v=nc.variables['lat_v']
-    lon_v=nc.variables['lon_v']
-
-    u_elements = len(lat_u[:])
-    v_elements = len(lat_v[:])
-
-    u_grid = gf.Grid("u_points")
-    u_grid.setImplicit0Cells(u_elements)
-    v_grid = gf.Grid("v_points")
-    v_grid.setImplicit0Cells(v_elements)
-
-
 def uv_to_rho(file):
     nc = netCDF4.Dataset(file)
 
@@ -64,33 +35,19 @@ def uv_to_rho(file):
         return None
 
     # Store shape for use below
-    [rho_x,rho_y] = lat_rho.shape
+    [rho_y,rho_x] = lat_rho.shape
 
-    # Only pull the U and V values that can contribute to the averaging (see diagram).
-    # This means we lost the first and last row and the first and last column.
-
-    # U
-    [eta_u, xi_u] = nc.variables['lat_u'].shape
-    # Skip the first and last row of U
-    u_eta = range(1, eta_u - 1)  # Y
-    # Don't skip any columns of U
-    u_xi = range(0, xi_u)   # X
-    u_data = nc.variables['u'][0,0, u_eta , u_xi ]
-    u_data = u_data + 2
+    # U ]
+    u_data = nc.variables['u'][0,0,:,:]
 
     # V
-    [eta_v, xi_v] = nc.variables['lat_v'].shape
-    # Don't skip any rows of V
-    v_eta = range(0, eta_v)  # Y
-    # Skip the first and last column of V
-    v_xi = range(1, xi_v - 1)   # X
-    v_data = nc.variables['v'][0,0, v_eta , v_xi ]
+    v_data = nc.variables['v'][0,0,:,:]
 
     # Get the angles
     angle = nc.variables['angle'][:,:]
 
     # Create empty rho matrix to store complex U + Vj
-    U = np.empty(lat_rho.shape, dtype=complex )
+    U = np.empty([rho_y,rho_x], dtype=complex )
     # And fill it with with nan values
     U[:] = np.nan
 
@@ -102,6 +59,7 @@ def uv_to_rho(file):
     #t1.join();  t2.join()
     #u_avg = t1.data
     #v_avg = t2.data
+
     # Don't thread
     u_avg = average_adjacents(u_data)
     v_avg = average_adjacents(v_data,True)
@@ -109,11 +67,15 @@ def uv_to_rho(file):
     # Fill in RHO cells per diagram above.  Skip first row and first
     # column of RHOs and leave them as numpy.nan values.  Also skip the 
     # last row and column.
-    U[1:rho_x-1, 1:rho_y-1] = np.vectorize(complex)(u_avg,v_avg)
-    return U
-    
+    vfunc = np.vectorize(complex)
+    # Only pull the U and V values that can contribute to the averaging (see diagram).
+    # This means we lost the first and last row and the first and last column of both
+    # U and V.
+    complexed = vfunc(u_avg[1:-1,:],v_avg[:,1:-1])
+    U[1:rho_y-1, 1:rho_x-1] = complexed
+ 
     # We need the rotated point, so rotate by the "angle"
-    #return rotate_complex_by_angle(U,angle)
+    return rotate_complex_by_angle(U,angle)
 
 def rotate_complex_by_angle(points,angles):
     """

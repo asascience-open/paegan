@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 import os
 import math
+import netCDF4
 
 from src.roms import roms as rm
 
@@ -66,35 +67,57 @@ class RomsTest(unittest.TestCase):
         #URL = 'http://testbedapps-dev.sura.org/thredds/dodsC/alldata/Estuarine_Hypoxia/noaa/cbofs2/synoptic/Output_Avg/ocean_avg_synoptic_seg22.nc'
         URL = os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/ocean_avg_synoptic_seg22.nc"))
 
-        # From file
-        # http://testbedapps-dev.sura.org/thredds/dodsC/alldata/Estuarine_Hypoxia/noaa/cbofs2/synoptic/Output_Avg/ocean_avg_synoptic_seg22.nc.ascii?u[0:1:0][0:1:0][100:1:101][99:1:102],v[0:1:0][0:1:0][99:1:101][100:1:102],angle[100:1:102][100:1:103]
-        #
-        # U / V
-        # ---------------------------------------------------------------------------------------------------------------
-        #      rho     | 0.00103918 |         rho         | -0.00214493 |          rho        | 0.02839777 |    rho
-        # ---------------------------------------------------------------------------------------------------------------
-        #  0.00497477  |            |     0.00125827      |             |      -0.00457699    |            | 0.00461918
-        # ---------------------------------------------------------------------------------------------------------------
-        #      rho     | 0.01185319 |        (rho)        | 0.01215537  |         (rho)       | 0.01831482 |    rho
-        #              |            | -0.6600563835401998 |             | -0.6384198811416639 |            |
-        # ---------------------------------------------------------------------------------------------------------------
-        #  -0.01828926 |            |     -0.01866616     |             |     -0.01803783     |            | -0.01132555
-        # ---------------------------------------------------------------------------------------------------------------
-        #      rho     | 0.01286777 |         rho         | 0.01294046  |          rho        | 0.01156001 |    rho
-        # ---------------------------------------------------------------------------------------------------------------
-
+        # Call the uv_to_rho to calculate the resulting complex numbers on the 
+        # rho grid.
         uv_rho = rm.uv_to_rho(URL)
-        #print uv_rho[95:105,95:105]
-        left_rho_u = 0.5 * (0.01185319 + 0.01215537)
-        left_rho_v = 0.5 * (0.00125827 + -0.01866616)
-        right_rho_u = 0.5 * (0.01215537 + 0.01831482)
-        right_rho_v = 0.5 * (-0.00457699 + -0.01803783)
 
-        left_rho  = (complex)(left_rho_u,left_rho_v)# * math.e**(1j * -0.6600563835401998)
-        right_rho = (complex)(right_rho_u,right_rho_v)# *  math.e**(1j * -0.6384198811416639)
+        # Manually calculate the two complex numbers for (rho) blocks.
+        # The RHO blocks are (101,101) and (101,102) in this case
+        nc = netCDF4.Dataset(URL)
+        u = nc.variables['u'][0,0,:,:]
+        v = nc.variables['v'][0,0,:,:]
 
-        print left_rho
-        print right_rho
+        # This is what we have.
+        #  ---------------------------------
+        #  rho | u | rho | u | rho | u | rho
+        #  ---------------------------------
+        #   v  |   | {v} |   | {v} |   |  v
+        #  ---------------------------------
+        #  rho |{u}|(rho)|{u}|(rho)|{u}| rho
+        #  ---------------------------------
+        #   v  |   | {v} |   | {v} |   |  v
+        #  ---------------------------------
+        #  rho | u | rho | u | rho | u | rho
+        #  ---------------------------------
+
+        left_rho_u = 0.5 * (u[101,100] + u[101,101])
+        left_rho_v = 0.5 * (v[100,101] + v[101,101])
+
+        right_rho_u = 0.5 * (u[101,101] + u[101,102])
+        right_rho_v = 0.5 * (v[100,102] + v[101,102])
+
+        # Turn into a numpy array of complex numbers
+        U = np.vectorize(complex)(np.array([left_rho_u,right_rho_u]), np.array(left_rho_v,right_rho_v))
+
+        # Grab angles at the (rho) points
+        angles = nc.variables['angle'][101,101:103]
+
+        # And rotate by those angles
+        U = rm.rotate_complex_by_angle(U,angles)
+
+        left_rho  = U[0]
+        right_rho = U[1]
+
+        print
+        print "Manual Left (101,101): " + str(left_rho)
+        print "Method Left (101,101): " + str(uv_rho[101,101])
+        print
+        print "Manual Right (101,102): " + str(right_rho)
+        print "Method Right (101,102): " + str(uv_rho[101,102])
+
+        assert left_rho == uv_rho[101,101]
+        # Why does the right point now work!!!?!?!?!?!?!?
+        assert right_rho == uv_rho[101,102]
 
 
 if __name__ == '__main__':
