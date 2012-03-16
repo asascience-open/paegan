@@ -1,1 +1,6 @@
 Processing and Analysis of Geophysics And Numbers
+
+Try it out:
+
+$ pip install -r requirements.txt
+$ ./run_tests.py
