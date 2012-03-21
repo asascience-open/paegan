@@ -6,7 +6,7 @@ from src.transport.models.vincentydirect import vinc_pt
 from src.transport.models.location4d import Location4D
 
 class TransportTest(unittest.TestCase):
-    def test_transport(self):
+    def test_single_particle(self):
         p = Particle() # create a particle instance 'p'
         # Set the start position of the Particle
         start_lat = 38
@@ -27,7 +27,7 @@ class TransportTest(unittest.TestCase):
         z = [0.005, 0.002, 0.001, -0.003] # in m/s
 
         for i in xrange(0, len(times)):
-            print p.get_current_location()
+            #print p.get_current_location()
             transport_model = Transport() # create a transport instance
             current_location = p.get_current_location()
             try:
@@ -44,4 +44,27 @@ class TransportTest(unittest.TestCase):
             newloc.time = start_time + timedelta(seconds=calculatedTime)
             p.set_next_location(newloc)
             
-        print p.get_current_location()
+        #for u in xrange(0,len(p.get_locations())):
+        #    print p.get_locations()[u]
+
+    def test_multiple_particles(self):
+        # Constants
+        horizDisp=0.05 # in meters^2 / second
+        vertDisp=0.00003 # in meters^2 / secon
+        times = [0, 3600, 7200, 10800] # in seconds
+        start_lat = 38
+        start_lon = -76
+        start_depth = 4
+        temp_time = datetime.utcnow()
+        start_time = datetime(temp_time.year, temp_time.month, temp_time.day, temp_time.hour)
+
+        # Generate these as random numbers
+        u = [0.3, 0.2, 0.1, 0.05] # in m/s
+        v = [-0.1, -0.3, -0.06, -0.2] # in m/s
+        z = [0.005, 0.002, 0.001, -0.003] # in m/s
+
+        for i in xrange(0,100):
+            p = Particle()
+            for t in xrange(0, len(times)):
+                print t
+                # run transport

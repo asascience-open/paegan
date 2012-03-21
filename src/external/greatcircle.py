@@ -136,7 +136,7 @@ class GreatCircle(object):
         return s, alpha12,  alpha21 
         
     @staticmethod
-    def  vinc_pt( f, a, phi1, lembda1, alpha12, s ) :
+    def vinc_pt( f, a, phi1, lembda1, alpha12, s ) :
         """
 
         Returns the lat and long of projected point and reverse azimuth

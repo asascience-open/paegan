@@ -9,7 +9,7 @@ def genRand():
     rand = random.random()
     flip = random.random()
     if flip > 0.5:
-        rand *= -1      
+        rand *= -1
     return rand
 
 class Transport:

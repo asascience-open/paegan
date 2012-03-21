@@ -51,7 +51,7 @@ class Location4D(object):
     time = property(get_time, set_time)
 
     def __str__(self):
-        return  " *** Location3D *** " + \
+        return  " *** Location4D *** " + \
                 "\nlatitude: " + str(self.latitude) + \
                 "\nlongitude: " + str(self.longitude) + \
                 "\ndepth: " + str(self.depth) + \
