@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from src.transport.models.transport import Transport
 from src.transport.particles.particle import Particle
 from src.transport.models.vincentydirect import vinc_pt
-from src.transport.models.location4d import Location4D
+from src.transport.location4d import Location4D
 
 class TransportTest(unittest.TestCase):
     def test_single_particle(self):
@@ -15,9 +15,8 @@ class TransportTest(unittest.TestCase):
         temp_time = datetime.utcnow()
         start_time = datetime(temp_time.year, temp_time.month, temp_time.day, temp_time.hour)
 
-        loc = Location4D(start_lat, start_lon, start_depth)
-        loc.time = start_time
-        p.set_next_location(loc) # set particle location
+        loc = Location4D(latitude=start_lat, longitude=start_lon, depth=start_depth, time=start_time)
+        p.location = loc # set particle location
         
         times = [0, 3600, 7200, 10800] # in seconds
         horizDisp=0.05 # in meters^2 / second
@@ -29,7 +28,7 @@ class TransportTest(unittest.TestCase):
         for i in xrange(0, len(times)):
             #print p.get_current_location()
             transport_model = Transport() # create a transport instance
-            current_location = p.get_current_location()
+            current_location = p.location
             try:
                 modelTimestep = times[i+1] - times[i]
                 calculatedTime = times[i+1]
@@ -37,13 +36,14 @@ class TransportTest(unittest.TestCase):
                 modelTimestep = times[i] - times[i-1]
                 calculatedTime = times[i] + modelTimestep
             movement = transport_model.move(current_location.latitude, current_location.longitude, current_location.depth, u[i], v[i], z[i], horizDisp, vertDisp, modelTimestep)
-            newloc = Location4D(movement['lat'], movement['lon'], movement['depth'])
+            newloc = Location4D(latitude=movement['lat'], longitude=movement['lon'], depth=movement['depth'])
             newloc.u = movement['u']
             newloc.v = movement['v']
             newloc.z = movement['z']
             newloc.time = start_time + timedelta(seconds=calculatedTime)
-            p.set_next_location(newloc)
+            p.location = newloc
             
+        #print p.linestring()
         #for u in xrange(0,len(p.get_locations())):
         #    print p.get_locations()[u]
 
