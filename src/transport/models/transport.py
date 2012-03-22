@@ -36,7 +36,7 @@ class Transport:
         distance_vert = z * modelTimestep # calculate the vertical distance in meters using z and model timestep
         depth += distance_vert
         # Stay at the surface
-        if depth < 0:
+        if depth > 0:
             depth = 0
 
         lat_result, lon_result, angle_result = GreatCircle.vinc_pt(f, rmajor, math.radians(lat), math.radians(lon), s_and_d['direction'], distance_horiz)
