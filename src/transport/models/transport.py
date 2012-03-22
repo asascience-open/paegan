@@ -1,16 +1,7 @@
 import math
-import random
 from src.external.greatcircle import GreatCircle
-
-def genRand():
-    """
-    pseudo random number generator
-    """
-    rand = random.random()
-    flip = random.random()
-    if flip > 0.5:
-        rand *= -1
-    return rand
+from src.utils.asamath import AsaMath
+from src.utils.asarandom import AsaRandom
 
 class Transport:
     """
@@ -33,14 +24,13 @@ class Transport:
         f = (rmajor - rminor) / rmajor # calculating flattening (vincenty)
         #f = 1 / 298.257223563 # WGS-84 ellipsoid flattening parameter (vincenty)
 
-        u += genRand() * ((2 * horizDisp / modelTimestep) ** 0.5) # u transformation calcualtions
-        v += genRand() * ((2 * horizDisp / modelTimestep) ** 0.5) # v transformation calcualtions
-        z += genRand() * ((2 * vertDisp / modelTimestep) ** 0.5) # z transformation calculations
+        u += AsaRandom.random() * ((2 * horizDisp / modelTimestep) ** 0.5) # u transformation calcualtions
+        v += AsaRandom.random() * ((2 * horizDisp / modelTimestep) ** 0.5) # v transformation calcualtions
+        z += AsaRandom.random() * ((2 * vertDisp / modelTimestep) ** 0.5) # z transformation calculations
 
         # Move horizontally
-        velocity_horiz = ((u ** 2) + (v ** 2)) ** 0.5 # calculates velocity in m/s from transformed u and v
-        distance_horiz = velocity_horiz * modelTimestep # calculate the horizontal distance in meters using the velocity and model timestep
-        bearing = math.atan2(u, v) # calculates the bearing resulting from vector addition of transformed u and v
+        s_and_d = AsaMath.speed_direction_from_u_v(u=u,v=v) # calculates velocity in m/s from transformed u and v
+        distance_horiz = s_and_d['speed'] * modelTimestep # calculate the horizontal distance in meters using the velocity and model timestep
 
         # Move vertically
         distance_vert = z * modelTimestep # calculate the vertical distance in meters using z and model timestep
@@ -49,7 +39,7 @@ class Transport:
         if depth < 0:
             depth = 0
 
-        lat_result, lon_result, angle_result = GreatCircle.vinc_pt(f, rmajor, math.radians(lat), math.radians(lon), bearing, distance_horiz)
+        lat_result, lon_result, angle_result = GreatCircle.vinc_pt(f, rmajor, math.radians(lat), math.radians(lon), s_and_d['direction'], distance_horiz)
 
         # Convert lat and lon to degrees
         lat_result = math.degrees(lat_result)
