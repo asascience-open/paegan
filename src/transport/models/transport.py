@@ -10,6 +10,7 @@ def genRand():
     flip = random.random()
     if flip > 0.5:
         rand *= -1
+    #print rand
     return rand
 
 class Transport:
@@ -33,20 +34,20 @@ class Transport:
         f = (rmajor - rminor) / rmajor # calculating flattening (vincenty)
         #f = 1 / 298.257223563 # WGS-84 ellipsoid flattening parameter (vincenty)
 
-        u += genRand() * ((2 * horizDisp / modelTimestep) ** 0.5) # u transformation calcualtions
-        v += genRand() * ((2 * horizDisp / modelTimestep) ** 0.5) # v transformation calcualtions
-        z += genRand() * ((2 * vertDisp / modelTimestep) ** 0.5) # z transformation calculations
+        u += (genRand() * ((2 * horizDisp / modelTimestep) ** 0.5)) # u transformation calcualtions
+        v += (genRand() * ((2 * horizDisp / modelTimestep) ** 0.5)) # v transformation calcualtions
+        z += (genRand() * ((2 * vertDisp / modelTimestep) ** 0.5)) # z transformation calculations
 
         # Move horizontally
         velocity_horiz = ((u ** 2) + (v ** 2)) ** 0.5 # calculates velocity in m/s from transformed u and v
         distance_horiz = velocity_horiz * modelTimestep # calculate the horizontal distance in meters using the velocity and model timestep
         bearing = math.atan2(u, v) # calculates the bearing resulting from vector addition of transformed u and v
-
+        
         # Move vertically
         distance_vert = z * modelTimestep # calculate the vertical distance in meters using z and model timestep
         depth += distance_vert
         # Stay at the surface
-        if depth < 0:
+        if depth > 0:
             depth = 0
 
         lat_result, lon_result, angle_result = GreatCircle.vinc_pt(f, rmajor, math.radians(lat), math.radians(lon), bearing, distance_horiz)
