@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from src.transport.models.transport import Transport
 from src.transport.particles.particle import Particle
 from src.transport.location4d import Location4D
+from src.utils.asarandom import AsaRandom
 
 class TransportTest(unittest.TestCase):
     def test_single_particle(self):
@@ -68,14 +69,11 @@ class TransportTest(unittest.TestCase):
         v=[]
         z=[]
         for w in xrange(0,100):
-            u.append(abs(random.gauss(0,0.01))) # gaussian in m/s
-            v.append(abs(random.gauss(0,0.01))) # gaussian in m/s
             z.append(random.gauss(0,0.0001)) # gaussian in m/s
-            #u.append(genRand()) # random function in m/s
-            #v.append(genRand()) # random function in m/s
-            #z.append(genRand()) # random function in m/s
+            u.append(abs(AsaRandom.random())) # random function in m/s
+            v.append(abs(AsaRandom.random())) # random function in m/s
 
-        for t in xrange(0,3):
+        for i in xrange(0,3):
             p = Particle()
 
             loc = Location4D(latitude=start_lat, longitude=start_lon, depth=start_depth, time=start_time)
@@ -92,9 +90,6 @@ class TransportTest(unittest.TestCase):
                 except:
                     modelTimestep = times[i] - times[i-1]
                     calculatedTime = times[i] + modelTimestep
-                #print u[i]
-                #print v[i]
-                #print i
                 movement = transport_model.move(current_location.latitude, current_location.longitude, current_location.depth, u[i], v[i], z[i], horizDisp, vertDisp, modelTimestep)
                 newloc = Location4D(latitude=movement['lat'], longitude=movement['lon'], depth=movement['depth'])
                 newloc.u = movement['u']
