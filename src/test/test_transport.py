@@ -68,8 +68,8 @@ class TransportTest(unittest.TestCase):
         v=[]
         z=[]
         for w in xrange(0,100):
-            u.append(random.gauss(0,0.1)) # gaussian in m/s
-            v.append(abs(random.gauss(0,0.1))) # gaussian in m/s
+            u.append(abs(random.gauss(0,0.01))) # gaussian in m/s
+            v.append(abs(random.gauss(0,0.01))) # gaussian in m/s
             z.append(random.gauss(0,0.0001)) # gaussian in m/s
             #u.append(genRand()) # random function in m/s
             #v.append(genRand()) # random function in m/s
@@ -105,13 +105,13 @@ class TransportTest(unittest.TestCase):
             arr.append(p)
         
         # 3D plot
-        # fig = matplotlib.pyplot.figure() # call a blank figure
-        # ax = fig.gca(projection='3d') # line with points
+        fig = matplotlib.pyplot.figure() # call a blank figure
+        ax = fig.gca(projection='3d') # line with points
         # ax = fig.add_subplot(111, projection='3d') # scatter
 
         # 2D plot
-        fig = matplotlib.pyplot.figure() # call blank figure
-        ax = fig.add_subplot(111) # scatter plot
+        #fig = matplotlib.pyplot.figure() # call blank figure
+        #ax = fig.add_subplot(111) # scatter plot
 
         #for x in range(len(arr)):
         for x in range(3):
@@ -124,15 +124,19 @@ class TransportTest(unittest.TestCase):
                 p_proj_lats.append(particle.locations[y].get_latitude())
                 p_proj_lons.append(particle.locations[y].get_longitude())
                 p_proj_depths.append(particle.locations[y].get_depth())
-            # ax.plot(p_proj_lons, p_proj_lats, p_proj_depths, marker='o') # 3D line plot with point
+            ax.plot(p_proj_lons, p_proj_lats, p_proj_depths, marker='o') # 3D line plot with point
+
             # ax.scatter(p_proj_lons, p_proj_lats, p_proj_depths, c='r', marker='o') # 3D scatter plot just points
-            col=['r','b','g']
-            ax.scatter(p_proj_lons, p_proj_lats, marker='o', c=col) # 2D scatter plot just points
+            #col=['r','b','g']
+            #ax.scatter(p_proj_lons, p_proj_lats, marker='o', c=col) # 2D scatter plot just points
 
         #print p_proj_depths
         #print p_proj_lons
         #print p_proj_lats
         #ax2.scatter(p_proj_lons, p_proj_lats, p_proj_depths, c='r', marker='o', linestyle='solid')
         #ax.scatter(p_proj_lons, p_proj_lats, p_proj_depths, c='r', marker='o')
+        ax.set_xlabel('Longitude')
+        ax.set_ylabel('Latitude')
+        ax.set_zlabel('Depth (m)')
         matplotlib.pyplot.show()
        
