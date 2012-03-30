@@ -20,4 +20,4 @@ class Particle(object):
     locations = property(get_locations, set_locations)
 
     def linestring(self):
-        return map(lambda x: list(x.point.coords)[0], self.locations)
+        return LineString(map(lambda x: list(x.point.coords)[0], self.locations))
