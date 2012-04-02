@@ -19,8 +19,8 @@ class Particle(object):
         return self._locations
     locations = property(get_locations, set_locations)
 
-    def get_last_linestring(self):
-        return LineString(self.locations[-2], self.locations[-1])
+    def get_last_movement(self):
+        return LineString(list(self.locations[-2].point.coords) + list(self.locations[-1].point.coords))
 
     def linestring(self):
         return LineString(map(lambda x: list(x.point.coords)[0], self.locations))
