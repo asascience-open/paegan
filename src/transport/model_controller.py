@@ -9,6 +9,7 @@ from src.transport.models.transport import Transport
 from src.transport.particles.particle import Particle
 from src.transport.location4d import Location4D
 from src.utils.asarandom import AsaRandom
+from src.transport.shoreline import Shoreline
 
 class ModelController(object):
     """
@@ -16,8 +17,8 @@ class ModelController(object):
     """
     def __init__(self, **kwargs):
 
-    	""" 
-    		Mandatory named arguments:
+        """ 
+            Mandatory named arguments:
             * point (Shapely Point Object) no default
             * depth (meters) default 0
             * start (DateTime Object) none
@@ -40,6 +41,11 @@ class ModelController(object):
         self._step = kwargs.pop('step', 3600)
         self._models = kwargs.pop('models', None)
         self._dirty = True
+        self._particles = []
+
+        # Create shoreline
+        if self.use_shoreline == True:
+            self._shoreline = Shoreline()
 
         # Inerchangeables
         if "point" in kwargs:
@@ -128,6 +134,12 @@ class ModelController(object):
         return self._models
     models = property(get_models, set_models)
 
+    def set_particles(self, parts):
+        self._particles = parts
+    def get_particles(self):
+        return self._particles
+    particles = property(get_particles, set_particles)
+
     def __str__(self):
         return  " *** ModelController *** " + \
                 "\nlatitude: " + str(self.latitude) + \
@@ -141,56 +153,69 @@ class ModelController(object):
                 "\nuse_bathymetry: " + str(self.use_bathymetry) +\
                 "\nuse_shoreline: " + str(self.use_shoreline)
 
+    def check_bounds(self, **kwargs):
+        # shoreline
+        starting = kwargs.pop('starting')
+        ending = kwargs.pop('ending')
+
+        if self.use_shoreline == True:
+            self._shoreline.intersect(starting, ending)
+
+        # bathymetry
+        #if self.use_bathymetry == True:
+            # get bathymetry
+
+    def generate_map(self):
+        # Plot here
+
     # The transport part
     def run(self):
         # data from model controller inputs
         times = range(0,(self.step*self.nstep)+1,self.step)
+        u_get=[]
+        v_get=[]
+        z_get=[]
         start_lat = self.latitude
         start_lon = self.longitude
         start_depth = self.depth
-        start_time = self.time
-        models = self.models
-        arr = [] # empty array for storing resulting particle objects
+        start_time = self.start
+        models = self.modelsjects
 
         for x in xrange(0, self.npart): # loop over number of particles chosen
 
             p = Particle() # create a particle instance (from particle.py)
-            if start_time == None: raise TypeError("must provide a stat time to run the models")
+            if start_time == None:
+                raise TypeError("must provide a stat time to run the models")
             loc = Location4D(latitude=start_lat, longitude=start_lon, depth=start_depth, time=start_time) # make location4d instance
             p.location = loc # set particle location
 
-            for i in xrange(0, len(times)-1): # loop over number of time steps
+            # loop over number of time steps
+            for i in xrange(0, len(times)-1): 
 
-                u_get=[]
-                v_get=[]
-                z_get=[]
+                try:
+                    modelTimestep = times[i+1] - times[i]
+                    calculatedTime = times[i+1]
+                except:
+                    modelTimestep = times[i] - times[i-1]
+                    calculatedTime = times[i] + modelTimestep
+                    
+                current_location = p.location
 
-                if 'transport' in models:
+                if Transport in models:
                     transport_model = Transport(horizDisp=0.05, vertDisp=0.00003) # create a transport instance
-                    current_location = p.location
-                    try:
-                        modelTimestep = times[i+1] - times[i]
-                        calculatedTime = times[i+1]
-                    except:
-                        modelTimestep = times[i] - times[i-1]
-                        calculatedTime = times[i] + modelTimestep
-                    movement = transport_model.move(current_location.latitude, current_location.longitude, current_location.depth, u_get, v_get, z_get, horizDisp, vertDisp, modelTimestep)
+                    movement = transport_model.move(current_location.latitude, current_location.longitude, current_location.depth, u_get, v_get, z_get, modelTimestep)
+                    newloc = Location4D(latitude=movement['lat'], longitude=movement['lon'], depth=movement['depth'])
+                    newloc.u = movement['u']
+                    newloc.v = movement['v']
+                    newloc.z = movement['z']
+                    newloc.time = start_time + timedelta(seconds=calculatedTime)
+
+                    newloc = check_bounds(p.get_current_location, newloc);
+
+                    p.location = newloc
 
                 #if 'behaviour' in models:
                 #behavior_movement = 
-                
-                # shoreline
-                #if self.use_shoreline == True:
-                    # get shoreline
 
-                # bathymetry
-                #if self.use_bathymetry == True:
-                    # get bathymetry
 
-                newloc = Location4D(latitude=movement['lat'], longitude=movement['lon'], depth=movement['depth'])
-                newloc.u = movement['u']
-                newloc.v = movement['v']
-                newloc.z = movement['z']
-                newloc.time = start_time + timedelta(seconds=calculatedTime)
-                p.location = newloc
-            arr.append(p)
+            self._particles.append(p)

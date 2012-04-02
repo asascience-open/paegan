@@ -46,9 +46,9 @@ class Transport:
         f = (rmajor - rminor) / rmajor # calculating flattening (vincenty)
         #f = 1 / 298.257223563 # WGS-84 ellipsoid flattening parameter (vincenty)
 
-        u += AsaRandom.random() * ((2 * self.horizDisp / modelTimestep) ** 0.5) # u transformation calcualtions
-        v += AsaRandom.random() * ((2 * self.horizDisp / modelTimestep) ** 0.5) # v transformation calcualtions
-        z += AsaRandom.random() * ((2 * self.vertDisp / modelTimestep) ** 0.5) # z transformation calculations
+        u += AsaRandom.random() * ((2 * self._horizDisp / modelTimestep) ** 0.5) # u transformation calcualtions
+        v += AsaRandom.random() * ((2 * self._horizDisp / modelTimestep) ** 0.5) # v transformation calcualtions
+        z += AsaRandom.random() * ((2 * self._vertDisp / modelTimestep) ** 0.5) # z transformation calculations
 
         # Move horizontally
         s_and_d = AsaMath.speed_direction_from_u_v(u=u,v=v) # calculates velocity in m/s from transformed u and v

@@ -24,4 +24,4 @@ class ParticleTest(unittest.TestCase):
 
         p.location= Location4D(latitude=39, longitude=-75, depth=1)
 
-        assert(len(list(p.linestring().coords))) == 4        
+        assert(len(list(p.linestring().coords))) == 4

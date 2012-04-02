@@ -19,7 +19,8 @@ class ModelControllerTest(unittest.TestCase):
         start_depth = -5
         temp_time = datetime.utcnow()
         start_time = datetime(temp_time.year, temp_time.month, temp_time.day, temp_time.hour)
-
-        model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=3600, nstep=10, npart=1, models=['transport'], use_bathymetry=False, use_shoreline=False)
-  		
+        model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=3600, nstep=10, npart=1, models=[Transport], use_bathymetry=False, use_shoreline=False)
+        # Take in a dataset
+        model.run()
         print model
+        
