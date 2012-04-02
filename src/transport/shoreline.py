@@ -2,6 +2,7 @@ import os
 from osgeo import ogr
 from shapely import wkb, geometry
 from shapely.geometry import LineString
+from shapely.geometry import Point
 
 class Shoreline(object):
     def __init__(self, **kwargs):
@@ -40,6 +41,7 @@ class Shoreline(object):
         for element in self._geoms:
             inter = ls.intersection(element)
             if inter:
+                inter = Point(list(inter.coords)[0])
                 break
 
         return inter

@@ -16,7 +16,7 @@ class ShorelineTest(unittest.TestCase):
         starting = Location4D(latitude=39, longitude=-75, depth=0).point
         ending = Location4D(latitude=39.5, longitude=-75, depth=0).point
 
-        intersection = Point(s.intersect(start_point= starting, end_point=ending).coords[0])
+        intersection = s.intersect(start_point= starting, end_point=ending)
         assert -75 == intersection.x
         assert intersection.y > 39.185
         assert intersection.y < 39.195
