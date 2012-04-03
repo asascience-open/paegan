@@ -2,7 +2,7 @@ import unittest
 import random
 import matplotlib
 import matplotlib.pyplot
-#from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import Axes3D
 import numpy
 from datetime import datetime, timedelta
 from src.transport.models.transport import Transport
@@ -33,6 +33,9 @@ class ModelController(object):
             * depth (meters) default 0
         """
 
+        # Dataset
+        self._dataset = None
+
         # Defaults
         self._use_shoreline = kwargs.pop('use_shoreline', True)
         self._use_bathymetry = kwargs.pop('use_bathymetry', True)
@@ -45,7 +48,7 @@ class ModelController(object):
         self._particles = []
 
         # Create shoreline
-        if self.use_shoreline == True:
+        if self._use_shoreline == True:
             self._shoreline = Shoreline()
 
         # Create Bathymetry
@@ -164,13 +167,13 @@ class ModelController(object):
 
         # shoreline
         if self.use_shoreline == True:
-            pt = self._shoreline.intersect(start_points=starting, end_points=ending)
+            pt = self._shoreline.intersect(start_point=starting, end_point=ending)
             if pt:
                 return pt
 
         # bathymetry
         if self.use_bathymetry == True:
-            pt = self._bathymetry.intersect(start_points=starting, end_points=ending)
+            pt = self._bathymetry.intersect(start_point=starting, end_point=ending)
             if pt:
                 return pt
 
@@ -180,22 +183,45 @@ class ModelController(object):
         True
 
     def generate_map(self):
-        # Plot here
+        fig = matplotlib.pyplot.figure() # call a blank figure
+        ax = fig.gca(projection='3d') # line with points
 
-    # The transport part
+        #for x in range(len(arr)):
+        for x in xrange(self._npart):
+            particle=self._particles[x]
+            p_proj_lats=[]
+            p_proj_lons=[]
+            p_proj_depths=[]
+
+            for y in range(len(particle.locations)):
+                p_proj_lats.append(particle.locations[y].get_latitude())
+                p_proj_lons.append(particle.locations[y].get_longitude())
+                p_proj_depths.append(particle.locations[y].get_depth())
+            ax.plot(p_proj_lons, p_proj_lats, p_proj_depths, marker='o') # 3D line plot with point
+
+        ax.set_xlabel('Longitude')
+        ax.set_ylabel('Latitude')
+        ax.set_zlabel('Depth (m)')
+        matplotlib.pyplot.show()
+
     def run(self):
-        # data from model controller inputs
-        times = range(0,(self.step*self.nstep)+1,self.step)
-        u_get=[]
-        v_get=[]
-        z_get=[]
-        start_lat = self.latitude
-        start_lon = self.longitude
-        start_depth = self.depth
-        start_time = self.start
-        models = self.modelsjects
+        ######################################################
+        u=[] # random u,v,z generator
+        v=[]
+        z=[]
+        for w in xrange(0,100):
+            z.append(AsaRandom.random())
+            u.append(abs(AsaRandom.random()))
+            v.append(abs(AsaRandom.random()))
+        #######################################################
+        times = range(0,(self._step*self._nstep)+1,self._step)
+        start_lat = self._latitude
+        start_lon = self._longitude
+        start_depth = self._depth
+        start_time = self._start
+        models = self._models
 
-        for x in xrange(0, self.npart): # loop over number of particles chosen
+        for x in xrange(0, self._npart): # loop over number of particles chosen
 
             p = Particle() # create a particle instance (from particle.py)
             if start_time == None:
@@ -217,19 +243,18 @@ class ModelController(object):
 
                 if Transport in models:
                     transport_model = Transport(horizDisp=0.05, vertDisp=0.00003) # create a transport instance
-                    movement = transport_model.move(current_location.latitude, current_location.longitude, current_location.depth, u_get, v_get, z_get, modelTimestep)
+                    movement = transport_model.move(current_location.latitude, current_location.longitude, current_location.depth, u[i], v[i], z[i], modelTimestep)
                     newloc = Location4D(latitude=movement['lat'], longitude=movement['lon'], depth=movement['depth'])
                     newloc.u = movement['u']
                     newloc.v = movement['v']
                     newloc.z = movement['z']
                     newloc.time = start_time + timedelta(seconds=calculatedTime)
 
-                    newloc = check_bounds(starting=p.get_current_location, ending=newloc, u=u_get, v=v_get, z=z_get);
+                    self.check_bounds(starting=p.location.point, ending=newloc.point, u=u[i], v=v[i], z=[i])
 
                     p.location = newloc
 
                 #if 'behaviour' in models:
                 #behavior_movement = 
-
 
             self._particles.append(p)

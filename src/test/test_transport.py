@@ -97,8 +97,8 @@ class TransportTest(unittest.TestCase):
             arr.append(p)
         
         # 3D plot
-        fig = matplotlib.pyplot.figure() # call a blank figure
-        ax = fig.gca(projection='3d') # line with points
+        #fig = matplotlib.pyplot.figure() # call a blank figure
+        #ax = fig.gca(projection='3d') # line with points
         # ax = fig.add_subplot(111, projection='3d') # scatter
 
         # 2D plot
@@ -106,17 +106,17 @@ class TransportTest(unittest.TestCase):
         #ax = fig.add_subplot(111) # scatter plot
 
         #for x in range(len(arr)):
-        for x in range(3):
-            particle=arr[x]
-            p_proj_lats=[]
-            p_proj_lons=[]
-            p_proj_depths=[]
+        #for x in range(3):
+         #   particle=arr[x]
+          #  p_proj_lats=[]
+           # p_proj_lons=[]
+            #p_proj_depths=[]
 
-            for y in range(len(particle.locations)):
-                p_proj_lats.append(particle.locations[y].get_latitude())
-                p_proj_lons.append(particle.locations[y].get_longitude())
-                p_proj_depths.append(particle.locations[y].get_depth())
-            ax.plot(p_proj_lons, p_proj_lats, p_proj_depths, marker='o') # 3D line plot with point
+            #for y in range(len(particle.locations)):
+             #   p_proj_lats.append(particle.locations[y].get_latitude())
+              #  p_proj_lons.append(particle.locations[y].get_longitude())
+               # p_proj_depths.append(particle.locations[y].get_depth())
+            #ax.plot(p_proj_lons, p_proj_lats, p_proj_depths, marker='o') # 3D line plot with point
 
             # ax.scatter(p_proj_lons, p_proj_lats, p_proj_depths, c='r', marker='o') # 3D scatter plot just points
             #col=['r','b','g']
@@ -127,7 +127,7 @@ class TransportTest(unittest.TestCase):
         #print p_proj_lats
         #ax2.scatter(p_proj_lons, p_proj_lats, p_proj_depths, c='r', marker='o', linestyle='solid')
         #ax.scatter(p_proj_lons, p_proj_lats, p_proj_depths, c='r', marker='o')
-        ax.set_xlabel('Longitude')
-        ax.set_ylabel('Latitude')
-        ax.set_zlabel('Depth (m)')
-        matplotlib.pyplot.show()
+        #ax.set_xlabel('Longitude')
+        #ax.set_ylabel('Latitude')
+        #ax.set_zlabel('Depth (m)')
+        #matplotlib.pyplot.show()

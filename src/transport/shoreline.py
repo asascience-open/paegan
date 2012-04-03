@@ -38,10 +38,10 @@ class Shoreline(object):
             raise TypeError( "must provide a LineString geometry object or (2) Point geometry objects" )
 
         inter = False
-        for element in self._geoms:
-            inter = ls.intersection(element)
-            if inter:
-                inter = Point(list(inter.coords)[0])
-                break
+        #for element in self._geoms:
+        #    inter = ls.intersection(element)
+        #    if inter:
+        #        inter = Point(list(inter.coords)[0])
+        #        break
 
         return inter
