@@ -162,23 +162,29 @@ class ModelController(object):
                 "\nuse_bathymetry: " + str(self.use_bathymetry) +\
                 "\nuse_shoreline: " + str(self.use_shoreline)
 
-    def check_bounds(self, **kwargs):
+    def boundry_interaction(self, **kwargs):
         starting = kwargs.pop('starting')
         ending = kwargs.pop('ending')
 
-        # shoreline
-        if self.use_shoreline:
-            pt = self._shoreline.intersect(start_point=starting, end_point=ending)
-            if pt:
-                return pt
-
         # bathymetry
         if self.use_bathymetry:
-            pt = self._bathymetry.intersect(start_point=starting, end_point=ending)
+            pt = self._bathymetry.intersect(start_point=starting.point, end_point=ending.point, distance=kwargs.get('vdistance'), angle=kwargs.get('vangle'))
             if pt:
-                return pt
+                ending.latitude = pt.y
+                ending.longitude = pt.x
+                ending.depth = pt.z
 
-        return False
+        # shoreline
+        if self.use_shoreline:
+            pt = self._shoreline.intersect(start_point=starting.point, end_point=ending.point, distance=kwargs.get('distance'), angle=kwargs.get('angle'))
+            if pt:
+                ending.latitude = pt.y
+                ending.longitude = pt.x
+                ending.depth = pt.z
+
+
+
+        return ending
 
     def reflect(self, **kwargs):
         True
@@ -246,15 +252,11 @@ class ModelController(object):
                 if Transport in models:
                     transport_model = Transport(horizDisp=0.05, vertDisp=0.00003) # create a transport instance
                     movement = transport_model.move(current_location, u[i], v[i], z[i], modelTimestep)
-                    newloc = Location4D(latitude=movement['lat'], longitude=movement['lon'], depth=movement['depth'])
-                    newloc.u = movement['u']
-                    newloc.v = movement['v']
-                    newloc.z = movement['z']
-                    newloc.time = start_time + timedelta(seconds=calculatedTime)
+                    newloc = Location4D(latitude=movement['lat'], longitude=movement['lon'], depth=movement['depth'], time=start_time + timedelta(seconds=calculatedTime))
 
-                if newloc:
-                    self.check_bounds(starting=p.location.point, ending=newloc.point, u=u[i], v=v[i], z=[i])
-                    p.location = newloc
+                    if newloc:
+                        newloc = self.boundry_interaction(starting=p.location, ending=newloc, distance=movement['distance'], angle=movement['angle'], vdistance=movement['vertical_distance'])
+                        p.location = newloc
 
                 #if 'behaviour' in models:
                 #behavior_movement = 
@@ -267,7 +269,7 @@ class ModelController(object):
         v=[]
         z=[]
         for w in xrange(0,self._nstep):
-            z.append(AsaRandom.random())
+            z.append(AsaRandom.random()*0.001)
             u.append(abs(AsaRandom.random()))
             v.append(abs(AsaRandom.random()))
         #######################################################
@@ -309,6 +311,6 @@ class ModelController(object):
                     newloc = Location4D(latitude=movement['lat'], longitude=movement['lon'], depth=movement['depth'], time=newtime)
 
                     if newloc:
-                        self.check_bounds(starting=p.location.point, ending=newloc.point, u=u[i], v=v[i], z=[i])
+                        newloc = self.boundry_interaction(starting=p.location, ending=newloc, distance=movement['distance'], angle=movement['angle'], vdistance=movement['vertical_distance'])
                         part.location = newloc
 
