@@ -73,14 +73,16 @@ class Transport:
             distance = distance to traveled
             angle = angle to travel in
             start_point = Location4D object representing the starting point
+            rmajor = radius of earth's major axis. default=6378137.0 (WGS84)
+            rminor = radius of earth's minor axis. default=6356752.3142 (WGS84)
         """
 
         distance = kwargs.pop('distance')
         angle = kwargs.pop('angle')
         starting = kwargs.pop('start_point')
-        rmajor = kwargs.pop('rmajor', 6378137.0) # radius of earth's major axis (vincenty)
-        rminor = kwargs.pop('rminor', 6356752.3142) # radius of earth's minor axis (vincenty)
-        f = (rmajor - rminor) / rmajor # calculating flattening (vincenty)
+        rmajor = kwargs.pop('rmajor', 6378137.0)
+        rminor = kwargs.pop('rminor', 6356752.3142)
+        f = (rmajor - rminor) / rmajor
 
         lat_result, lon_result, angle_result = GreatCircle.vinc_pt(f, rmajor, math.radians(starting.latitude), math.radians(starting.longitude), angle, distance)        
 
