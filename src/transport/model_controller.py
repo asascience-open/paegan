@@ -11,6 +11,7 @@ from src.transport.location4d import Location4D
 from src.utils.asarandom import AsaRandom
 from src.transport.shoreline import Shoreline
 from src.transport.bathymetry import Bathymetry
+from shapely.geometry import Point
 
 class ModelController(object):
     """
@@ -47,14 +48,6 @@ class ModelController(object):
         self._dirty = True
         self._particles = []
 
-        # Create shoreline
-        if self._use_shoreline == True:
-            self._shoreline = Shoreline()
-
-        # Create Bathymetry
-        if self.use_bathymetry == True:
-            self._bathymetry = Bathymetry()
-
         # Inerchangeables
         if "point" in kwargs:
             self._point = kwargs.pop('point')
@@ -63,6 +56,14 @@ class ModelController(object):
             self._longitude = kwargs.pop('longitude') 
         else:
             raise TypeError("must provide a point geometry object or latitude and longitude")
+
+        # Create shoreline
+        if self._use_shoreline == True:
+            self._shoreline = Shoreline(point=self.point)
+
+        # Create Bathymetry
+        if self.use_bathymetry == True:
+            self._bathymetry = Bathymetry(point=self.point)
 
         # Errors
         if "nstep" in kwargs:
@@ -75,7 +76,7 @@ class ModelController(object):
         self._dirty = False
     def get_point(self):
         if self._dirty:
-            self._point = Point(self._longitude, self._latitude, self._depth)
+            self.set_point(Point(self._longitude, self._latitude, self._depth))
         return self._point
     point = property(get_point, set_point)
 
@@ -225,7 +226,7 @@ class ModelController(object):
 
             p = Particle() # create a particle instance (from particle.py)
             if start_time == None:
-                raise TypeError("must provide a stat time to run the models")
+                raise TypeError("must provide a start time to run the models")
             loc = Location4D(latitude=start_lat, longitude=start_lon, depth=start_depth, time=start_time) # make location4d instance
             p.location = loc # set particle location
 
@@ -240,6 +241,7 @@ class ModelController(object):
                     calculatedTime = times[i] + modelTimestep
                     
                 current_location = p.location
+                newloc = None
 
                 if Transport in models:
                     transport_model = Transport(horizDisp=0.05, vertDisp=0.00003) # create a transport instance
@@ -250,6 +252,7 @@ class ModelController(object):
                     newloc.z = movement['z']
                     newloc.time = start_time + timedelta(seconds=calculatedTime)
 
+                if newloc:
                     self.check_bounds(starting=p.location.point, ending=newloc.point, u=u[i], v=v[i], z=[i])
 
                     p.location = newloc
