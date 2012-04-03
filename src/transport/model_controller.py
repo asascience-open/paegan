@@ -167,13 +167,13 @@ class ModelController(object):
         ending = kwargs.pop('ending')
 
         # shoreline
-        if self.use_shoreline == True:
+        if self.use_shoreline:
             pt = self._shoreline.intersect(start_point=starting, end_point=ending)
             if pt:
                 return pt
 
         # bathymetry
-        if self.use_bathymetry == True:
+        if self.use_bathymetry:
             pt = self._bathymetry.intersect(start_point=starting, end_point=ending)
             if pt:
                 return pt
