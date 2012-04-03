@@ -231,7 +231,7 @@ class ModelController(object):
             p.location = loc # set particle location
 
             # loop over number of time steps
-            for i in xrange(0, len(times)-1): 
+            for i in xrange(0, self._nstep-1): 
 
                 try:
                     modelTimestep = times[i+1] - times[i]
@@ -260,3 +260,55 @@ class ModelController(object):
                 #behavior_movement = 
 
             self._particles.append(p)
+
+    def run_by_time(self):
+        ######################################################
+        u=[] # random u,v,z generator
+        v=[]
+        z=[]
+        for w in xrange(0,self._nstep):
+            z.append(AsaRandom.random())
+            u.append(abs(AsaRandom.random()))
+            v.append(abs(AsaRandom.random()))
+        #######################################################
+        times = range(0,(self._step*self._nstep)+1,self._step)
+        start_lat = self._latitude
+        start_lon = self._longitude
+        start_depth = self._depth
+        start_time = self._start
+        models = self._models
+
+        if start_time == None:
+            raise TypeError("must provide a start time to run the models")
+
+        startloc = Location4D(latitude=start_lat, longitude=start_lon, depth=start_depth, time=start_time)
+
+        for x in xrange(0, self._npart):
+            p = Particle()
+            p.location = startloc
+            self.particles.append(p)
+
+        # loop over number of time steps
+        for i in xrange(0, len(times)-1): 
+            try:
+                modelTimestep = times[i+1] - times[i]
+                calculatedTime = times[i+1]
+            except:
+                modelTimestep = times[i] - times[i-1]
+                calculatedTime = times[i] + modelTimestep
+                
+            newtime = start_time + timedelta(seconds=calculatedTime)
+            current_location = p.location
+            newloc = None
+            
+            if Transport in models:
+                transport_model = Transport(horizDisp=0.05, vertDisp=0.00003) # create a transport instance
+
+                for part in self.particles:
+                    movement = transport_model.move(part.location, u[i], v[i], z[i], modelTimestep)
+                    newloc = Location4D(latitude=movement['lat'], longitude=movement['lon'], depth=movement['depth'], time=newtime)
+
+                    if newloc:
+                        self.check_bounds(starting=p.location.point, ending=newloc.point, u=u[i], v=v[i], z=[i])
+                        part.location = newloc
+
