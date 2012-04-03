@@ -167,13 +167,13 @@ class ModelController(object):
 
         # shoreline
         if self.use_shoreline == True:
-            pt = self._shoreline.intersect(start_points=starting, end_points=ending)
+            pt = self._shoreline.intersect(start_point=starting, end_point=ending)
             if pt:
                 return pt
 
         # bathymetry
         if self.use_bathymetry == True:
-            pt = self._bathymetry.intersect(start_points=starting, end_points=ending)
+            pt = self._bathymetry.intersect(start_point=starting, end_point=ending)
             if pt:
                 return pt
 
@@ -250,7 +250,7 @@ class ModelController(object):
                     newloc.z = movement['z']
                     newloc.time = start_time + timedelta(seconds=calculatedTime)
 
-                    newloc = check_bounds(starting=p.get_current_location, ending=newloc, u=u_get, v=v_get, z=z_get);
+                    self.check_bounds(starting=p.location.point, ending=newloc.point, u=u[i], v=v[i], z=[i])
 
                     p.location = newloc
 
