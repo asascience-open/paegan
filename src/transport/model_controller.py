@@ -40,20 +40,20 @@ class ModelController(object):
         # Defaults
         self._use_shoreline = kwargs.pop('use_shoreline', True)
         self._use_bathymetry = kwargs.pop('use_bathymetry', True)
-        self._depth = kwargs.pop('depth', 0)
-        self._npart = kwargs.pop('npart', 1)
-        self._start = kwargs.pop('start', None)
-        self._step = kwargs.pop('step', 3600)
-        self._models = kwargs.pop('models', None)
+        self.depth = kwargs.pop('depth', 0)
+        self.npart = kwargs.pop('npart', 1)
+        self.start = kwargs.pop('start', None)
+        self.step = kwargs.pop('step', 3600)
+        self.models = kwargs.pop('models', None)
         self._dirty = True
-        self._particles = []
+        self.particles = []
 
         # Inerchangeables
         if "point" in kwargs:
-            self._point = kwargs.pop('point')
+            self.point = kwargs.pop('point')
         elif "latitude" and "longitude" in kwargs:
-            self._latitude = kwargs.pop('latitude')
-            self._longitude = kwargs.pop('longitude') 
+            self.latitude = kwargs.pop('latitude')
+            self.longitude = kwargs.pop('longitude') 
         else:
             raise TypeError("must provide a point geometry object or latitude and longitude")
 

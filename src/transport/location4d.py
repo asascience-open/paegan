@@ -18,16 +18,16 @@ class Location4D(object):
         """
 
         if "point" in kwargs:
-            self._point = kwargs.pop('point')
+            self.point = kwargs.pop('point')
         elif "latitude" and "longitude" in kwargs:
-            self._latitude = kwargs.pop('latitude')
-            self._longitude = kwargs.pop('longitude') 
+            self.latitude = kwargs.pop('latitude')
+            self.longitude = kwargs.pop('longitude') 
         else:
             raise TypeError( "must provide a point geometry object or latitude and longitude" )
 
         self._dirty = True
-        self._depth = kwargs.pop('depth', None) 
-        self._time = kwargs.pop('time', None) 
+        self.depth = kwargs.pop('depth', None) 
+        self.time = kwargs.pop('time', None) 
 
 
     def set_point(self, point):
