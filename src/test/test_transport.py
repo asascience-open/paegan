@@ -38,7 +38,7 @@ class TransportTest(unittest.TestCase):
             except:
                 modelTimestep = times[i] - times[i-1]
                 calculatedTime = times[i] + modelTimestep
-            movement = transport_model.move(current_location.latitude, current_location.longitude, current_location.depth, u[i], v[i], z[i], modelTimestep)
+            movement = transport_model.move(current_location, u[i], v[i], z[i], modelTimestep)
             newloc = Location4D(latitude=movement['lat'], longitude=movement['lon'], depth=movement['depth'])
             newloc.u = movement['u']
             newloc.v = movement['v']
@@ -86,7 +86,7 @@ class TransportTest(unittest.TestCase):
                 except:
                     modelTimestep = times[i] - times[i-1]
                     calculatedTime = times[i] + modelTimestep
-                movement = transport_model.move(current_location.latitude, current_location.longitude, current_location.depth, u[i], v[i], z[i], modelTimestep)
+                movement = transport_model.move(current_location, u[i], v[i], z[i], modelTimestep)
 
                 newloc = Location4D(latitude=movement['lat'], longitude=movement['lon'], depth=movement['depth'])
                 newloc.u = movement['u']
