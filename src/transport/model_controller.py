@@ -10,6 +10,7 @@ from src.transport.particles.particle import Particle
 from src.transport.location4d import Location4D
 from src.utils.asarandom import AsaRandom
 from src.transport.shoreline import Shoreline
+from src.transport.bathymetry import Bathymetry
 
 class ModelController(object):
     """
@@ -49,6 +50,10 @@ class ModelController(object):
         # Create shoreline
         if self._use_shoreline == True:
             self._shoreline = Shoreline()
+
+        # Create Bathymetry
+        if self.use_bathymetry == True:
+            self._bathymetry = Bathymetry()
 
         # Inerchangeables
         if "point" in kwargs:
@@ -156,14 +161,26 @@ class ModelController(object):
                 "\nuse_bathymetry: " + str(self.use_bathymetry) +\
                 "\nuse_shoreline: " + str(self.use_shoreline)
 
-    def check_bounds(starting, ending):
+    def check_bounds(self, **kwargs):
+        starting = kwargs.pop('starting')
+        ending = kwargs.pop('ending')
 
-        if self._use_shoreline == True:
-            self._shoreline.intersect(starting, ending)
+        # shoreline
+        if self.use_shoreline == True:
+            pt = self._shoreline.intersect(start_points=starting, end_points=ending)
+            if pt:
+                return pt
 
         # bathymetry
-        # if self.use_bathymetry == True:
-            # get bathymetry
+        if self.use_bathymetry == True:
+            pt = self._bathymetry.intersect(start_points=starting, end_points=ending)
+            if pt:
+                return pt
+
+        return False
+
+    def reflect(self, **kwargs):
+        True
 
     def generate_map(self):
         fig = matplotlib.pyplot.figure() # call a blank figure
@@ -233,8 +250,7 @@ class ModelController(object):
                     newloc.z = movement['z']
                     newloc.time = start_time + timedelta(seconds=calculatedTime)
 
-                    print self._shoreline.intersect(start_point=p.get_location, end_point=newloc)
-                    #newloc = self.check_bounds(p.get_location, newloc)
+                    newloc = check_bounds(starting=p.get_current_location, ending=newloc, u=u_get, v=v_get, z=z_get);
 
                     p.location = newloc
 

@@ -25,3 +25,13 @@ class ParticleTest(unittest.TestCase):
         p.location= Location4D(latitude=39, longitude=-75, depth=1)
 
         assert(len(list(p.linestring().coords))) == 4
+
+    def test_particle_last_movement(self):
+        p = Particle()
+        p.location = Location4D(latitude=38, longitude=-76, depth=0)
+        p.location = Location4D(latitude=39, longitude=-75, depth=1)
+        p.location = Location4D(latitude=40, longitude=-74, depth=2)
+       
+        result = list(p.get_last_movement().coords)
+        assert (-75, 39, 1) == result[0]
+        assert (-74, 40, 2) == result[1]

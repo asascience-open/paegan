@@ -60,24 +60,6 @@ class Location4D(object):
         return self._depth
     depth = property(get_depth, set_depth)
 
-    def set_u(self, u):
-        self._u = u
-    def get_u(self):
-        return self._u
-    u = property(get_u, set_u)
-
-    def set_v(self, v):
-        self._v = v
-    def get_v(self):
-        return self._v
-    v = property(get_v, set_v)
-
-    def set_z(self, z):
-        self._z = z
-    def get_z(self):
-        return self._z
-    z = property(get_z, set_z)
-
     def set_time(self, time):
         self._time = time
     def get_time(self):
