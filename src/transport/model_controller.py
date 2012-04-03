@@ -76,7 +76,7 @@ class ModelController(object):
         self._dirty = False
     def get_point(self):
         if self._dirty:
-            self.set_point(Point(self._longitude, self._latitude, self._depth))
+            self.point = Point(self._longitude, self._latitude, self._depth)
         return self._point
     point = property(get_point, set_point)
 
