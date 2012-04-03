@@ -210,8 +210,8 @@ class ModelController(object):
         u=[] # random u,v,z generator
         v=[]
         z=[]
-        for w in xrange(0,100):
-            z.append(AsaRandom.random())
+        for w in xrange(0, self._nstep-1):
+            z.append(AsaRandom.random()*0.001)
             u.append(abs(AsaRandom.random()))
             v.append(abs(AsaRandom.random()))
         #######################################################
