@@ -7,7 +7,7 @@
 import numpy as np
 import netCDF4, datetime
 from dateutil.parser import parse
-from pylab import date2num,num2date
+import pylab
 
 class Timevar(np.ndarray):
     
@@ -53,7 +53,7 @@ class Timevar(np.ndarray):
         return data.view(self)
     
     def nearest_index(self, dateo):
-        to = date2num(dateo)
+        to = pylab.date2num(dateo)
         return where(abs(self.jd-to) == min(abs(self.jd-to)))[0]
     
     def nearest(self, dateo):
@@ -66,7 +66,7 @@ class Timevar(np.ndarray):
         #    res=self.jd[self.nearest_index(dateo)][0]
         #else:
         #    res=self.jd[self.nearest_index(dateo)][1]
-        return num2date(self.jd[self.nearest_index(dateo)][0])
+        return pylab.num2date(self.jd[self.nearest_index(dateo)][0])
     
     def get_seconds(self):
         fac = self._unit2sec[self._units] * self._sec2unit['seconds']
@@ -85,10 +85,10 @@ class Timevar(np.ndarray):
         return np.asarray(self,dtype='float64')*fac
     
     def get_jd(self):
-        return (date2num(self.origin)+self.days)
+        return (pylab.date2num(self.origin)+self.days)
 
     def get_dates(self):
-        return num2date(self.jd)
+        return pylab.num2date(self.jd)
         
     jd = property(get_jd, None, doc="Julian day, for plotting in pylab")
     seconds = property(get_seconds, None, doc="seconds")

@@ -26,7 +26,7 @@ class TimevarTest(unittest.TestCase):
         tvar = Timevar(datafile, name='ocean_time')
         assert data.shape == tvar.shape
 
-    def test_timevar_values(self):
+    def test_timevar_roms_seconds_values(self):
 
         datafile = os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/ocean_avg_synoptic_seg22.nc"))
 
@@ -45,11 +45,62 @@ class TimevarTest(unittest.TestCase):
 
         assert np.allclose(data,tvar.days)
 
+        # Now compare datetimes
+        data = data.tolist()
+        jds = []
+        for x in data:
+            jds.append(dt + timedelta(days=x))
+
+        assert jds == tvar.dates
+
+    def test_timevar_hfradar_days_values(self):
+
+        datafile = os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/marcooshfradar20120331.nc"))
+
+        # Manually extract
+        # time:units = days since 2001-01-01 00:00:00
+        dt = datetime(2001,1,1,tzinfo=pytz.utc)
+        ds = netCDF4.Dataset(datafile)
+        data = ds.variables['time'][:]
+
+        # Timevar extract
+        tvar = Timevar(datafile, name='time')
+
+        assert np.allclose(data,tvar.days)
 
         # Now compare datetimes
         data = data.tolist()
         jds = []
         for x in data:
             jds.append(dt + timedelta(days=x))
+
+        assert jds == tvar.dates
+
+
+    def test_timevar_ncom_hour_values_dap(self):
+
+        datafile = "http://edac-dap3.northerngulfinstitute.org/thredds/dodsC/US_East/ncom_relo_useast_u_2012032600/ncom_relo_useast_u_2012032600_t039.nc"
+
+        # Manually extract
+        # time:units = hour since 2000-01-01 00:00:00
+        dt = datetime(2000,1,1,tzinfo=pytz.utc)
+        ds = netCDF4.Dataset(datafile)
+        data = ds.variables['time'][:]
+        # Convert to days
+        factor = 24
+        data = data / factor
+
+        # Timevar extract
+        tvar = Timevar(datafile, name='time')
+
+        assert np.allclose(data,tvar.days)
+
+        # Now compare datetimes
+        data = data.tolist()
+        jds = []
+        for x in data:
+            jds.append(dt + timedelta(days=x))
+
+        print jds
 
         assert jds == tvar.dates
