@@ -1,7 +1,7 @@
 import math
-from src.external.greatcircle import GreatCircle
 from src.utils.asamath import AsaMath
 from src.utils.asarandom import AsaRandom
+from src.utils.asagreatcircle import AsaGreatCircle
 
 class Transport:
     """
@@ -58,35 +58,14 @@ class Transport:
             depth = 0
 
         # Great circle calculation
-        result = self.great_circle(distance=distance_horiz, angle=s_and_d['direction'], start_point=location)
+        result = AsaGreatCircle.great_circle(distance=distance_horiz, angle=s_and_d['direction'], start_point=location)
 
         # Convert lat and lon to degrees
         lat_result = math.degrees(result['latitude'])
         lon_result = math.degrees(result['longitude'])
         angle_result = result['reverse_angle']
 
-        return {'lat':lat_result, 'lon':lon_result, 'reverse_angle':angle_result, 'depth':depth, 'u': u, 'v':v, 'z':z, 'distance':distance_horiz, 'angle': s_and_d['direction'], 'vertical_distance':distance_vert}
-
-    def great_circle(self, **kwargs):
-        """
-            Named arguments:
-            distance = distance to traveled
-            angle = angle to travel in
-            start_point = Location4D object representing the starting point
-            rmajor = radius of earth's major axis. default=6378137.0 (WGS84)
-            rminor = radius of earth's minor axis. default=6356752.3142 (WGS84)
-        """
-
-        distance = kwargs.pop('distance')
-        angle = kwargs.pop('angle')
-        starting = kwargs.pop('start_point')
-        rmajor = kwargs.pop('rmajor', 6378137.0)
-        rminor = kwargs.pop('rminor', 6356752.3142)
-        f = (rmajor - rminor) / rmajor
-
-        lat_result, lon_result, angle_result = GreatCircle.vinc_pt(f, rmajor, math.radians(starting.latitude), math.radians(starting.longitude), angle, distance)        
-
-        return {'latitude': lat_result, 'longitude': lon_result, 'reverse_angle': angle_result}
+        return {'lat':lat_result, 'lon':lon_result, 'reverse_angle':angle_result, 'depth':depth, 'u': u, 'v':v, 'z':z, 'distance':distance_horiz, 'angle': s_and_d['direction'], 'vertical_distance':distance_vert, 'vertical_angle':vertical_angle}
 
     def __str__(self):
         return  " *** Transport *** " + \

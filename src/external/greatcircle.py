@@ -36,16 +36,6 @@ class GreatCircle(object):
     # |                                                                     |
     # -----------------------------------------------------------------------
 
-    #----------------------------------------------------------------------------
-    # Vincenty's Direct formulae                                                |
-    # Given: latitude and longitude of a point (phi1, lembda1) and              |
-    # the geodetic azimuth (alpha12)                                            |
-    # and ellipsoidal distance in metres (s) to a second point,                 |
-    #                                                                           |
-    # Calculate: the latitude and longitude of the second point (phi2, lembda2) |
-    # and the reverse azimuth (alpha21).                                        |
-    #                                                                           |
-    #----------------------------------------------------------------------------
     @staticmethod
     def vinc_dist(  f,  a,  phi1,  lembda1,  phi2,  lembda2 ) :
         """ 
@@ -135,6 +125,17 @@ class GreatCircle(object):
 
         return s, alpha12,  alpha21 
         
+        
+    #----------------------------------------------------------------------------
+    # Vincenty's Direct formulae                                                |
+    # Given: latitude and longitude of a point (phi1, lembda1) and              |
+    # the geodetic azimuth (alpha12)                                            |
+    # and ellipsoidal distance in metres (s) to a second point,                 |
+    #                                                                           |
+    # Calculate: the latitude and longitude of the second point (phi2, lembda2) |
+    # and the reverse azimuth (alpha21).                                        |
+    #                                                                           |
+    #----------------------------------------------------------------------------
     @staticmethod
     def vinc_pt( f, a, phi1, lembda1, alpha12, s ) :
         """
