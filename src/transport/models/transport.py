@@ -54,6 +54,10 @@ class Transport:
         depth = location.depth
         depth += distance_vert
 
+        # vertical angle
+        # vangle = tan^-1(distance_vert / distance_horiz)
+        vertical_angle = math.degrees(math.atan(distance_vert / distance_horiz))
+
         # Great circle calculation
         result = AsaGreatCircle.great_circle(distance=distance_horiz, angle=s_and_d['direction'], start_point=location)
 
