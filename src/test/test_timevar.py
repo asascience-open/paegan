@@ -101,6 +101,4 @@ class TimevarTest(unittest.TestCase):
         for x in data:
             jds.append(dt + timedelta(days=x))
 
-        print jds
-
         assert jds == tvar.dates
