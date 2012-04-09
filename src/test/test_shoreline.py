@@ -8,10 +8,14 @@ import math
 class ShorelineTest(unittest.TestCase):
 
     def test_indexing(self):
-        p = Point(-75.849775, 36.519332)
+        p = Point(-73.745631, 40.336791)
         s = Shoreline(point=p, spatialbuffer=2)
-        print s.linestring
-
+        line = s.linestring
+        #print line
+        #x, y = line.xy
+        #print x
+        #print y
+        
     def test_water_start_land_end_intersection(self):
         # Starts in the water and ends on land
         s = Shoreline()

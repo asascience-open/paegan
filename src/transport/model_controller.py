@@ -223,6 +223,20 @@ class ModelController(object):
                 p_proj_depths.append(particle.locations[y].get_depth())
             ax.plot(p_proj_lons, p_proj_lats, p_proj_depths, marker='o') # 3D line plot with point
 
+
+        midpoint = (particle.locations[len(particle.locations)/2].get_longitude(), particle.locations[len(particle.locations)/2].get_latitude())
+        print midpoint
+        coast = Shoreline(point=Point(midpoint), buffer=4)
+        coast_line = coast.linestring
+        c_lons, c_lats = coast_line.xy
+        c_lons2 = [c_lons[x] for x in range(len(c_lons)) if c_lons[x] >=-77 and c_lons[x] <=-69]
+        c_lats2 = [c_lats[x] for x in range(len(c_lons)) if c_lons[x] >=-77 and c_lons[x] <=-69]
+        c_lats3 = [c_lats2[x] for x in range(len(c_lats2)) if c_lats2[x] >=37 and c_lats2[x] <=40]
+        c_lons3 = [c_lons2[x] for x in range(len(c_lats2)) if c_lats2[x] >=37 and c_lats2[x] <=40]
+
+        ax.plot(c_lons3, c_lats3, 0) # 3D line plot with point
+        matplotlib.pyplot.xlim((-77,-69))
+        matplotlib.pyplot.ylim((37, 40))
         ax.set_xlabel('Longitude')
         ax.set_ylabel('Latitude')
         ax.set_zlabel('Depth (m)')
