@@ -191,25 +191,20 @@ class ModelController(object):
         if self.use_shoreline:
             intersection_point = self._shoreline.intersect(start_point=starting.point, end_point=ending.point)
             if intersection_point:
-                return_points.append(intersectin_point)
+                return_points.append(intersection_point)
 
                 resulting_point = self._shoreline.react(start_point=starting, end_point=ending, hit_point=Location4D(point=intersection_point['point']), feature=intersection_point['feature'], distance=kwargs.get('distance'), angle=kwargs.get('angle'))
                 ending.latitude = resulting_point.latitude
                 ending.longitude = resulting_point.longitude
                 ending.depth = resulting_point.depth
 
-
         # sea-surface
         if self.use_seasurface:
             if ending.depth > 0:
                 ending.depth = 0
 
-
         return_points.append(ending)
         return return_points
-
-    def reflect(self, **kwargs):
-        True
 
     def generate_map(self):
         fig = matplotlib.pyplot.figure() # call a blank figure
