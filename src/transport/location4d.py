@@ -54,6 +54,9 @@ class Location4D(object):
     longitude = property(get_longitude, set_longitude)
 
     def set_depth(self, dep):
+        """
+            Depth below sea level, positive up
+        """
         self._depth = dep
         self._dirty = True
     def get_depth(self):

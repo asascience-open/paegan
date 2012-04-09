@@ -33,7 +33,7 @@ class Transport:
     def move(self, location, u, v, z, modelTimestep):
         """
         Returns the lat, lon, H, and velocity of a projected point given a starting
-        lat and lon (dec deg), a depth (m) below sea surface, u, v, and z velocity components (m/s), a horizontal and vertical
+        lat and lon (dec deg), a depth (m) below sea surface (positive up), u, v, and z velocity components (m/s), a horizontal and vertical
         displacement coefficient (m^2/s) H (m), and a model timestep (s).
 
         GreatCircle calculations are done based on the Vincenty Direct method.
