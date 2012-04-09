@@ -10,12 +10,7 @@ class ShorelineTest(unittest.TestCase):
     def test_indexing(self):
         p = Point(-73.745631, 40.336791)
         s = Shoreline(point=p, spatialbuffer=2)
-        line = s.linestring
-        #print line
-        #x, y = line.xy
-        #print x
-        #print y
-        
+
     def test_water_start_land_end_intersection(self):
         # Starts in the water and ends on land
         s = Shoreline()
@@ -72,46 +67,52 @@ class ShorelineTest(unittest.TestCase):
         assert intersection.x > -74.96
         assert intersection.x < -74.94
 
-    def test_water_start_water_end_jump_over_land_intersection_and_reaction(self):
-        # Starts on water and ends on water, but there is land inbetween
+    def test_reaction_up_left(self):
+
         s = Shoreline()
 
-        # -75, 39   is in the middle of the Delaware Bay
-        # -74, 39   is in the Atlantic
-        # This jumps over a peninsula.
-        # Intersection should be the Point -74.96 -> -74.94, 39
-        #
         starting = Location4D(latitude=39.1, longitude=-74.91, depth=0)
         ending   = Location4D(latitude=39.1, longitude=-74.85, depth=0)
 
         difference = AsaGreatCircle.great_distance(start_point=starting, end_point=ending)
-        angle = difference['angle']
+        angle = math.degrees(difference['angle'])
         distance = difference['distance']
 
         intersection = s.intersect(start_point=starting.point, end_point=ending.point)
         int4d = Location4D(point=intersection['point'])
-        assert 39.1 == int4d.latitude
-        assert int4d.longitude > -74.91
-        assert int4d.longitude < -74.88
 
-        # Distance until it hit shoreline.  Measured in Arc to be somewhere around 945 meters
-        first_leg = AsaGreatCircle.great_distance(start_point=starting, end_point=int4d)
-        assert first_leg['distance'] > 940
-        assert first_leg['distance'] < 950
-
-        # Second leg distance
-        reaction_distance = distance - first_leg['distance']
-        shoreline_angle = 65.44745 # Calculated with Arc
-        # Coming in at 0 degrees and hitting an angle of 65.44745, resulting in 114.55255
-        reaction_angle = shoreline_angle + 90 + angle
-
-        second_point = AsaGreatCircle.great_circle(distance=reaction_distance, angle=math.radians(reaction_angle), start_point=int4d)
-        second_location = Location4D(latitude=math.degrees(second_point['latitude']), longitude=math.degrees(second_point['longitude']), depth=ending.depth)
+        final_point = s.react(  start_point = starting,
+                                hit_point = int4d,
+                                end_point = ending,
+                                feature = intersection['feature'],
+                                distance = distance,
+                                angle = angle)
 
         # should have 'bounced' up and to the left
-        assert second_location.latitude < int4d.latitude # left
-        assert second_location.longitude > int4d.longitude # up
+        assert final_point.latitude < int4d.latitude
+        assert final_point.longitude > int4d.longitude
 
-        # First leg plus second leg should equal total distance
-        second_leg = AsaGreatCircle.great_distance(start_point=int4d, end_point=second_location)
-        assert round(second_leg['distance'] + first_leg['distance'], 4) == round(distance, 4)
+    def test_reaction_down_right(self):
+
+        s = Shoreline()
+
+        starting = Location4D(latitude=39.05, longitude=-75.34, depth=0)
+        ending   = Location4D(latitude=38.96, longitude=-75.315, depth=0)
+
+        difference = AsaGreatCircle.great_distance(start_point=starting, end_point=ending)
+        angle = math.degrees(difference['angle'])
+        distance = difference['distance']
+
+        intersection = s.intersect(start_point=starting.point, end_point=ending.point)
+        int4d = Location4D(point=intersection['point'])
+
+        final_point = s.react(  start_point = starting,
+                                hit_point = int4d,
+                                end_point = ending,
+                                feature = intersection['feature'],
+                                distance = distance,
+                                angle = angle)
+
+        # should have 'bounced' up and to the left
+        #assert final_point.latitude > int4d.latitude
+        #assert final_point.longitude < int4d.longitude

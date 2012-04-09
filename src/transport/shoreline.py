@@ -1,4 +1,5 @@
 import os
+import math
 from osgeo import ogr
 from shapely import wkb, geometry
 from shapely.geometry import LineString
@@ -103,15 +104,27 @@ class Shoreline(object):
                 if spoint.within(element):
                     raise Exception('Starting point on land')
                 else:
-                    # Return the first point in the linestring
+                    # Return the first point in the linestring, and the linestring that it hit
                     if isinstance(inter, MultiLineString):
                         inter = inter.geoms[0]
                         
-                    return {'point':Point(inter.coords[0]), 'feature': element}
+                    
+                    eache = None
+                    plines = list(element.exterior.coords)
+                    for i in xrange(0,len(plines)-1):
+                        eache = LineString([plines[i], plines[i+1]])
+                        inter2 = ls.intersection(eache)
+                        if inter2:
+                            break
 
-                    #return inter.geoms
+                    return {'point':Point(inter.coords[0]), 'feature': eache}
 
     def react(self, **kwargs):
+        """
+            Bounce off of a shoreline
+            feature = Linestring of two points, being the line segment the particle hit.
+            angle = decimal degrees from 0 (x-axis), couter-clockwise (math style)
+        """
         start_point = kwargs.pop('start_point')
         hit_point = kwargs.pop('hit_point')
         end_point = kwargs.pop('end_point')
@@ -119,9 +132,22 @@ class Shoreline(object):
         distance = kwargs.pop('distance')
         angle = kwargs.pop('angle')
 
+        # Bounce off the shoreline.  We need to figure out the angle of the shoreline here.
+        points_in_shore = list(feature.coords)
+
+        shoreline_x = abs(abs(Point(points_in_shore[0]).x) - abs(Point(points_in_shore[-1]).x))
+        shoreline_y = abs(abs(Point(points_in_shore[0]).y) - abs(Point(points_in_shore[-1]).y))
+        
+        beta = math.degrees(math.atan(shoreline_x / shoreline_y))
+        theta = 90 - angle - beta
+        bounce_angle = 2 * theta + angle
+
+        #print "Incoming Angle: " + str(angle)
+        #print "Beta: " + str(beta)
+        #print "ShorelineAngle: " + str(theta + angle)
+        #print "Bounce Angle: " + str(bounce_angle)
 
         after_distance = distance - AsaGreatCircle.great_distance(start_point=start_point, end_point=hit_point)['distance']
-        # Bounce off the shorline.  We need to figure out the angle of the shoreline here.
-        bounce_angle = 45
+        
         new_point = AsaGreatCircle.great_circle(distance=after_distance, angle=bounce_angle, start_point=hit_point)
         return Location4D(latitude=new_point['latitude'], longitude=new_point['longitude'], depth=start_point.depth)

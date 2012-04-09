@@ -8,7 +8,7 @@ class AsaGreatCircle(object):
         """
             Named arguments:
             distance = distance to traveled
-            angle = angle to travel in
+            angle = angle to travel in, in DECIMAL DEGREES of HEADING from NORTH
             start_point = Location4D object representing the starting point
             rmajor = radius of earth's major axis. default=6378137.0 (WGS84)
             rminor = radius of earth's minor axis. default=6356752.3142 (WGS84)
@@ -43,4 +43,4 @@ class AsaGreatCircle(object):
 
         distance, angle, reverse_angle = GreatCircle.vinc_dist(f, rmajor, math.radians(start_point.latitude), math.radians(start_point.longitude), math.radians(end_point.latitude), math.radians(end_point.longitude))
 
-        return {'distance': distance, 'angle': angle, 'reverse_angle': reverse_angle}
+        return {'distance': distance, 'angle': angle, 'reverse_angle': math.degrees(reverse_angle)}
