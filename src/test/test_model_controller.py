@@ -26,18 +26,3 @@ class ModelControllerTest(unittest.TestCase):
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True)
         model.run()
         model.generate_map()
-
-    def test_run_individual_timesteps(self):
-        # Set the start position and time for the models
-        start_lat = 39
-        start_lon = -70
-        start_depth = -50
-        num_particles = 1
-        time_step = 3600
-        num_steps = 1000
-        temp_time = datetime.utcnow()
-        models = [Transport]
-        start_time = datetime(temp_time.year, temp_time.month, temp_time.day, temp_time.hour)
-        model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True)
-        model.run_by_time()
-        #model.generate_map()
