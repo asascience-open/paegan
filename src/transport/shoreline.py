@@ -32,6 +32,19 @@ class Shoreline(object):
         self._geoms = []
         self.index(point=point, spatialbuffer=spatialbuffer)
 
+    def get_geoms(self):
+        return self._geoms
+    geoms = property(get_geoms, None)
+
+    def get_linestring(self):
+        points = []
+        for poly in self._geoms:
+            plines = list(poly.exterior.coords)
+            for i in xrange(0,len(plines)-1):
+                points.append(Point(plines[i], plines[i+1]))
+        return LineString(map(lambda x: list(x.coords)[0], points))
+    linestring = property(get_linestring, None)
+
     def index(self, **kwargs):
         """
             This queries the shapefile around a buffer of a point
@@ -41,18 +54,20 @@ class Shoreline(object):
             30 times the time with world land polygons.
 
         """
+
         point = kwargs.pop("point", None)
         spatialbuffer = kwargs.pop("spatialbuffer", 2)
 
+        self._layer.SetSpatialFilter(None)
         self._spatial_query_object = None
-        self._layer.SetSpatialFilter( self._spatial_query_object )
-
+        
         if point:
             self._spatial_query_object = point.buffer(spatialbuffer)
-            poly = ogr.CreateGeometryFromWkt( self._spatial_query_object.wkt )
+            poly = ogr.CreateGeometryFromWkt(self._spatial_query_object.wkt)
             self._layer.SetSpatialFilter(poly)
             poly.Destroy()
 
+        self._geoms = []
         for element in self._layer:
             self._geoms.append(wkb.loads(element.GetGeometryRef().ExportToWkb()))
 
