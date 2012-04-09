@@ -40,6 +40,7 @@ class ModelController(object):
         # Defaults
         self._use_shoreline = kwargs.pop('use_shoreline', True)
         self._use_bathymetry = kwargs.pop('use_bathymetry', True)
+        self._use_seasurface = kwargs.pop('use_seasurface', True)
         self.depth = kwargs.pop('depth', 0)
         self.npart = kwargs.pop('npart', 1)
         self.start = kwargs.pop('start', None)
@@ -131,6 +132,12 @@ class ModelController(object):
         return self._use_bathymetry
     use_bathymetry = property(get_use_bathymetry, set_use_bathymetry)
 
+    def set_use_seasurface(self, sea):
+        self._use_seasurface = sea
+    def get_use_seasurface(self):
+        return self._use_seasurface
+    use_seasurface = property(get_use_seasurface, set_use_seasurface)
+
     def set_npart(self, npa):
         self._npart = npa
     def get_npart(self):
@@ -163,8 +170,14 @@ class ModelController(object):
                 "\nuse_shoreline: " + str(self.use_shoreline)
 
     def boundry_interaction(self, **kwargs):
+        """
+            Returns a list of Location4D objects
+        """
+
         starting = kwargs.pop('starting')
         ending = kwargs.pop('ending')
+
+        return_points = []
 
         # bathymetry
         if self.use_bathymetry:
@@ -176,15 +189,24 @@ class ModelController(object):
 
         # shoreline
         if self.use_shoreline:
-            pt = self._shoreline.intersect(start_point=starting.point, end_point=ending.point, distance=kwargs.get('distance'), angle=kwargs.get('angle'))
-            if pt:
-                ending.latitude = pt.y
-                ending.longitude = pt.x
-                ending.depth = pt.z
+            intersection_point = self._shoreline.intersect(start_point=starting.point, end_point=ending.point)
+            if intersection_point:
+                return_points.append(intersectin_point)
+
+                resulting_point = self._shoreline.react(start_point=starting, end_point=ending, hit_point=Location4D(point=intersection_point['point']), feature=intersection_point['feature'], distance=kwargs.get('distance'), angle=kwargs.get('angle'))
+                ending.latitude = resulting_point.latitude
+                ending.longitude = resulting_point.longitude
+                ending.depth = resulting_point.depth
 
 
+        # sea-surface
+        if self.use_seasurface:
+            if ending.depth > 0:
+                ending.depth = 0
 
-        return ending
+
+        return_points.append(ending)
+        return return_points
 
     def reflect(self, **kwargs):
         True
@@ -217,7 +239,7 @@ class ModelController(object):
         v=[]
         z=[]
         for w in xrange(0, self._nstep-1):
-            z.append(AsaRandom.random()*0.001)
+            z.append(0)
             u.append(abs(AsaRandom.random()))
             v.append(abs(AsaRandom.random()))
         #######################################################
@@ -230,11 +252,11 @@ class ModelController(object):
 
         for x in xrange(0, self._npart): # loop over number of particles chosen
 
-            p = Particle() # create a particle instance (from particle.py)
+            part = Particle() # create a particle instance (from particle.py)
             if start_time == None:
                 raise TypeError("must provide a start time to run the models")
             loc = Location4D(latitude=start_lat, longitude=start_lon, depth=start_depth, time=start_time) # make location4d instance
-            p.location = loc # set particle location
+            part.location = loc # set particle location
 
             # loop over number of time steps
             for i in xrange(0, self._nstep-1): 
@@ -246,22 +268,23 @@ class ModelController(object):
                     modelTimestep = times[i] - times[i-1]
                     calculatedTime = times[i] + modelTimestep
                     
-                current_location = p.location
+                current_location = part.location
                 newloc = None
 
                 if Transport in models:
-                    transport_model = Transport(horizDisp=0.05, vertDisp=0.00003) # create a transport instance
+                    transport_model = Transport(horizDisp=0.05, vertDisp=0.0003) # create a transport instance
                     movement = transport_model.move(current_location, u[i], v[i], z[i], modelTimestep)
                     newloc = Location4D(latitude=movement['lat'], longitude=movement['lon'], depth=movement['depth'], time=start_time + timedelta(seconds=calculatedTime))
 
                     if newloc:
-                        newloc = self.boundry_interaction(starting=p.location, ending=newloc, distance=movement['distance'], angle=movement['angle'], vdistance=movement['vertical_distance'])
-                        p.location = newloc
+                        new_points = self.boundry_interaction(starting=part.location, ending=newloc, distance=movement['distance'], angle=movement['angle'], vdistance=movement['vertical_distance'], vangle=movement['vertical_angle'])
+                        for np in new_points:
+                            part.location = np
 
                 #if 'behaviour' in models:
                 #behavior_movement = 
 
-            self._particles.append(p)
+            self._particles.append(part)
 
     def run_by_time(self):
         ######################################################
@@ -269,7 +292,7 @@ class ModelController(object):
         v=[]
         z=[]
         for w in xrange(0,self._nstep):
-            z.append(AsaRandom.random()*0.001)
+            z.append(0)
             u.append(abs(AsaRandom.random()))
             v.append(abs(AsaRandom.random()))
         #######################################################
@@ -304,13 +327,14 @@ class ModelController(object):
             newloc = None
             
             if Transport in models:
-                transport_model = Transport(horizDisp=0.05, vertDisp=0.00003) # create a transport instance
+                transport_model = Transport(horizDisp=0.05, vertDisp=0.0003) # create a transport instance
 
                 for part in self.particles:
                     movement = transport_model.move(part.location, u[i], v[i], z[i], modelTimestep)
                     newloc = Location4D(latitude=movement['lat'], longitude=movement['lon'], depth=movement['depth'], time=newtime)
 
                     if newloc:
-                        newloc = self.boundry_interaction(starting=p.location, ending=newloc, distance=movement['distance'], angle=movement['angle'], vdistance=movement['vertical_distance'])
-                        part.location = newloc
+                        new_points = self.boundry_interaction(starting=p.location, ending=newloc, distance=movement['distance'], angle=movement['angle'], vdistance=movement['vertical_distance'], vangle=movement['vertical_angle'])
+                        for np in new_points:
+                            part.location = np
 

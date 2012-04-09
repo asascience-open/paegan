@@ -17,7 +17,7 @@ class ModelControllerTest(unittest.TestCase):
         start_lat = 39
         start_lon = -70
         start_depth = 0
-        num_particles = 5
+        num_particles = 1
         time_step = 3600
         num_steps = 1000
         temp_time = datetime.utcnow()
@@ -32,7 +32,7 @@ class ModelControllerTest(unittest.TestCase):
         start_lat = 39
         start_lon = -70
         start_depth = -50
-        num_particles = 5
+        num_particles = 1
         time_step = 3600
         num_steps = 1000
         temp_time = datetime.utcnow()

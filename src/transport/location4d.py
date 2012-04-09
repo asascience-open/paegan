@@ -32,6 +32,9 @@ class Location4D(object):
 
     def set_point(self, point):
         self._point = point
+        self._latitude = point.y
+        self._longitude = point.x
+        self._depth = point.z
         self._dirty = False
     def get_point(self):
         if self._dirty:

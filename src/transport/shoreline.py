@@ -4,6 +4,8 @@ from shapely import wkb, geometry
 from shapely.geometry import LineString
 from shapely.geometry import Point
 from shapely.geometry import MultiLineString
+from src.utils.asagreatcircle import AsaGreatCircle
+from src.transport.location4d import Location4D
 
 class Shoreline(object):
     def __init__(self, **kwargs):
@@ -75,7 +77,7 @@ class Shoreline(object):
         # If the current point lies outside of our current shapefile index,
         # re-query the shapefile in a buffer around this point
         if self._spatial_query_object and not ls.within(self._spatial_query_object):
-            self.index(point=Point(ls.coords[0]), buffer=2)
+            self.index(point=Point(ls.coords[0]), spatialbuffer=2)
 
         for element in self._geoms:
             inter = ls.intersection(element)
@@ -90,8 +92,21 @@ class Shoreline(object):
                     if isinstance(inter, MultiLineString):
                         inter = inter.geoms[0]
                         
-                    return Point(inter.coords[0])
+                    return {'point':Point(inter.coords[0]), 'feature': element}
 
                     #return inter.geoms
 
-        #return {'intersection_point': inter_point, 'intersection_line': inter_line, 'message' }
+    def react(self, **kwargs):
+        start_point = kwargs.pop('start_point')
+        hit_point = kwargs.pop('hit_point')
+        end_point = kwargs.pop('end_point')
+        feature = kwargs.pop('feature')
+        distance = kwargs.pop('distance')
+        angle = kwargs.pop('angle')
+
+
+        after_distance = distance - AsaGreatCircle.great_distance(start_point=start_point, end_point=hit_point)['distance']
+        # Bounce off the shorline.  We need to figure out the angle of the shoreline here.
+        bounce_angle = 45
+        new_point = AsaGreatCircle.great_circle(distance=after_distance, angle=bounce_angle, start_point=hit_point)
+        return Location4D(latitude=new_point['latitude'], longitude=new_point['longitude'], depth=start_point.depth)

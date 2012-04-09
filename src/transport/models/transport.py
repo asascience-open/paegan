@@ -53,9 +53,6 @@ class Transport:
         distance_vert = z * modelTimestep # calculate the vertical distance in meters using z and model timestep
         depth = location.depth
         depth += distance_vert
-        # Stay at the surface
-        if depth > 0:
-            depth = 0
 
         # Great circle calculation
         result = AsaGreatCircle.great_circle(distance=distance_horiz, angle=s_and_d['direction'], start_point=location)
