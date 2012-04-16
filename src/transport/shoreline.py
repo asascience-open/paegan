@@ -1,3 +1,4 @@
+import numpy as np
 import os
 import math
 from osgeo import ogr
@@ -43,6 +44,8 @@ class Shoreline(object):
             plines = list(poly.exterior.coords)
             for i in xrange(0,len(plines)-1):
                 points.append(Point(plines[i], plines[i+1]))
+
+            points.append(Point(np.nan, np.nan)) # blank point needed to remove crossing of lines
         return LineString(map(lambda x: list(x.coords)[0], points))
     linestring = property(get_linestring, None)
 

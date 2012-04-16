@@ -2,8 +2,10 @@ import unittest
 import random
 import matplotlib
 import matplotlib.pyplot
+from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 import numpy
+import netCDF4
 from datetime import datetime, timedelta
 from src.transport.models.transport import Transport
 from src.transport.particles.particle import Particle
@@ -221,22 +223,45 @@ class ModelController(object):
                 p_proj_lats.append(particle.locations[y].get_latitude())
                 p_proj_lons.append(particle.locations[y].get_longitude())
                 p_proj_depths.append(particle.locations[y].get_depth())
-            ax.plot(p_proj_lons, p_proj_lats, p_proj_depths, marker='o') # 3D line plot with point
+            ax.plot(p_proj_lons, p_proj_lats, p_proj_depths, marker='o', c='red') # particles
 
-
+        #add shoreline
         midpoint = (particle.locations[len(particle.locations)/2].get_longitude(), particle.locations[len(particle.locations)/2].get_latitude())
         print midpoint
-        coast = Shoreline(point=Point(midpoint), buffer=4)
+        coast = Shoreline(point=Point(midpoint), buffer=3)
         coast_line = coast.linestring
         c_lons, c_lats = coast_line.xy
-        c_lons2 = [c_lons[x] for x in range(len(c_lons)) if c_lons[x] >=-77 and c_lons[x] <=-69]
-        c_lats2 = [c_lats[x] for x in range(len(c_lons)) if c_lons[x] >=-77 and c_lons[x] <=-69]
-        c_lats3 = [c_lats2[x] for x in range(len(c_lats2)) if c_lats2[x] >=37 and c_lats2[x] <=40]
-        c_lons3 = [c_lons2[x] for x in range(len(c_lats2)) if c_lats2[x] >=37 and c_lats2[x] <=40]
+        c_lons = numpy.array(c_lons)
+        c_lats = numpy.array(c_lats)
+        c_lons = numpy.where((c_lons >=-77) & (c_lons <=-69), c_lons, numpy.nan)
+        c_lats = numpy.where((c_lats >=37.5) & (c_lats <=41), c_lats, numpy.nan)
 
-        ax.plot(c_lons3, c_lats3, 0) # 3D line plot with point
-        matplotlib.pyplot.xlim((-77,-69))
-        matplotlib.pyplot.ylim((37, 40))
+        #add bathymetry
+        nc1 = netCDF4.Dataset('/home/dev/Development/paegan/src/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd')
+        x = nc1.variables['x']
+        y = nc1.variables['y']
+        z = nc1.variables['z']
+
+        bath_lon = numpy.where((x[:] >=-77) & (x[:] <=-69))[0]
+        bath_lat = numpy.where((y[:] >=37.5) & (y[:] <=41))[0]
+        x=x[bath_lon]
+        y=y[bath_lat]
+
+        x_grid, y_grid = numpy.meshgrid(x, y)
+        lons_grid, lats_grid = numpy.meshgrid(bath_lon, bath_lat)
+        lons_vec = lons_grid.ravel()
+        lats_vec = lats_grid.ravel()
+
+        sub_z = z[lats_vec,lons_vec]
+        reshape_z = sub_z.reshape(210,481)
+        z_nans = numpy.where((reshape_z >=-500) & (reshape_z <=0), reshape_z, numpy.nan)
+        
+        ax.plot_surface(x_grid,y_grid,z_nans,rstride=5, cstride=5) # bathymetry
+        ax.plot(c_lons, c_lats, 0) # shoreline
+        ax.set_xlim3d(-77,-69)
+        ax.set_ylim3d(37.5, 41)
+        ax.set_zlim3d(-500,0)
+        ax.set_zmargin(0.1)
         ax.set_xlabel('Longitude')
         ax.set_ylabel('Latitude')
         ax.set_zlabel('Depth (m)')

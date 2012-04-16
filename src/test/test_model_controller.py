@@ -14,8 +14,8 @@ from src.transport.model_controller import ModelController
 class ModelControllerTest(unittest.TestCase):
     def test_run_individual_particles(self):
         # Set the start position and time for the models
-        start_lat = 38.271254
-        start_lon = -71.948870
+        start_lat = 39
+        start_lon = -73
         start_depth = 0
         num_particles = 1
         time_step = 3600

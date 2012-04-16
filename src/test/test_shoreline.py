@@ -10,7 +10,7 @@ class ShorelineTest(unittest.TestCase):
     def test_indexing(self):
         p = Point(-73.745631, 40.336791)
         s = Shoreline(point=p, spatialbuffer=2)
-
+        
     def test_water_start_land_end_intersection(self):
         # Starts in the water and ends on land
         s = Shoreline()
