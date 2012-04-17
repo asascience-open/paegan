@@ -52,26 +52,19 @@ class Transport:
         # Move vertically
         distance_vert = z * modelTimestep # calculate the vertical distance in meters using z and model timestep
 
-        # We need to represent depths as negative down when transporting.
+        # We need to represent depths as positive up when transporting.
         depth = location.depth
         depth += distance_vert
 
         # vertical angle
-        # vangle = tan^-1(distance_vert / distance_horiz)
         vertical_angle = math.degrees(math.atan(distance_vert / distance_horiz))
 
         # Great circle calculation
         # Calculation takes in azimuth (heading from North, so convert our mathematical angle to azimuth)
-        azimuth = 90 - s_and_d['direction']
-        if azimuth < 0:
-            azimuth += 360
-        result = AsaGreatCircle.great_circle(distance=distance_horiz, angle=azimuth, start_point=location)
+        azimuth = AsaMath.math_angle_to_azimuth(angle=s_and_d['direction'])
+        result = AsaGreatCircle.great_circle(distance=distance_horiz, azimuth=azimuth, start_point=location)
 
-        # Convert lat and lon to degrees
-        lat_result = math.degrees(result['latitude'])
-        lon_result = math.degrees(result['longitude'])
-
-        return {'lat':lat_result, 'azimuth': azimuth, 'lon':lon_result, 'depth':depth, 'u': u, 'v':v, 'z':z, 'distance':distance_horiz, 'angle': s_and_d['direction'], 'vertical_distance':distance_vert, 'vertical_angle':vertical_angle}
+        return {'latitude':result['latitude'], 'azimuth': azimuth, 'reverse_azimuth': result['reverse_azimuth'], 'longitude':result['longitude'], 'depth':depth, 'u': u, 'v':v, 'z':z, 'distance':distance_horiz, 'angle': s_and_d['direction'], 'vertical_distance':distance_vert, 'vertical_angle':vertical_angle}
 
     def __str__(self):
         return  " *** Transport *** " + \

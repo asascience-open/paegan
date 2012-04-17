@@ -29,7 +29,6 @@ class Location4D(object):
         self.depth = kwargs.pop('depth', None) 
         self.time = kwargs.pop('time', None) 
 
-
     def set_point(self, point):
         self._point = point
         self._latitude = point.y

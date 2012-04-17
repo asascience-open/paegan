@@ -3,6 +3,7 @@ from src.transport.location4d import Location4D
 from src.transport.shoreline import Shoreline
 from shapely.geometry import Point
 from src.utils.asagreatcircle import AsaGreatCircle
+from src.utils.asamath import AsaMath
 import math
 
 class ShorelineTest(unittest.TestCase):
@@ -67,15 +68,15 @@ class ShorelineTest(unittest.TestCase):
         assert intersection.x > -74.96
         assert intersection.x < -74.94
 
-    def test_reaction_up_left(self):
+    def test_reverse_left(self):
 
-        s = Shoreline()
+        s = Shoreline(type='reverse')
 
         starting = Location4D(latitude=39.1, longitude=-74.91, depth=0)
         ending   = Location4D(latitude=39.1, longitude=-74.85, depth=0)
 
         difference = AsaGreatCircle.great_distance(start_point=starting, end_point=ending)
-        angle = math.degrees(difference['angle'])
+        angle = AsaMath.azimuth_to_math_angle(azimuth=difference['azimuth'])
         distance = difference['distance']
 
         intersection = s.intersect(start_point=starting.point, end_point=ending.point)
@@ -86,21 +87,26 @@ class ShorelineTest(unittest.TestCase):
                                 end_point = ending,
                                 feature = intersection['feature'],
                                 distance = distance,
-                                angle = angle)
+                                angle = angle,
+                                azimuth = difference['azimuth'],
+                                reverse_azimuth = difference['reverse_azimuth'])
 
-        # should have 'bounced' up and to the left
-        assert final_point.latitude < int4d.latitude
-        assert final_point.longitude > int4d.longitude
+        # Since we are on a stright horizonal line, the latitude will change only slightly
+        assert abs(final_point.latitude - starting.latitude) < 0.005
 
-    def test_reaction_down_right(self):
+        # Resulting longitude should be between the startpoint and the intersection point
+        assert final_point.longitude < int4d.longitude
+        assert final_point.longitude > starting.longitude
 
-        s = Shoreline()
+    def test_reverse_up_left(self):
+
+        s = Shoreline(type='reverse')
 
         starting = Location4D(latitude=39.05, longitude=-75.34, depth=0)
         ending   = Location4D(latitude=38.96, longitude=-75.315, depth=0)
-
+        
         difference = AsaGreatCircle.great_distance(start_point=starting, end_point=ending)
-        angle = math.degrees(difference['angle'])
+        angle = AsaMath.azimuth_to_math_angle(azimuth=difference['azimuth'])
         distance = difference['distance']
 
         intersection = s.intersect(start_point=starting.point, end_point=ending.point)
@@ -111,8 +117,14 @@ class ShorelineTest(unittest.TestCase):
                                 end_point = ending,
                                 feature = intersection['feature'],
                                 distance = distance,
-                                angle = angle)
+                                angle = angle,
+                                azimuth = difference['azimuth'],
+                                reverse_azimuth = difference['reverse_azimuth'])
 
-        # should have 'bounced' up and to the left
-        #assert final_point.latitude > int4d.latitude
-        #assert final_point.longitude < int4d.longitude
+        # Resulting latitude should be between the startpoint and the intersection point
+        assert final_point.latitude > int4d.latitude
+        assert final_point.latitude < starting.latitude
+        
+        # Resulting longitude should be between the startpoint and the intersection point
+        assert final_point.longitude < int4d.longitude
+        assert final_point.longitude > starting.longitude

@@ -7,6 +7,8 @@ from shapely.geometry import LineString
 from shapely.geometry import Point
 from shapely.geometry import MultiLineString
 from src.utils.asagreatcircle import AsaGreatCircle
+from src.utils.asamath import AsaMath
+from src.utils.asarandom import AsaRandom
 from src.transport.location4d import Location4D
 
 class Shoreline(object):
@@ -30,6 +32,7 @@ class Shoreline(object):
         if not source:
             raise Exception('Could not load {}'.format(self._file))
 
+        self._type = kwargs.pop("type", "reverse")
         self._layer = source.GetLayer()
         self._geoms = []
         self.index(point=point, spatialbuffer=spatialbuffer)
@@ -128,6 +131,23 @@ class Shoreline(object):
             feature = Linestring of two points, being the line segment the particle hit.
             angle = decimal degrees from 0 (x-axis), couter-clockwise (math style)
         """
+        if self._type == "bounce":
+            print "This shoreline type is NOT SUPPORTED and it broken"
+            return self.__bounce(**kwargs)
+        elif self._type == "reverse":
+            return self.__reverse(**kwargs)
+        else:
+            print "Not reacting to shoreline (sticky with inifinite concentration)"
+
+    def __bounce(self, **kwargs):
+        """
+            Bounce off of the shoreline.
+
+            NOTE: This does not work, but left here for future implementation
+
+            feature = Linestring of two points, being the line segment the particle hit.
+            angle = decimal degrees from 0 (x-axis), couter-clockwise (math style)
+        """
         start_point = kwargs.pop('start_point')
         hit_point = kwargs.pop('hit_point')
         end_point = kwargs.pop('end_point')
@@ -135,22 +155,48 @@ class Shoreline(object):
         distance = kwargs.pop('distance')
         angle = kwargs.pop('angle')
 
-        # Bounce off the shoreline.  We need to figure out the angle of the shoreline here.
-        points_in_shore = list(feature.coords)
+        # Figure out the angle of the shoreline here (beta)
+        points_in_shore = map(lambda x: Point(x), list(feature.coords))
+        points_in_shore = sorted(points_in_shore, key=lambda x: x.x)
 
-        shoreline_x = abs(abs(Point(points_in_shore[0]).x) - abs(Point(points_in_shore[-1]).x))
-        shoreline_y = abs(abs(Point(points_in_shore[0]).y) - abs(Point(points_in_shore[-1]).y))
-        
+        # The point on the left (least longitude is always the first Point)
+        first_shore = points_in_shore[0]
+        last_shore = points_in_shore[-1]
+
+        shoreline_x = abs(abs(first_shore.x) - abs(last_shore.x))
+        shoreline_y = abs(abs(first_shore.y) - abs(last_shore.y))
         beta = math.degrees(math.atan(shoreline_x / shoreline_y))
-        theta = 90 - angle - beta
-        bounce_angle = 2 * theta + angle
 
-        #print "Incoming Angle: " + str(angle)
-        #print "Beta: " + str(beta)
-        #print "ShorelineAngle: " + str(theta + angle)
-        #print "Bounce Angle: " + str(bounce_angle)
+        theta = 90 - angle - beta
+        bounce_azimuth = AsaMath.math_angle_to_azimuth(angle=2 * theta + angle)
+
+        print "Beta:           " + str(beta)
+        print "Incoming Angle: " + str(angle)
+        print "ShorelineAngle: " + str(theta + angle)
+        print "Bounce Azimuth: " + str(bounce_azimuth)
+        print "Bounce Angle:   " + str(AsaMath.azimuth_to_math_angle(azimuth=bounce_azimuth))
 
         after_distance = distance - AsaGreatCircle.great_distance(start_point=start_point, end_point=hit_point)['distance']
         
-        new_point = AsaGreatCircle.great_circle(distance=after_distance, angle=bounce_angle, start_point=hit_point)
+        new_point = AsaGreatCircle.great_circle(distance=after_distance, azimuth=bounce_azimuth, start_point=hit_point)
+        return Location4D(latitude=new_point['latitude'], longitude=new_point['longitude'], depth=start_point.depth)
+
+    def __reverse(self, **kwargs):
+        """
+            Reverse particle just off of the shore in the direction that it came in.
+            Adds a slight random factor to the distance and angle it is reversed in.
+        """
+        start_point = kwargs.pop('start_point')
+        hit_point = kwargs.pop('hit_point')
+        distance = kwargs.pop('distance')
+        azimuth = kwargs.pop('azimuth')
+        reverse_azimuth = kwargs.pop('reverse_azimuth')
+
+        distance_reversed = 0.01 * AsaGreatCircle.great_distance(start_point=start_point, end_point=hit_point)['distance']
+
+        #print "Incoming Azimuth: " + str(azimuth)
+        #print "Reverse Azimuth: " + str(reverse_azimuth)
+        #print "Distance Reversed:" + str(distance_reversed)
+
+        new_point = AsaGreatCircle.great_circle(distance=distance_reversed, azimuth=reverse_azimuth, start_point=hit_point)
         return Location4D(latitude=new_point['latitude'], longitude=new_point['longitude'], depth=start_point.depth)

@@ -183,7 +183,10 @@ class ModelController(object):
 
         # bathymetry
         if self.use_bathymetry:
-            pt = self._bathymetry.intersect(start_point=starting.point, end_point=ending.point, distance=kwargs.get('vdistance'), angle=kwargs.get('vangle'))
+            pt = self._bathymetry.intersect(start_point=starting.point,
+                                            end_point=ending.point,
+                                            distance=kwargs.get('vertical_distance'),
+                                            angle=kwargs.get('vertical_angle'))
             if pt:
                 ending.latitude = pt.y
                 ending.longitude = pt.x
@@ -195,7 +198,14 @@ class ModelController(object):
             if intersection_point:
                 return_points.append(intersection_point)
 
-                resulting_point = self._shoreline.react(start_point=starting, end_point=ending, hit_point=Location4D(point=intersection_point['point']), feature=intersection_point['feature'], distance=kwargs.get('distance'), angle=kwargs.get('angle'))
+                resulting_point = self._shoreline.react(start_point=starting,
+                                                        end_point=ending,
+                                                        hit_point=Location4D(point=intersection_point['point']),
+                                                        feature=intersection_point['feature'],
+                                                        distance=kwargs.get('distance'),
+                                                        angle=kwargs.get('angle'),
+                                                        azimuth=kwargs.get('azimuth'),
+                                                        reverse_azimuth=kwargs.get('reverse_azimuth'))
                 ending.latitude = resulting_point.latitude
                 ending.longitude = resulting_point.longitude
                 ending.depth = resulting_point.depth
@@ -312,10 +322,10 @@ class ModelController(object):
 
                 for part in self.particles:
                     movement = transport_model.move(part.location, u[i], v[i], z[i], modelTimestep)
-                    newloc = Location4D(latitude=movement['lat'], longitude=movement['lon'], depth=movement['depth'], time=newtime)
+                    newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtime)
 
                     if newloc:
-                        new_points = self.boundry_interaction(starting=p.location, ending=newloc, distance=movement['distance'], angle=movement['angle'], vdistance=movement['vertical_distance'], vangle=movement['vertical_angle'])
+                        new_points = self.boundry_interaction(starting=p.location, ending=newloc, distance=movement['distance'], angle=movement['angle'], azimuth=movement['azimuth'], reverse_azimuth=movement['reverse_azimuth'], vertical_distance=movement['vertical_distance'], vertical_angle=movement['vertical_angle'])
                         for np in new_points:
                             part.location = np
 

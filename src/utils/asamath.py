@@ -1,4 +1,4 @@
-from math import sqrt, atan2, degrees
+from math import sqrt, atan2, degrees, radians
 
 class AsaMath(object):
 
@@ -23,7 +23,16 @@ class AsaMath(object):
                 return rads
 
         # if 'output' was not specified as 'radians', we return degrees
-        if u > 0:
-            return degrees(rads)
-        else:
-            return degrees(rads) + 360
+        return cls.normalize_angle(angle=degrees(rads))
+
+    @classmethod
+    def azimuth_to_math_angle(cls, **kwargs):
+        return cls.normalize_angle(angle=90 - kwargs.get("azimuth"))
+
+    @classmethod
+    def math_angle_to_azimuth(cls, **kwargs):
+        return cls.normalize_angle(angle=(360 - kwargs.get("angle")) + 90)
+
+    @classmethod
+    def normalize_angle(cls, **kwargs):
+        return kwargs.get('angle') % 360
