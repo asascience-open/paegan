@@ -1,15 +1,18 @@
-import numpy as np
 import os
 import math
+import time
+import numpy as np
 from osgeo import ogr
 from shapely import wkb, geometry
 from shapely.geometry import LineString
-from shapely.geometry import Point
+from shapely.geometry import Point, Polygon
 from shapely.geometry import MultiLineString
+from shapely.geometry import MultiPolygon
 from src.utils.asagreatcircle import AsaGreatCircle
 from src.utils.asamath import AsaMath
 from src.utils.asarandom import AsaRandom
 from src.transport.location4d import Location4D
+from shapely.prepared import prep
 
 class Shoreline(object):
     def __init__(self, **kwargs):
@@ -26,16 +29,16 @@ class Shoreline(object):
             self._file = os.path.normpath(os.path.join(__file__,"../../resources/shoreline/global/10m_land.shp"))
 
         point = kwargs.pop("point", None)
-        spatialbuffer = kwargs.pop("buffer", 2)
+        self._spatialbuffer = kwargs.pop("spatialbuffer", 1)
 
-        source = ogr.Open(self._file)
-        if not source:
+        self._source = ogr.Open(self._file)
+        if not self._source:
             raise Exception('Could not load {}'.format(self._file))
 
         self._type = kwargs.pop("type", "reverse")
-        self._layer = source.GetLayer()
+        self._layer = self._source.GetLayer()
         self._geoms = []
-        self.index(point=point, spatialbuffer=spatialbuffer)
+        self.index(point=point)
 
     def get_geoms(self):
         return self._geoms
@@ -63,7 +66,7 @@ class Shoreline(object):
         """
 
         point = kwargs.pop("point", None)
-        spatialbuffer = kwargs.pop("spatialbuffer", 2)
+        spatialbuffer = kwargs.pop("spatialbuffer", self._spatialbuffer)
 
         self._layer.SetSpatialFilter(None)
         self._spatial_query_object = None
@@ -75,9 +78,15 @@ class Shoreline(object):
             poly.Destroy()
 
         self._geoms = []
+        # The _geoms should be only Polygons, not MultiPolygons
         for element in self._layer:
-            self._geoms.append(wkb.loads(element.GetGeometryRef().ExportToWkb()))
-
+            geom = wkb.loads(element.GetGeometryRef().ExportToWkb())
+            if isinstance(geom, Polygon):
+                self._geoms.append(geom)
+            elif isinstance(geom, MultiPolygon):
+                for poly in geom:
+                    self._geoms.append(poly)
+            
     def intersect(self, **kwargs):
         """
             Intersect a Line or Point Collection and the Shoreline
@@ -86,11 +95,17 @@ class Shoreline(object):
             Should also return a linestring buffer around the interseciton point
             so we can calculate the direction to bounce a particle.
         """
+        st = time.time()
+
         ls = None
         if "linestring" in kwargs:
             ls = kwargs.pop('linestring')
+            spoint = Point(ls.coords[0])
+            epoint = Point(ls.coords[-1])
         elif "start_point" and "end_point" in kwargs:
-            ls = LineString(list(kwargs.pop('start_point').coords) + list(kwargs.pop('end_point').coords))
+            spoint = kwargs.pop('start_point')
+            epoint = kwargs.pop('end_point')
+            ls = LineString(list(spoint.coords) + list(epoint.coords))
         else:
             raise TypeError( "must provide a LineString geometry object or (2) Point geometry objects" )
 
@@ -99,31 +114,37 @@ class Shoreline(object):
         # If the current point lies outside of our current shapefile index,
         # re-query the shapefile in a buffer around this point
         if self._spatial_query_object and not ls.within(self._spatial_query_object):
-            self.index(point=Point(ls.coords[0]), spatialbuffer=2)
+            self.index(point=spoint)
 
         for element in self._geoms:
+            prepped_element = prep(element)
+
+            # Test if starging on land
+            if prepped_element.contains(spoint):
+                raise Exception('Starting point on land')
+
             inter = ls.intersection(element)
             if inter:
-                # Test if starging on land
-                spoint = Point(ls.coords[0])
-                epoint = Point(ls.coords[-1])
-                if spoint.within(element):
-                    raise Exception('Starting point on land')
-                else:
-                    # Return the first point in the linestring, and the linestring that it hit
-                    if isinstance(inter, MultiLineString):
-                        inter = inter.geoms[0]
-                        
-                    
-                    eache = None
-                    plines = list(element.exterior.coords)
-                    for i in xrange(0,len(plines)-1):
-                        eache = LineString([plines[i], plines[i+1]])
-                        inter2 = ls.intersection(eache)
-                        if inter2:
-                            break
+                # Return the first point in the linestring, and the linestring that it hit
+                if isinstance(inter, MultiLineString):
+                    inter = inter.geoms[0]
 
-                    return {'point':Point(inter.coords[0]), 'feature': eache}
+                inter = Point(inter.coords[0])
+                smaller_int = inter.buffer(self._spatialbuffer)
+                shorelines = element.exterior.intersection(smaller_int)
+                if isinstance(shorelines, LineString):
+                    shorelines = [shorelines]
+                else:
+                    shorelines = list(shorelines)
+
+                for shore_segment in shorelines:
+                    # Once we find the linestring in the Polygon that was
+                    # intersected, break out and return
+                    if ls.touches(shore_segment):
+                        break
+
+                return {'point': Point(inter.x, inter.y, epoint.z), 'feature': shore_segment or None}
+        return None
 
     def react(self, **kwargs):
         """
@@ -192,7 +213,9 @@ class Shoreline(object):
         azimuth = kwargs.pop('azimuth')
         reverse_azimuth = kwargs.pop('reverse_azimuth')
 
-        distance_reversed = 0.01 * AsaGreatCircle.great_distance(start_point=start_point, end_point=hit_point)['distance']
+        # Throw it 100m back
+        #distance_reversed = 0.01 * AsaGreatCircle.great_distance(start_point=start_point, end_point=hit_point)['distance']
+        distance_reversed = 100
 
         #print "Incoming Azimuth: " + str(azimuth)
         #print "Reverse Azimuth: " + str(reverse_azimuth)

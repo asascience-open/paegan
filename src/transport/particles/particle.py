@@ -13,11 +13,15 @@ class Particle(object):
         return self._locations[-1]
     location = property(get_location, set_location)
 
-    def set_locations(self, locations):
-        self._locations = locations
     def get_locations(self):
         return self._locations
-    locations = property(get_locations, set_locations)
+    locations = property(get_locations, None)
+
+    def set_active(self, active):
+        self._active = active
+    def get_active(self):
+        return self._active
+    active = property(get_active, set_active)
 
     def get_last_movement(self):
         return LineString(list(self.locations[-2].point.coords) + list(self.locations[-1].point.coords))

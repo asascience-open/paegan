@@ -5,13 +5,32 @@ from shapely.geometry import Point
 from src.utils.asagreatcircle import AsaGreatCircle
 from src.utils.asamath import AsaMath
 import math
+import time
 
 class ShorelineTest(unittest.TestCase):
 
-    def test_indexing(self):
+    def test_reindexing(self):
+
         p = Point(-73.745631, 40.336791)
+        p2 = Point(-78.745631, 44.336791)
+        p3 = Point(0, 0)
         s = Shoreline(point=p, spatialbuffer=2)
+        s.index(point=p2, spatialbuffer=2)
+        s.index(point=p3, spatialbuffer=2)
         
+    def test_intersection_speed(self):
+
+        # Intersects on the west coast of NovaScotia
+
+        starting = Location4D(longitude=-66.1842219282406177, latitude=44.0141581697495852, depth=0).point
+        ending = Location4D(longitude=-66.1555195384399326, latitude=44.0387992322117370, depth=0).point
+        s = Shoreline(point=starting, spatialbuffer=1)
+
+        st = time.time()
+        intersection = s.intersect(start_point=starting, end_point=ending)['point']
+        #print "Time: " + str(time.time() - st)
+
+
     def test_water_start_land_end_intersection(self):
         # Starts in the water and ends on land
         s = Shoreline()
@@ -22,10 +41,10 @@ class ShorelineTest(unittest.TestCase):
         starting = Location4D(latitude=39, longitude=-75, depth=0).point
         ending   = Location4D(latitude=39.5, longitude=-75, depth=0).point
 
-        intersection = s.intersect(start_point=starting, end_point=ending)['point']
-        assert -75 == intersection.x
-        assert intersection.y > 39.185
-        assert intersection.y < 39.195
+        intersection = Location4D(point=s.intersect(start_point=starting, end_point=ending)['point'])
+        assert -75 == intersection.longitude
+        assert intersection.latitude > 39.185
+        assert intersection.latitude < 39.195
 
     def test_land_start_water_end_intersection(self):
         # Starts on land and ends in the water
@@ -62,11 +81,11 @@ class ShorelineTest(unittest.TestCase):
         starting = Location4D(latitude=39, longitude=-75, depth=0).point
         ending   = Location4D(latitude=39, longitude=-74, depth=0).point
 
-        intersection = s.intersect(start_point=starting, end_point=ending)['point']
+        intersection = Location4D(point=s.intersect(start_point=starting, end_point=ending)['point'])
 
-        assert 39 == intersection.y
-        assert intersection.x > -74.96
-        assert intersection.x < -74.94
+        assert 39 == intersection.latitude
+        assert intersection.longitude > -74.96
+        assert intersection.longitude < -74.94
 
     def test_reverse_left(self):
 
