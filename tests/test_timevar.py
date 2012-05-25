@@ -10,7 +10,7 @@ import pytz
 class TimevarTest(unittest.TestCase):
     def test_timevar_length(self):
 
-        datafile = os.path.normpath(os.path.join(__file__,"../../resources/models/pws/pws_L2_2012040100.nc"))
+        datafile = os.path.normpath(os.path.join(__file__,"../../paegan/resources/models/pws/pws_L2_2012040100.nc"))
         # Manually extract
         ds = netCDF4.Dataset(datafile)
         data = ds.variables['time'][:]
