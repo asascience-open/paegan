@@ -7,12 +7,12 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import netCDF4
 from datetime import datetime, timedelta
-from src.transport.models.transport import Transport
-from src.transport.particles.particle import Particle
-from src.transport.location4d import Location4D
-from src.utils.asarandom import AsaRandom
-from src.transport.shoreline import Shoreline
-from src.transport.bathymetry import Bathymetry
+from paegan.transport.models.transport import Transport
+from paegan.transport.particles.particle import Particle
+from paegan.transport.location4d import Location4D
+from paegan.utils.asarandom import AsaRandom
+from paegan.transport.shoreline import Shoreline
+from paegan.transport.bathymetry import Bathymetry
 from shapely.geometry import Point
 from shapely.geometry import MultiLineString
 
@@ -251,7 +251,7 @@ class ModelController(object):
         c_lats = np.where((c_lats >= visual_bbox[1]) & (c_lats <= visual_bbox[3]), c_lats, np.nan)
 
         #add bathymetry
-        nc1 = netCDF4.Dataset('/home/dev/Development/paegan/src/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd')
+        nc1 = netCDF4.Dataset('/home/dev/Development/paegan/paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd')
         x = nc1.variables['x']
         y = nc1.variables['y']
 

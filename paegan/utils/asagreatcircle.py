@@ -1,5 +1,5 @@
 import math
-from src.external.greatcircle import GreatCircle
+from paegan.external.greatcircle import GreatCircle
 
 class AsaGreatCircle(object):
 

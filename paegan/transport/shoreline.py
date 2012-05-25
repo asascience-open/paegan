@@ -8,10 +8,10 @@ from shapely.geometry import LineString
 from shapely.geometry import Point, Polygon
 from shapely.geometry import MultiLineString
 from shapely.geometry import MultiPolygon
-from src.utils.asagreatcircle import AsaGreatCircle
-from src.utils.asamath import AsaMath
-from src.utils.asarandom import AsaRandom
-from src.transport.location4d import Location4D
+from paegan.utils.asagreatcircle import AsaGreatCircle
+from paegan.utils.asamath import AsaMath
+from paegan.utils.asarandom import AsaRandom
+from paegan.transport.location4d import Location4D
 from shapely.prepared import prep
 
 class Shoreline(object):

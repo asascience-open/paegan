@@ -2,7 +2,7 @@ import unittest
 import os
 import netCDF4
 from datetime import timedelta, datetime, tzinfo
-from src.cdm.timevar import Timevar
+from paegan.cdm.timevar import Timevar
 import numpy as np
 from dateutil.parser import parse
 import pytz

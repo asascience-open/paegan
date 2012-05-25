@@ -1,9 +1,9 @@
 import unittest
-from src.transport.location4d import Location4D
-from src.transport.shoreline import Shoreline
+from paegan.transport.location4d import Location4D
+from paegan.transport.shoreline import Shoreline
 from shapely.geometry import Point
-from src.utils.asagreatcircle import AsaGreatCircle
-from src.utils.asamath import AsaMath
+from paegan.utils.asagreatcircle import AsaGreatCircle
+from paegan.utils.asamath import AsaMath
 import math
 import time
 

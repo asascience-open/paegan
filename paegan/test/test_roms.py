@@ -4,7 +4,7 @@ import os
 import math
 import netCDF4
 
-from src.roms import roms as rm
+from paegan.roms import roms as rm
 
 class RomsTest(unittest.TestCase):
 

@@ -1,7 +1,7 @@
 import math
-from src.utils.asamath import AsaMath
-from src.utils.asarandom import AsaRandom
-from src.utils.asagreatcircle import AsaGreatCircle
+from paegan.utils.asamath import AsaMath
+from paegan.utils.asarandom import AsaRandom
+from paegan.utils.asagreatcircle import AsaGreatCircle
 
 class Transport:
     """

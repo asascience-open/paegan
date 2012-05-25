@@ -3,5 +3,3 @@ netCDF4==0.9.8
 numpy==1.6.1
 Shapely==1.2.14
 GDAL==1.9.0
-#Rtree==0.7.0
-#descartes==1.0

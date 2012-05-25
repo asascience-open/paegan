@@ -1,6 +1,6 @@
 import unittest
-from src.transport.particles.particle import Particle
-from src.transport.location4d import Location4D
+from paegan.transport.particles.particle import Particle
+from paegan.transport.location4d import Location4D
 
 class ParticleTest(unittest.TestCase):
     def test_particle_linestring(self):

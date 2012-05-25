@@ -5,11 +5,11 @@ import matplotlib.pyplot
 from mpl_toolkits.mplot3d import Axes3D
 import numpy
 from datetime import datetime, timedelta
-from src.transport.models.transport import Transport
-from src.transport.particles.particle import Particle
-from src.transport.location4d import Location4D
-from src.utils.asarandom import AsaRandom
-from src.transport.model_controller import ModelController
+from paegan.transport.models.transport import Transport
+from paegan.transport.particles.particle import Particle
+from paegan.transport.location4d import Location4D
+from paegan.utils.asarandom import AsaRandom
+from paegan.transport.model_controller import ModelController
 
 class ModelControllerTest(unittest.TestCase):
     def test_run_individual_particles(self):

@@ -1,6 +1,6 @@
 import math
 import unittest
-from src.utils.asamath import AsaMath
+from paegan.utils.asamath import AsaMath
 
 class AsaMathTest(unittest.TestCase):
     def test_geo_angle_to_math(self):
