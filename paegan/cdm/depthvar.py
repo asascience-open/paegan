@@ -1,4 +1,5 @@
 import numpy as np
+import netCDF4
 
 class Depthvar(np.ndarray):
     _unit2meters={}

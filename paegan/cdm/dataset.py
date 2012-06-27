@@ -1,48 +1,62 @@
 import numpy as np
 import netCDF4, datetime
+from timevar import Timevar
+from depthvar import Depthvar
 
 class Dataset():
-    def __init__(self, ncfile):
+    def datasetCommonInit(self, ncfile, xname='lon', yname='lat',
+        zname='z', tname='time'):
         """
         Initialize paegan dataset object, which uses specific
         readers for different kinds of datasets, and returns
         dataset objects that expose a common api.
         
-            >> dataset = cdm.Dataset(ncfile)
+        >> dataset = cdm.dataset.Dataset.datasetCommonInit(ncfile)
         """
         self.nc = netCDF4.Dataset(ncfile)
-        
+        self._filename = ncfile
+        self._datasettype = None
         # Find the coordinate variables for testing, unknown
         # if not found
-        keys = self.nc.variables.get_keys()
-        if 'lat' in keys and 'lon' in keys:
+        #print dir(self.nc.variables)
+        keys = self.nc.variables.viewkeys()
+        if xname in keys and yname in keys:
+            testvary = self.nc.variables[yname]
+            testvarx = self.nc.variables[xname]
+        elif 'lat' in keys and 'lon' in keys:
             testvary = self.nc.variables['lat']
             testvarx = self.nc.variables['lon']
         elif 'x' in keys and 'y' in keys:
             testvary = self.nc.variables['y']
             testvarx = self.nc.variables['x']
         else:
-            datasettype = "unknown"
+            self._datasettype = "unknown"
         
         # Test the shapes of the coordinate variables to 
         # determine the grid type
-        if datasettype != "unknown":
+        if self._datasettype is None:
             if len(testvary.shape) > 1:
-                datasettype = "cgrid"
+                self._datasettype = "cgrid"
             else:
                 if testvary.shape[0] != testvarx.shape[0]:
-                    datasettype = "rgrid"
+                    self._datasettype = "rgrid"
                 else:
-                    datasettype = "ncell"
-            
+                    self._datasettype = "ncell"
+        
         # Return appropriate dataset subclass based on
         # datasettype
-        if datasettype == 'ncell':
-            dataobj = NCellDataset()
-        elif datasettype == 'rgrid':
-            dataobj = RGridDataset()
-        elif datasettype == 'cgrid':
-            dataobj = CGridDataset()
+        if self._datasettype == 'ncell':
+            dataobj = NCellDataset(self.nc, 
+                self._filename, self._datasettype,
+                zname=zname, tname=tname)
+        elif self._datasettype == 'rgrid':
+            dataobj = RGridDataset(self.nc,
+                self._filename, self._datasettype,
+                zname=zname, tname=tname)
+        elif self._datasettype == 'cgrid':
+            dataobj = CGridDataset(self.nc,
+                self._filename, self._datasettype,
+                zname=zname, tname=tname)
             
         return dataobj
 
@@ -59,15 +73,22 @@ class Dataset():
         pass
 
     def gettimevar(self):
-        pass
+        return self._timevar
 
     def getdepthvar(self):
-        pass
+        return self._depthvar
  
     def getgeovar(self):
-        pass
+        return self._geovar
  
-    def getvalues(self, variable):
+    def getvalues(self, variable, inds=None, 
+        geos=None, depths=None, times=None, bbox=None,
+        timebounds=None,):
+        """
+        getvalues(self, variable, inds=None, 
+        geos=None, depths=None, times=None, bbox=None,
+        timebounds=None,)
+        """
         pass
         
     _getvalues = getvalues
@@ -80,15 +101,105 @@ class Dataset():
     
     
 class CGridDataset(Dataset):
-    pass
+    def __init__(self, nc, fname, datasettype, xname='lon', yname='lat',
+        zname='z', tname='time'):
+        self.cache = netCDF4.Dataset("cache", "w", diskless=True)
+        self.nc = nc
+        self._datasettype = datasettype
+        
+        # Need better way to figure out depth and time names
+        try:
+            time_units = self.nc.variables[zname].units
+        except:
+            time_units = None
+            
+        try:
+            depth_units = self.nc.variables[tname].units
+        except:
+            depth_units = None
+            
+        self._timevar = Timevar(fname, zname, depth_units)
+        self._depthvar = Depthvar(fname, tname, time_units)
+        
+        
+    def lon2ind(self):
+        pass
+         
+    def lat2ind(self):
+        pass
+            
+    def ind2lon(self):
+        pass
+   
+    def ind2lat(self):
+        pass
     
     
 class RGridDataset(Dataset):
-    pass
+    def __init__(self, nc, fname, datasettype, xname='lon', yname='lat',
+        zname='z', tname='time'):
+        self.cache = netCDF4.Dataset("cache", "w", diskless=True)
+        self.nc = nc
+        self._datasettype = datasettype
+        
+        # Need better way to figure out depth and time names
+        try:
+            time_units = self.nc.variables[zname].units
+        except:
+            time_units = None
+            
+        try:
+            depth_units = self.nc.variables[tname].units
+        except:
+            depth_units = None
+            
+        self._timevar = Timevar(fname, zname, depth_units)
+        self._depthvar = Depthvar(fname, tname, time_units)
+    
+    def lon2ind(self):
+        pass
+         
+    def lat2ind(self):
+        pass
+            
+    def ind2lon(self):
+        pass
+   
+    def ind2lat(self):
+        pass
     
     
 class NCellDataset(Dataset):
-    pass
+    def __init__(self, nc, fname, datasettype, xname='lon', yname='lat',
+        zname='z', tname='time'):
+        self.cache = netCDF4.Dataset("cache", "w", diskless=True)
+        self.nc = nc
+        self._datasettype = datasettype
+        
+        # Need better way to figure out depth and time names
+        try:
+            time_units = self.nc.variables[zname].units
+        except:
+            time_units = None
+            
+        try:
+            depth_units = self.nc.variables[tname].units
+        except:
+            depth_units = None
+            
+        self._timevar = Timevar(fname, zname, depth_units)
+        self._depthvar = Depthvar(fname, tname, time_units)
     
+    def lon2ind(self):
+        pass
+         
+    def lat2ind(self):
+        pass
+            
+    def ind2lon(self):
+        pass
+   
+    def ind2lat(self):
+        pass
         
         
