@@ -18,7 +18,8 @@ class TimevarTest(unittest.TestCase):
         tvar = Timevar(datafile)
         assert data.shape == tvar.shape
 
-        datafile = os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/ocean_avg_synoptic_seg22.nc"))
+        datafile = os.path.normpath(os.path.join(os.path.di
+        rname(__file__),"./resources/files/ocean_avg_synoptic_seg22.nc"))
         # Manually extract
         ds = netCDF4.Dataset(datafile)
         data = ds.variables['ocean_time'][:]
