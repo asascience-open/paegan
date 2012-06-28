@@ -91,6 +91,22 @@ class Dataset():
         """
         pass
         
+    def __str__(self):
+        k = []
+        for key in self.nc.variables.viewkeys():
+            k.append(key)
+        out = """ Paegan Dataset Object: 
+ Dataset Type: """ + self._datasettype + """ 
+ Resource: """ + self._filename + """
+ Variables: 
+ """ + str(k)
+          
+        return out 
+        
+        
+    #def __unicode__():
+    #    pass
+        
     _getvalues = getvalues
     _getgeovar = getgeovar
     _gettimevar = gettimevar
@@ -103,9 +119,10 @@ class Dataset():
 class CGridDataset(Dataset):
     def __init__(self, nc, fname, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
-        self.cache = netCDF4.Dataset("cache", "w", diskless=True)
+        self.cache = netCDF4.Dataset("cache", "w", diskless=True, persist=False)
         self.nc = nc
         self._datasettype = datasettype
+        self._filename = fname
         
         # Need better way to figure out depth and time names
         try:
@@ -117,9 +134,15 @@ class CGridDataset(Dataset):
             depth_units = self.nc.variables[tname].units
         except:
             depth_units = None
-            
-        self._timevar = Timevar(fname, zname, depth_units)
-        self._depthvar = Depthvar(fname, tname, time_units)
+        
+        try:
+            self._timevar = Timevar(fname, zname, depth_units)
+        except:
+            self._timevar = None
+        try:
+            self._depthvar = Depthvar(fname, tname, time_units)
+        except:
+            self._depthvar = None
         
         
     def lon2ind(self):
@@ -138,9 +161,10 @@ class CGridDataset(Dataset):
 class RGridDataset(Dataset):
     def __init__(self, nc, fname, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
-        self.cache = netCDF4.Dataset("cache", "w", diskless=True)
+        self.cache = netCDF4.Dataset("cache", "w", diskless=True, persist=False)
         self.nc = nc
         self._datasettype = datasettype
+        self._filename = fname
         
         # Need better way to figure out depth and time names
         try:
@@ -153,8 +177,14 @@ class RGridDataset(Dataset):
         except:
             depth_units = None
             
-        self._timevar = Timevar(fname, zname, depth_units)
-        self._depthvar = Depthvar(fname, tname, time_units)
+        try:
+            self._timevar = Timevar(fname, zname, depth_units)
+        except:
+            self._timevar = None
+        try:
+            self._depthvar = Depthvar(fname, tname, time_units)
+        except:
+            self._depthvar = None
     
     def lon2ind(self):
         pass
@@ -172,9 +202,10 @@ class RGridDataset(Dataset):
 class NCellDataset(Dataset):
     def __init__(self, nc, fname, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
-        self.cache = netCDF4.Dataset("cache", "w", diskless=True)
+        self.cache = netCDF4.Dataset("cache", "w", diskless=True, persist=False)
         self.nc = nc
         self._datasettype = datasettype
+        self._filename = fname
         
         # Need better way to figure out depth and time names
         try:
@@ -187,8 +218,14 @@ class NCellDataset(Dataset):
         except:
             depth_units = None
             
-        self._timevar = Timevar(fname, zname, depth_units)
-        self._depthvar = Depthvar(fname, tname, time_units)
+        try:
+            self._timevar = Timevar(fname, zname, depth_units)
+        except:
+            self._timevar = None
+        try:
+            self._depthvar = Depthvar(fname, tname, time_units)
+        except:
+            self._depthvar = None
     
     def lon2ind(self):
         pass
