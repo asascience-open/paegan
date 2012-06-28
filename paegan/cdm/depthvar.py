@@ -21,7 +21,10 @@ class Depthvar(np.ndarray):
     _meters2unit['miles'] = 1609.344
 
     def __new__(self, ncfile, name, units=None, **kwargs):
-        self._nc = netCDF4.Dataset(ncfile)
+        if type(ncfile) is str:
+            ncfile = netCDF4.Dataset(ncfile)
+        self._nc = ncfile
+        
         data = self._nc.variables[name][:]
         if units == None:
             self._units = self._nc.variables[name].units
