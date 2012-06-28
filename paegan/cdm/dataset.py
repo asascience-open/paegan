@@ -4,7 +4,7 @@ from timevar import Timevar
 from depthvar import Depthvar
 
 class Dataset():
-    def datasetCommonInit(self, ncfile, xname='lon', yname='lat',
+    def dataset(self, ncfile, xname='lon', yname='lat',
         zname='z', tname='time'):
         """
         Initialize paegan dataset object, which uses specific
@@ -78,7 +78,7 @@ class Dataset():
     def getdepthvar(self):
         return self._depthvar
  
-    def getgeovar(self):
+    def getcoordvar(self):
         return self._geovar
  
     def getvalues(self, variable, inds=None, 
@@ -95,11 +95,14 @@ class Dataset():
         k = []
         for key in self.nc.variables.viewkeys():
             k.append(key)
-        out = """ Paegan Dataset Object: 
- Dataset Type: """ + self._datasettype + """ 
- Resource: """ + self._filename + """
- Variables: 
- """ + str(k)
+        out = """
+[[ 
+  Paegan Dataset Object: 
+  Dataset Type: """ + self._datasettype + """ 
+  Resource: """ + self._filename + """
+  Variables: 
+  """ + str(k) + """
+]]"""
           
         return out 
         
@@ -108,7 +111,7 @@ class Dataset():
     #    pass
         
     _getvalues = getvalues
-    _getgeovar = getgeovar
+    _getcoordvar = getcoordvar
     _gettimevar = gettimevar
     _lon2ind = lon2ind
     _ind2lon = ind2lon
@@ -119,7 +122,7 @@ class Dataset():
 class CGridDataset(Dataset):
     def __init__(self, nc, fname, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
-        self.cache = netCDF4.Dataset("cache", "w", diskless=True, persist=False)
+        #self.cache = netCDF4.Dataset(cache, "w", diskless=True, persist=False)
         self.nc = nc
         self._datasettype = datasettype
         self._filename = fname
@@ -161,7 +164,7 @@ class CGridDataset(Dataset):
 class RGridDataset(Dataset):
     def __init__(self, nc, fname, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
-        self.cache = netCDF4.Dataset("cache", "w", diskless=True, persist=False)
+        #self.cache = netCDF4.Dataset(cache, "w", diskless=True, persist=False)
         self.nc = nc
         self._datasettype = datasettype
         self._filename = fname
@@ -202,7 +205,7 @@ class RGridDataset(Dataset):
 class NCellDataset(Dataset):
     def __init__(self, nc, fname, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
-        self.cache = netCDF4.Dataset("cache", "w", diskless=True, persist=False)
+        #self.cache = netCDF4.Dataset(cache, "w", diskless=True, persist=False)
         self.nc = nc
         self._datasettype = datasettype
         self._filename = fname
