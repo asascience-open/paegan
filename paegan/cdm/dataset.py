@@ -148,6 +148,15 @@ class Dataset:
     def getgridobj(self, var=None):
         #return self._gridobj
         assert var in self.nc.variables
+        names = self.get_coord_names(var)
+
+        if names['xname'] != None or yname !=None:
+            gridobj = Gridobj(self.nc, names["xname"], 
+                              names["yname"])
+        else:
+            gridobj = None
+        
+        return gridobj
         
 
     def __str__(self):
@@ -252,20 +261,17 @@ class Dataset:
     def get_coords(self, var=None, **kwargs):
         assert var in self.nc.variables
         names = self.get_coord_names(var)
-        print names
-        if tname != None:
+
+        if names['tname'] != None:
             timevar = Timevar(self.nc, names["tname"])
         else:
             timevar = None
-        if zname != None:
+        if names['zname'] != None:
             depthvar = Depthvar(self.nc, names["zname"])
         else:
             depthvar = None
-        if xname != None or yname !=None:
-            gridobj = Gridobj(self.nc, names["xname"], 
-                              names["yname"])
-        else:
-            gridobj = None
+        
+        gridobj = self.getgridobj(var)
         
         return {"time":timevar, "z":depthvar, "xy":gridobj}
         
@@ -304,8 +310,7 @@ class Dataset:
         # yinds = [[50,], [50,]]
         tinds = [[1,],]
         zinds = [[1,],]
-        xinds = [[50,], [50,]]
-        yinds = [[50,], [50,]]
+        xinds, yinds = self.get_xyind_from_bbox(var, bbox)
         
         # find how the shapes match up to var
         # (should i use dim names or just sizes to figure out?)
@@ -350,7 +355,7 @@ class Dataset:
                 elif name == "x":
                     for i,position in enumerate(positions[name]):
                         indices[position] = xinds[i]
-
+        
         return self._get_data(var, indices)
         
     def _get_data(self, var, **kwargs):
@@ -369,8 +374,8 @@ class Dataset:
 class CGridDataset(Dataset):
     def __new__(self, nc, filename, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
-        #self.cache = netCDF4.Dataset(cache, "w", diskless=True, persist=False)
-        pass
+        self.cache = dict()
+
         
     def lon2ind(self, var=None, **kwargs):
         pass
@@ -383,6 +388,18 @@ class CGridDataset(Dataset):
    
     def ind2lat(self, var=None, **kwargs):
         pass
+        
+    def get_xyind_from_bbox(self, var, bbox):
+        grid = self.getgridobj(var)
+        xbool = grid.get_xbool_from_bbox(bbox)
+        ybool = grid.get_ybool_from_bbox(bbox)
+        inds = np.where(np.logical_and(xbool, ybool))
+        minrow = np.min(inds[0])
+        mincol = np.min(inds[1])
+        maxrow = np.max(inds[0])
+        maxcol = np.max(inds[1])
+        inds = (np.arange(minrow, maxrow), np.arange(mincol, maxcol))
+        return inds, inds
         
     def _get_data(self, var, indarray):
         ndims = len(indarray)
@@ -410,8 +427,7 @@ class CGridDataset(Dataset):
 class RGridDataset(Dataset):
     def __new__(self, nc, filename, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
-        #self.cache = netCDF4.Dataset(cache, "w", diskless=True, persist=False)
-        pass
+        self.cache = dict()
         
     def lon2ind(self, var=None, **kwargs):
         pass
@@ -453,7 +469,7 @@ class RGridDataset(Dataset):
 class NCellDataset(Dataset):
     def __new__(self, nc, filename, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
-        #self.cache = netCDF4.Dataset(cache, "w", diskless=True, persist=False)
+        self.cache = dict()
         if None in self.nc.variables:
             self._is_topology = True
             self.topology_var_name = None

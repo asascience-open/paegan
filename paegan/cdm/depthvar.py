@@ -27,7 +27,10 @@ class Depthvar(np.ndarray):
         
         data = self._nc.variables[name][:]
         if units == None:
-            self._units = self._nc.variables[name].units
+            try:
+                self._units = self._nc.variables[name].units
+            except:
+                self._units = units
         else:
             self._units = units
                
