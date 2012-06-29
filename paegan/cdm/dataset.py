@@ -166,8 +166,8 @@ class Dataset:
     
     def get_coord_names(self, var=None, **kwargs):
         assert var in self.nc.variables
-        
-        coordinates = self.nc.variables[var].coordinates.split()
+        ncvar = self.nc.variables[var]
+        coordinates = ncvar.coordinates.split()
         # If the coordinate names not in kwargs, then figure
         # out the remaining coordinate names
         if "xname" in kwargs:
@@ -205,9 +205,48 @@ class Dataset:
                 tname = tname[0]
             else:
                 tname = None
-       
-        return {"tname":tname, "zname":zname,
-                "xname":xname, "yname":yname}
+                
+        names = {"tname":tname, "zname":zname,
+                 "xname":xname, "yname":yname}
+        
+        # find how the shapes match up to var
+        # (should i use dim names or just sizes to figure out?)
+        # I'm going to use dim names
+        dims = ncvar.dimensions
+        ndim = ncvar.ndim
+        shape = ncvar.shape
+        total = []
+        for i in names:
+            name = names[i]
+            if name != None:
+                cdims = self.nc.variables[name].dimensions
+                [total.append(dims.index(cdim)) for cdim in cdims]
+        
+        total = np.unique(np.asarray(total))
+
+        for missing in range(ndim):
+            if missing not in total:
+                missing_dim = dims[missing]
+                if missing_dim in self.nc.variables:
+                    if missing_dim in self._possiblex:
+                        common_name = "x"
+                        name = "xname"
+                    elif missing_dim in self._possibley:
+                        common_name = "y"
+                        name = "yname"
+                    elif missing_dim in self._possiblez:
+                        common_name = "z"
+                        name = "zname"
+                    elif missing_dim in self._possiblet:
+                        common_name = "time"
+                        name = "tname"
+                    names[name] = missing_dim
+        
+        # Need to add next check if there are any dims left
+        # to find variables with different names that use soley
+        # those dims and appear in our type keys
+        
+        return names
               
     def get_coords(self, var=None, **kwargs):
         assert var in self.nc.variables
@@ -243,9 +282,7 @@ class Dataset:
                     pass
         else:
             pass
-            
-    def get_values(self, **kwargs):
-        pass
+        return var_matches
         
     def __repr__(self):
         s = "CommonDataset(" + self._filename + \
@@ -294,27 +331,7 @@ class Dataset:
                 cdims = self.nc.variables[name].dimensions
                 [positions[common_name].append(dims.index(cdim)) for cdim in cdims]
                 [total.append(dims.index(cdim)) for cdim in cdims]
-        
-        total = np.unique(np.asarray(total))
 
-        for missing in range(ndim):
-            if missing not in total:
-                missing_dim = dims[missing]
-                if missing_dim in self.nc.variables:
-                    if missing_dim in self._possiblex:
-                        common_name = "x"
-                    elif missing_dim in self._possibley:
-                        common_name = "y"
-                    elif missing_dim in self._possiblez:
-                        common_name = "z"
-                    elif missing_dim in self._possiblet:
-                        common_name = "time"
-                    positions[common_name] = [missing]
-        
-        # Need to add next check if there are any dims left
-        # to find variables with different names that use soley
-        # those dims and appear in our type keys
-        
         # Now take time inds, z inds, x and y inds and put them 
         # into the request in the right places:
         indices = [None for i in range(ndim)]
