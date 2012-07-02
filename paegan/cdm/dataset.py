@@ -355,7 +355,7 @@ class Dataset:
                 elif name == "x":
                     for i,position in enumerate(positions[name]):
                         indices[position] = xinds[i]
-        
+
         return self._get_data(var, indices)
         
     def _get_data(self, var, **kwargs):
