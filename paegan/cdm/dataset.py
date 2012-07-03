@@ -3,6 +3,7 @@ import netCDF4, datetime
 from timevar import Timevar
 from depthvar import Depthvar
 from gridvar import Gridobj
+from variable import variable as cachevar
 
     
 def CommonDataset(ncfile, xname='lon', yname='lat',
@@ -81,6 +82,7 @@ class Dataset:
     def __init__(self, nc, filename, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
         self.nc = nc
+        self._coordcache = dict()
         self._filename = filename
         self._datasettype = datasettype
         self.metadata = self.nc.__dict__
@@ -158,42 +160,62 @@ class Dataset:
         assert var in self.nc.variables
         depths = self.getdepthvar(var)
         bounds = (np.min(depths.get_m), np.max(depths.get_m))
+        
+    def _checkcache(self, var):
+        assert var in self.nc.variables
+        test = var in self._coordcache
+        return test
 
     def gettimevar(self, var=None):
         #return self._timevar
         assert var in self.nc.variables
-        names = self.get_coord_names(var)
-
-        if names['tname'] != None:
-            timevar = Timevar(self.nc, names["tname"])
+        timevar = None
+        if self._checkcache(var):
+            timevar = self._coordcache[var].time
         else:
-            timevar = None
-        
+            self._coordcache[var] = cachevar()
+        if timevar == None:
+            names = self.get_coord_names(var)
+            if names['tname'] != None:
+                timevar = Timevar(self.nc, names["tname"])
+            else:
+                timevar = None  
+            self._coordcache[var].time = timevar
         return timevar
  
     def getdepthvar(self, var=None):
         #return self._depthvar
         assert var in self.nc.variables
-        names = self.get_coord_names(var)
-
-        if names['zname'] != None:
-            depthvar = Depthvar(self.nc, names["zname"])
+        depthvar = None
+        if self._checkcache(var):
+            depthvar = self._coordcache[var].z
         else:
-            depthvar = None
-        
+            self._coordcache[var] = cachevar()
+        if depthvar == None:
+            names = self.get_coord_names(var)
+            if names['zname'] != None:
+                depthvar = Depthvar(self.nc, names["zname"])
+            else:
+                depthvar = None
+            self._coordcache[var].add_z(depthvar)
         return depthvar
         
     def getgridobj(self, var=None):
         #return self._gridobj
         assert var in self.nc.variables
-        names = self.get_coord_names(var)
-
-        if names['xname'] != None or yname !=None:
-            gridobj = Gridobj(self.nc, names["xname"], 
-                              names["yname"])
+        gridobj = None
+        if self._checkcache(var):
+            gridobj = self._coordcache[var].xy
         else:
-            gridobj = None
-        
+            self._coordcache[var] = cachevar()
+        if gridobj == None:
+            names = self.get_coord_names(var)
+            if names['xname'] != None or yname !=None:
+                gridobj = Gridobj(self.nc, names["xname"], 
+                   names["yname"])
+            else:
+                gridobj = None
+            self._coordcache[var].add_xy(gridobj)
         return gridobj
         
     def get_tind_from_bounds(self, var, bounds, convert=False):
@@ -222,7 +244,6 @@ class Dataset:
   Variables: 
   """ + str(k) + """
 ]]"""
-          
         return out 
     
     def get_coord_names(self, var=None, **kwargs):
