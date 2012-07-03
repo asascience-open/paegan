@@ -15,7 +15,7 @@ def CommonDataset(ncfile, xname='lon', yname='lat',
     dataset objects that expose a common api.
     
     from cdm.dataset import CommonDataset
-    >> d = Dataset()
+
     >> dataset = CommonDataset(ncfile)
     >> dataset = CommonDataset(url, "lon_rho", "lat_rho", "s_rho", "ocean_time")
     >> dataset = CommonDataset(url, dataset_type="cgrid") 
@@ -76,8 +76,10 @@ def CommonDataset(ncfile, xname='lon', yname='lat',
             self._filename, self._datasettype,
             zname=zname, tname=tname, xname=xname, yname=yname)
     return dataobj
-        
-        
+    
+    
+    
+    
 class Dataset:
     def __init__(self, nc, filename, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
@@ -86,18 +88,19 @@ class Dataset:
         self._filename = filename
         self._datasettype = datasettype
         self.metadata = self.nc.__dict__
-        self._possiblet = ["time", "TIME",
+        self._possiblet = ["time", "TIME", "Time",
                            "t", "T",
                            "ocean_time", "OCEAN_TIME",
                            "jd", "JD",
                            "dn", "DN",
-                           "times", "TIMES",
+                           "times", "TIMES", "Times",
                           ]
         self._possiblez = ["depth", "DEPTH",
                            "depths", "DEPTHS",
                            "height", "HEIGHT",
                            "altitude", "ALTITUDE",
-                           "alt", "ALT",
+                           "alt", "ALT", 
+                           "Alt", "Altitude",
                            "h", "H",
                            "s_rho", "S_RHO",
                            "s_w", "S_W",
@@ -112,6 +115,8 @@ class Dataset:
                            "lon_u", "LON_U",
                            "lon_v", "LON_V",
                            "lonc", "LONC",
+                           "Lon", "Longitude",
+                           "longitude", "LONGITUDE"
                           ]
         self._possibley = ["y", "Y",
                            "lat", "LAT",
@@ -120,6 +125,8 @@ class Dataset:
                            "lat_u", "LAT_U",
                            "lat_v", "LAT_V",
                            "latc", "LATC",
+                           "Lat", "Latitude",
+                           "latitude", "LATITUDE",
                           ]
                           
         if xname not in self._possiblex:
@@ -490,7 +497,13 @@ class Dataset:
     _ind2lat = ind2lat
     __get_data = _get_data
         
+        
+        
+        
 class CGridDataset(Dataset):
+    """
+    CGridDataset(Dataset)
+    """
     def __new__(self, nc, filename, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
         pass
@@ -540,9 +553,13 @@ class CGridDataset(Dataset):
                        indarray[3], indarray[4], indarray[5]])
         return data
         
-
-    
+        
+        
+        
 class RGridDataset(Dataset):
+    """
+    RGridDataset(Dataset)
+    """
     def __new__(self, nc, filename, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
         pass
@@ -586,9 +603,14 @@ class RGridDataset(Dataset):
             data = np.asarray(var[indarray[0], indarray[1], indarray[2], 
                        indarray[3], indarray[4], indarray[5]])
         return data
-    
-    
+
+
+
+
 class NCellDataset(Dataset):
+    """
+    NCellDataset(Dataset)
+    """
     def __new__(self, nc, filename, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
         pass
