@@ -102,6 +102,8 @@ class Dataset:
                            "s_rho", "S_RHO",
                            "s_w", "S_W",
                            "z", "Z",
+                           "siglay", "SIGLAY",
+                           "siglev", "SIGLEV",
                           ]
         self._possiblex = ["x", "X",
                            "lon", "LON",
@@ -109,6 +111,7 @@ class Dataset:
                            "lonx", "lonx",
                            "lon_u", "LON_U",
                            "lon_v", "LON_V",
+                           "lonc", "LONC",
                           ]
         self._possibley = ["y", "Y",
                            "lat", "LAT",
@@ -116,6 +119,7 @@ class Dataset:
                            "laty", "laty",
                            "lat_u", "LAT_U",
                            "lat_v", "LAT_V",
+                           "latc", "LATC",
                           ]
                           
         if xname not in self._possiblex:
@@ -210,7 +214,7 @@ class Dataset:
             self._coordcache[var] = cachevar()
         if gridobj == None:
             names = self.get_coord_names(var)
-            if names['xname'] != None or yname !=None:
+            if names['xname'] != None or names['yname'] !=None:
                 gridobj = Gridobj(self.nc, names["xname"], 
                    names["yname"])
             else:
@@ -260,7 +264,6 @@ class Dataset:
                 xname = xname[0]
             else:
                 xname = None
-            
         if "yname" in kwargs:
             yname = kwargs["yname"]
         else:
@@ -269,7 +272,6 @@ class Dataset:
                 yname = yname[0]
             else:
                 yname = None
-             
         if "zname" in kwargs:
             zname = kwargs["zname"]
         else:
@@ -278,7 +280,6 @@ class Dataset:
                 zname = zname[0]
             else:
                 zname = None
-            
         if "tname" in kwargs:
             tname = kwargs["tname"]
         else:
@@ -286,11 +287,9 @@ class Dataset:
             if len(tname) > 0:
                 tname = tname[0]
             else:
-                tname = None
-                
+                tname = None      
         names = {"tname":tname, "zname":zname,
                  "xname":xname, "yname":yname}
-        
         # find how the shapes match up to var
         # (should i use dim names or just sizes to figure out?)
         # I'm going to use dim names
@@ -302,41 +301,42 @@ class Dataset:
             name = names[i]
             if name != None:
                 cdims = self.nc.variables[name].dimensions
-                [total.append(dims.index(cdim)) for cdim in cdims]
-        
+                for cdim in cdims:
+                    try:
+                        total.append(dims.index(cdim))
+                    except:
+                        pass 
         total = np.unique(np.asarray(total))
-
         for missing in range(ndim):
             if missing not in total:
                 missing_dim = dims[missing]
                 if missing_dim in self.nc.variables:
                     if missing_dim in self._possiblex:
-                        common_name = "x"
-                        name = "xname"
+                        name2 = "xname"
                     elif missing_dim in self._possibley:
-                        common_name = "y"
-                        name = "yname"
+                        name2 = "yname"
                     elif missing_dim in self._possiblez:
-                        common_name = "z"
-                        name = "zname"
+                        name2 = "zname"
                     elif missing_dim in self._possiblet:
-                        common_name = "time"
-                        name = "tname"
-                    names[name] = missing_dim
-        
+                        name2 = "tname"
+                    else:
+                        name2 = None
+                    if name2 != None:
+                        names[name2] = missing_dim
         # Need to add next check if there are any dims left
         # to find variables with different names that use soley
         # those dims and appear in our type keys
         
+        # then make guesses based on attributes
+        
+        # then...
         return names
               
     def get_coords(self, var=None, **kwargs):
         assert var in self.nc.variables
-        names = self.get_coord_names(var)
         timevar = self.gettimevar(var)
         depthvar = self.getdepthvar(var)
         gridobj = self.getgridobj(var)
-        
         return {"time":timevar, "z":depthvar, "xy":gridobj}
         
         
@@ -372,7 +372,6 @@ class Dataset:
         assert var in self.nc.variables
         ncvar = self.nc.variables[var]
         names = self.get_coord_names(var)
-
         # find how the shapes match up to var
         # (should i use dim names or just sizes to figure out?)
         # I'm going to use dim names
@@ -391,14 +390,18 @@ class Dataset:
                 common_name = "x"
             elif i == "yname":
                 common_name = "y"
-            positions[common_name] = None
-            
-            if name != None:
-                positions[common_name] = []
-                cdims = self.nc.variables[name].dimensions
-                [positions[common_name].append(dims.index(cdim)) for cdim in cdims]
-                [total.append(dims.index(cdim)) for cdim in cdims]
-                
+            else:
+                common_name = None
+            if common_name != None:
+                positions[common_name] = None
+                if name != None:
+                    positions[common_name] = []
+                    cdims = self.nc.variables[name].dimensions
+                    for cdim in cdims:
+                        try:
+                            positions[common_name].append(dims.index(cdim))
+                        except:
+                            pass
         # get t inds, z inds, xy inds
         # tinds = [[1,],]
         # zinds = [[1,],]
@@ -412,7 +415,6 @@ class Dataset:
                     tinds = np.arange(0, ncvar.shape[positions["time"]]+1)
                 else:
                     tinds = timeinds
-        
         if positions["z"] != None:
             if zbounds != None:
                 zinds = self.get_zind_from_bounds(var, zbounds)
@@ -421,37 +423,34 @@ class Dataset:
                     zinds = np.arange(0, ncvar.shape[positions["z"]]+1)
                 else:
                     pass
-
         if bbox != None:
             xinds, yinds = self.get_xyind_from_bbox(var, bbox)
         else:
             xinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["x"]]
             yinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["y"]]
-
-        if len(tinds) > 0 and len(zinds) > 0 and \
-            len(xinds) > 0 and len(yinds) > 0:
-            # Now take time inds, z inds, x and y inds and put them 
-            # into the request in the right places:
-            indices = [None for i in range(ndim)]
-            for name in positions:
-                if positions[name] != None:
-                    if name == "time":
-                        for i,position in enumerate(positions[name]):
-                            indices[position] = tinds[i] 
-                    elif name == "z":
-                        for i,position in enumerate(positions[name]):
-                            indices[position] = zinds[i]
-                    elif name == "y":
-                        for i,position in enumerate(positions[name]):
-                            indices[position] = yinds[i]
-                    elif name == "x":
-                        for i,position in enumerate(positions[name]):
-                            indices[position] = xinds[i]
-
+        #if len(tinds) > 0 and len(zinds) > 0 and \
+        #    len(xinds) > 0 and len(yinds) > 0:
+        # Now take time inds, z inds, x and y inds and put them 
+        # into the request in the right places:
+        indices = [None for i in range(ndim)]
+        for name in positions:
+            if positions[name] != None:
+                if name == "time":
+                    for i,position in enumerate(positions[name]):
+                        indices[position] = tinds[i] 
+                elif name == "z":
+                    for i,position in enumerate(positions[name]):
+                        indices[position] = zinds[i]
+                elif name == "y":
+                    for i,position in enumerate(positions[name]):
+                        indices[position] = yinds[i]
+                elif name == "x":
+                    for i,position in enumerate(positions[name]):
+                        indices[position] = xinds[i]
+        if np.all([len(i)>0 for i in indices]):
             data = self._get_data(var, indices)
         else:
             data = np.ndarray()
-            
         return data
         
     def _get_data(self, var, **kwargs):
@@ -470,9 +469,8 @@ class Dataset:
 class CGridDataset(Dataset):
     def __new__(self, nc, filename, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
-        self.cache = dict()
+        pass
 
-        
     def lon2ind(self, var=None, **kwargs):
         pass
          
@@ -516,7 +514,6 @@ class CGridDataset(Dataset):
         elif ndims == 6:
             data = np.asarray(var[indarray[0], indarray[1], indarray[2], 
                        indarray[3], indarray[4], indarray[5]])
-        
         return data
         
 
@@ -524,7 +521,7 @@ class CGridDataset(Dataset):
 class RGridDataset(Dataset):
     def __new__(self, nc, filename, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
-        self.cache = dict()
+        pass
         
     def lon2ind(self, var=None, **kwargs):
         pass
@@ -545,9 +542,7 @@ class RGridDataset(Dataset):
         xinds = np.where(xbool)
         yinds = np.where(ybool)
         return xinds, yinds #xinds, yinds
-        
 
-        
     def _get_data(self, var, indarray):
         ndims = len(indarray)
         var = self.nc.variables[var]
@@ -566,14 +561,13 @@ class RGridDataset(Dataset):
         elif ndims == 6:
             data = np.asarray(var[indarray[0], indarray[1], indarray[2], 
                        indarray[3], indarray[4], indarray[5]])
-        
         return data
     
     
 class NCellDataset(Dataset):
     def __new__(self, nc, filename, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
-        self.cache = dict()
+        pass
         if None in self.nc.variables:
             self._is_topology = True
             self.topology_var_name = None
@@ -596,9 +590,7 @@ class NCellDataset(Dataset):
         ybool = grid.get_ybool_from_bbox(bbox)
         inds = np.where(np.logical_and(xbool, ybool))
         return inds, inds #xinds, yinds
-        
-    
-        
+
     def _get_data(self, var, indarray):
         ndims = len(indarray)
         var = self.nc.variables[var]
@@ -620,7 +612,7 @@ class NCellDataset(Dataset):
         elif ndims == 6:
             data = np.asarray(var[indarray[0], indarray[1], indarray[2], 
                        indarray[3], indarray[4], indarray[5]])
-        
         return data
+        
         
         
