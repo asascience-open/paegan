@@ -136,14 +136,52 @@ class Dataset:
    
     def ind2lat(self, var=None, **kwargs):
         pass
+        
+    def gettimebounds(self, var=None, **kwargs):
+        assert var in self.nc.variables
+        time = self.gettimevar(var)
+        bounds = (np.min(time), np.max(time))
+    
+    def gettimebounds_dt(self, var=None, **kwargs):
+        assert var in self.nc.variables
+        time = self.gettimevar(var)
+        u = time._units
+        bounds = (netCDF4.num2date(np.min(time),units=u),
+                  netCDF4.num2date(np.max(time),units=u))
+        
+    def getdepthbounds(self, var=None, **kwargs):
+        assert var in self.nc.variables
+        time = self.gettimevar(var)
+        bounds = (np.min(time), np.max(time))
+        
+    def getdepthbounds_m(self, var=None, **kwargs):
+        assert var in self.nc.variables
+        depths = self.getdepthvar(var)
+        bounds = (np.min(depths.get_m), np.max(depths.get_m))
 
     def gettimevar(self, var=None):
         #return self._timevar
         assert var in self.nc.variables
+        names = self.get_coord_names(var)
+
+        if names['tname'] != None:
+            timevar = Timevar(self.nc, names["tname"])
+        else:
+            timevar = None
+        
+        return timevar
  
     def getdepthvar(self, var=None):
         #return self._depthvar
         assert var in self.nc.variables
+        names = self.get_coord_names(var)
+
+        if names['zname'] != None:
+            depthvar = Depthvar(self.nc, names["zname"])
+        else:
+            depthvar = None
+        
+        return depthvar
         
     def getgridobj(self, var=None):
         #return self._gridobj
@@ -158,7 +196,20 @@ class Dataset:
         
         return gridobj
         
-
+    def get_tind_from_bounds(self, var, bounds, convert=False):
+        assert var in self.nc.variables
+        time = self.gettimevar(var)
+        if convert:
+            bounds = netCDF4.date2num(bounds)
+        inds = np.where(np.logical_and(time >= bounds[0], time <= bounds[1]))
+        return inds
+    
+    def get_zind_from_bounds(self, var, bounds):
+        assert var in self.nc.variables
+        depths = self.getdepthvar(var)
+        inds = np.where(np.logical_and(depths >= bounds[0], depths <= bounds[1]))
+        return inds
+        
     def __str__(self):
         k = []
         for key in self.nc.variables.viewkeys():
@@ -261,16 +312,8 @@ class Dataset:
     def get_coords(self, var=None, **kwargs):
         assert var in self.nc.variables
         names = self.get_coord_names(var)
-
-        if names['tname'] != None:
-            timevar = Timevar(self.nc, names["tname"])
-        else:
-            timevar = None
-        if names['zname'] != None:
-            depthvar = Depthvar(self.nc, names["zname"])
-        else:
-            depthvar = None
-        
+        timevar = self.gettimevar(var)
+        depthvar = self.getdepthvar(var)
         gridobj = self.getgridobj(var)
         
         return {"time":timevar, "z":depthvar, "xy":gridobj}
@@ -296,22 +339,19 @@ class Dataset:
             ", dataset_type='" + self._datasettype + "')"
         return s
         
-    def get_values(self, var, inds=None, 
-        geos=None, depths=None, times=None, bbox=None,
-        timebounds=None,):
+    def get_values(self, var, zbounds=None, bbox=None,
+        timebounds=None, zinds=None, timeinds=None):
+        """
+        
+        Get smallest chunck of data that encompasses the 4-d
+        bounding box limits of the data completely.
+        
+        
+        """
         assert var in self.nc.variables
         ncvar = self.nc.variables[var]
         names = self.get_coord_names(var)
-        
-        # get t inds, z inds, xy inds
-        # tinds = [[1,],]
-        # zinds = [[1,],]
-        # xinds = [[50,], [50,]]
-        # yinds = [[50,], [50,]]
-        tinds = [[1,],]
-        zinds = [[1,],]
-        xinds, yinds = self.get_xyind_from_bbox(var, bbox)
-        
+
         # find how the shapes match up to var
         # (should i use dim names or just sizes to figure out?)
         # I'm going to use dim names
@@ -337,26 +377,61 @@ class Dataset:
                 cdims = self.nc.variables[name].dimensions
                 [positions[common_name].append(dims.index(cdim)) for cdim in cdims]
                 [total.append(dims.index(cdim)) for cdim in cdims]
+                
+        # get t inds, z inds, xy inds
+        # tinds = [[1,],]
+        # zinds = [[1,],]
+        # xinds = [[50,], [50,]]
+        # yinds = [[50,], [50,]]
+        if positions["time"] != None:
+            if timebounds != None:
+                tinds = self.get_tind_from_bounds(var, timebounds)
+            else:
+                if timeinds == None:
+                    tinds = np.arange(0, ncvar.shape[positions["time"]]+1)
+                else:
+                    tinds = timeinds
+        
+        if positions["z"] != None:
+            if zbounds != None:
+                zinds = self.get_zind_from_bounds(var, zbounds)
+            else:
+                if zinds == None:
+                    zinds = np.arange(0, ncvar.shape[positions["z"]]+1)
+                else:
+                    pass
 
-        # Now take time inds, z inds, x and y inds and put them 
-        # into the request in the right places:
-        indices = [None for i in range(ndim)]
-        for name in positions:
-            if positions[name] != None:
-                if name == "time":
-                    for i,position in enumerate(positions[name]):
-                        indices[position] = tinds[i] 
-                elif name == "z":
-                    for i,position in enumerate(positions[name]):
-                        indices[position] = zinds[i]
-                elif name == "y":
-                    for i,position in enumerate(positions[name]):
-                        indices[position] = yinds[i]
-                elif name == "x":
-                    for i,position in enumerate(positions[name]):
-                        indices[position] = xinds[i]
+        if bbox != None:
+            xinds, yinds = self.get_xyind_from_bbox(var, bbox)
+        else:
+            xinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["x"]]
+            yinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["y"]]
 
-        return self._get_data(var, indices)
+        if len(tinds) > 0 and len(zinds) > 0 and \
+            len(xinds) > 0 and len(yinds) > 0:
+            # Now take time inds, z inds, x and y inds and put them 
+            # into the request in the right places:
+            indices = [None for i in range(ndim)]
+            for name in positions:
+                if positions[name] != None:
+                    if name == "time":
+                        for i,position in enumerate(positions[name]):
+                            indices[position] = tinds[i] 
+                    elif name == "z":
+                        for i,position in enumerate(positions[name]):
+                            indices[position] = zinds[i]
+                    elif name == "y":
+                        for i,position in enumerate(positions[name]):
+                            indices[position] = yinds[i]
+                    elif name == "x":
+                        for i,position in enumerate(positions[name]):
+                            indices[position] = xinds[i]
+
+            data = self._get_data(var, indices)
+        else:
+            data = np.ndarray()
+            
+        return data
         
     def _get_data(self, var, **kwargs):
         pass
@@ -398,9 +473,10 @@ class CGridDataset(Dataset):
         mincol = np.min(inds[1])
         maxrow = np.max(inds[0])
         maxcol = np.max(inds[1])
-        inds = (np.arange(minrow, maxrow), np.arange(mincol, maxcol))
-        return inds, inds
+        inds = (np.arange(minrow, maxrow+1), np.arange(mincol, maxcol+1))
+        return inds, inds #xinds, yinds
         
+
     def _get_data(self, var, indarray):
         ndims = len(indarray)
         var = self.nc.variables[var]
@@ -441,8 +517,15 @@ class RGridDataset(Dataset):
     def ind2lat(self, var=None, **kwargs):
         pass
         
-    def _get_data(self, var, ndims, tinds, zinds, xinds, yinds):
-        pass
+    def get_xyind_from_bbox(self, var, bbox):
+        grid = self.getgridobj(var)
+        xbool = grid.get_xbool_from_bbox(bbox)
+        ybool = grid.get_ybool_from_bbox(bbox)
+        xinds = np.where(xbool)
+        yinds = np.where(ybool)
+        return xinds, yinds #xinds, yinds
+        
+
         
     def _get_data(self, var, indarray):
         ndims = len(indarray)
@@ -486,8 +569,14 @@ class NCellDataset(Dataset):
     def ind2lat(self, var=None, **kwargs):
         pass
         
-    def _get_data(self, var, ndims, tinds, zinds, xinds, yinds):
-        pass
+    def get_xyind_from_bbox(self, var, bbox):
+        grid = self.getgridobj(var)
+        xbool = grid.get_xbool_from_bbox(bbox)
+        ybool = grid.get_ybool_from_bbox(bbox)
+        inds = np.where(np.logical_and(xbool, ybool))
+        return inds, inds #xinds, yinds
+        
+    
         
     def _get_data(self, var, indarray):
         ndims = len(indarray)
