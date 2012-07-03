@@ -1,6 +1,6 @@
 import numpy as np
 
-class variable:
+class Coordinates:
     """
     This is just a container to hold the coordinate variables persistently in the dataset obj for each of the field variables of interest.
     """
@@ -39,7 +39,24 @@ class variable:
     def __unicode__(self):
         return self._info
         
-    _info = property(_getinfo) 
+    _info = property(_getinfo)
+    x = self.xy._xarray
+    y = self.xy._yarray
+    
+class SubCoordinates:
+    def __init__(self, **kwargs):
+        self.x = None
+        self.y = None
+        self.z = None
+        self.time = None
+        if "x" in kwargs:
+            self.x = kwargs["x"]
+        if "y" in kwargs:
+            self.y = kwargs["y"]
+        if "z" in kwargs:
+            self.z = kwargs["Z"]
+        if "time" in kwargs:
+            self.time = kwargs["time"]
        
        
          

@@ -3,7 +3,8 @@ import netCDF4, datetime
 from timevar import Timevar
 from depthvar import Depthvar
 from gridvar import Gridobj
-from variable import variable as cachevar
+from variable import Coordinates as cachevar
+from variable import SubCoordinates as subs
 
     
 def CommonDataset(ncfile, xname='lon', yname='lat',
@@ -74,7 +75,6 @@ def CommonDataset(ncfile, xname='lon', yname='lat',
         dataobj = CGridDataset(self.nc,
             self._filename, self._datasettype,
             zname=zname, tname=tname, xname=xname, yname=yname)
-        
     return dataobj
         
         
@@ -146,25 +146,23 @@ class Dataset:
     def gettimebounds(self, var=None, **kwargs):
         assert var in self.nc.variables
         time = self.gettimevar(var)
-        bounds = (np.min(time), np.max(time))
-    
-    def gettimebounds_dt(self, var=None, **kwargs):
-        assert var in self.nc.variables
-        time = self.gettimevar(var)
-        u = time._units
-        bounds = (netCDF4.num2date(np.min(time),units=u),
-                  netCDF4.num2date(np.max(time),units=u))
-        
+        if "units" in kwargs:
+            bounds = (netCDF4.num2date(np.min(time),units=u),
+                      netCDF4.num2date(np.max(time),units=u))
+        else:
+            bounds = (np.min(time), np.max(time))
+
     def getdepthbounds(self, var=None, **kwargs):
         assert var in self.nc.variables
-        time = self.gettimevar(var)
-        bounds = (np.min(time), np.max(time))
-        
-    def getdepthbounds_m(self, var=None, **kwargs):
-        assert var in self.nc.variables
         depths = self.getdepthvar(var)
-        bounds = (np.min(depths.get_m), np.max(depths.get_m))
-        
+        if "units" in kwargs:
+            if kwargs["units"] == "m":
+                bounds = (np.min(depths.get_m), np.max(depths.get_m))
+            else:
+                bounds = (,)
+        else:
+            bounds = (np.min(time), np.max(time))
+
     def _checkcache(self, var):
         assert var in self.nc.variables
         test = var in self._coordcache
@@ -332,7 +330,7 @@ class Dataset:
         # then...
         return names
               
-    def get_coords(self, var=None, **kwargs):
+    def get_coord_dict(self, var=None, **kwargs):
         assert var in self.nc.variables
         timevar = self.gettimevar(var)
         depthvar = self.getdepthvar(var)
@@ -359,6 +357,32 @@ class Dataset:
         s = "CommonDataset(" + self._filename + \
             ", dataset_type='" + self._datasettype + "')"
         return s
+        
+    def sub_coords(self, var, zbounds=None, bbox=None,
+        timebounds=None, zinds=None, timeinds=None):
+        assert var in self.nc.variables
+        names = self.get_names(var)
+        if names['tname'] != None:
+            tname = names['tname']
+            time = self._get_data(tname, zbounds=zbounds,
+                bbox=bbox, timebounds=timebounds, zinds=zinds,
+                timeinds=timeinds)
+        if names['zname'] != None:
+            zname = names['zname']
+            z = self._get_data(tname, zbounds=zbounds,
+                bbox=bbox, timebounds=timebounds, zinds=zinds,
+                timeinds=timeinds)
+        if names['xname'] != None:
+            xname = names['xname']
+            x = self._get_data(tname, zbounds=zbounds,
+                bbox=bbox, timebounds=timebounds, zinds=zinds,
+                timeinds=timeinds)
+        if names['yname'] != None:
+            yname = names['yname']
+            y = self._get_data(tname, zbounds=zbounds,
+                bbox=bbox, timebounds=timebounds, zinds=zinds,
+                timeinds=timeinds)
+        return subs(x=x, y=y, z=z, time=time)
         
     def get_values(self, var, zbounds=None, bbox=None,
         timebounds=None, zinds=None, timeinds=None):
