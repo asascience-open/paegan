@@ -95,3 +95,5 @@ class TransportTest(unittest.TestCase):
                 newloc.time = start_time + timedelta(seconds=calculatedTime)
                 p.location = newloc
             arr.append(p)
+            
+            
