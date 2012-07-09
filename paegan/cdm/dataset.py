@@ -94,6 +94,8 @@ class Dataset:
                            "jd", "JD",
                            "dn", "DN",
                            "times", "TIMES", "Times",
+                           "mt", "MT",
+                           "dt", "DT",
                           ]
         self._possiblez = ["depth", "DEPTH",
                            "depths", "DEPTHS",
@@ -116,7 +118,7 @@ class Dataset:
                            "lon_v", "LON_V",
                            "lonc", "LONC",
                            "Lon", "Longitude",
-                           "longitude", "LONGITUDE"
+                           "longitude", "LONGITUDE",
                           ]
         self._possibley = ["y", "Y",
                            "lat", "LAT",
@@ -332,7 +334,9 @@ class Dataset:
         # to find variables with different names that use soley
         # those dims and appear in our type keys
         
-        # then make guesses based on attributes
+        # then make guesses based on attributes like:
+        # units, standard_name, perhaps time attribute, axis 
+        # attribute (X,Y,Z,T),
         
         # then...
         return names
