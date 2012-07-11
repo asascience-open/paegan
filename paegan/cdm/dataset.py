@@ -168,7 +168,7 @@ class Dataset:
             if kwargs["units"] == "m":
                 bounds = (np.min(depths.get_m), np.max(depths.get_m))
             else:
-                bounds = (,)
+                bounds = ()
         else:
             bounds = (np.min(time), np.max(time))
 
@@ -372,31 +372,37 @@ class Dataset:
     def sub_coords(self, var, zbounds=None, bbox=None,
         timebounds=None, zinds=None, timeinds=None):
         assert var in self.nc.variables
-        names = self.get_names(var)
+        coord_dict = self.get_coord_dict(var)
+        names = self.get_coord_names(var)
+        x, y, z, time = None, None, None, None
         if names['tname'] != None:
-            tname = names['tname']
-            time = self._get_data(tname, zbounds=zbounds,
-                bbox=bbox, timebounds=timebounds, zinds=zinds,
-                timeinds=timeinds)
+            #tname = names['tname']
+            if timebounds != None:
+                timeinds = self.get_tind_from_bounds(var, timebounds)
+            time = coord_dict['time'][timeinds[0]:timeinds[-1]+1]
         if names['zname'] != None:
-            zname = names['zname']
-            z = self._get_data(tname, zbounds=zbounds,
-                bbox=bbox, timebounds=timebounds, zinds=zinds,
-                timeinds=timeinds)
+            #zname = names['zname']
+            if zbounds != None:
+                zinds = self.get_zind_from_bounds(var, zbounds)
+            z = coord_dict['z'][zinds[0]:zinds[-1]+1]
+        xinds, yinds = self.get_xyind_from_bbox(var, bbox)
+        xy = coord_dict['xy']
         if names['xname'] != None:
-            xname = names['xname']
-            x = self._get_data(tname, zbounds=zbounds,
-                bbox=bbox, timebounds=timebounds, zinds=zinds,
-                timeinds=timeinds)
+            #xname = names['xname']
+            if len(xy._xarray.shape) == 2:
+                x = xy._xarray[xinds[0][0]:xinds[0][-1]+1, xinds[1][0]:xinds[1][-1]+1]
+            elif len(xy.xarray.shape) == 1:
+                x = xy._xarray[np.squeeze(xinds)]
         if names['yname'] != None:
-            yname = names['yname']
-            y = self._get_data(tname, zbounds=zbounds,
-                bbox=bbox, timebounds=timebounds, zinds=zinds,
-                timeinds=timeinds)
+            #yname = names['yname']
+            if len(xy._yarray.shape) == 2:
+                y = xy._yarray[yinds[0][0]:yinds[0][-1]+1, yinds[1][0]:yinds[1][-1]+1]
+            elif len(xy.yarray.shape) == 1:
+                y = xy._yarray[np.squeeze(yinds)]
         return subs(x=x, y=y, z=z, time=time)
         
     def get_values(self, var, zbounds=None, bbox=None,
-        timebounds=None, zinds=None, timeinds=None):
+        timebounds=None, zinds=None, timeinds=None, use_local=False):
         """
         
         Get smallest chunck of data that encompasses the 4-d
@@ -482,8 +488,8 @@ class Dataset:
                 elif name == "x":
                     for i,position in enumerate(positions[name]):
                         indices[position] = xinds[i]
-        if np.all([len(i)>0 for i in indices]):
-            data = self._get_data(var, indices)
+        if np.all([i.size >0 for i in indices]):
+            data = self._get_data(var, indices, use_local)
         else:
             data = np.ndarray()
         return data
@@ -537,9 +543,13 @@ class CGridDataset(Dataset):
         return inds, inds #xinds, yinds
         
 
-    def _get_data(self, var, indarray):
+    def _get_data(self, var, indarray, use_local=False):
         ndims = len(indarray)
-        var = self.nc.variables[var]
+        if use_local == False:
+            var = self.nc.variables[var]
+        else:
+            pass
+            
         if ndims == 1:
             data = np.asarray(var[indarray])
         elif ndims == 2:
@@ -588,9 +598,12 @@ class RGridDataset(Dataset):
         yinds = np.where(ybool)
         return xinds, yinds #xinds, yinds
 
-    def _get_data(self, var, indarray):
+    def _get_data(self, var, indarray, use_local=False):
         ndims = len(indarray)
-        var = self.nc.variables[var]
+        if use_local == False:
+            var = self.nc.variables[var]
+        else:
+            pass
         if ndims == 1:
             data = np.asarray(var[indarray])
         elif ndims == 2:
@@ -641,9 +654,12 @@ class NCellDataset(Dataset):
         inds = np.where(np.logical_and(xbool, ybool))
         return inds, inds #xinds, yinds
 
-    def _get_data(self, var, indarray):
+    def _get_data(self, var, indarray, use_local=False):
         ndims = len(indarray)
-        var = self.nc.variables[var]
+        if use_local == False:
+            var =    self.nc.variables[var]
+        else:
+            pass
         if ndims == 1:
             data = np.asarray(var[:])
             data = data[indarray]

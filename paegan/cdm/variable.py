@@ -1,6 +1,6 @@
 import numpy as np
 
-class Coordinates:
+class Coordinates(object):
     """
     This is just a container to hold the coordinate variables persistently in the dataset obj for each of the field variables of interest.
     """
@@ -13,6 +13,8 @@ class Coordinates:
             self.z = kwargs["z"]
         if "timevar" in kwargs:
             self.time = kwargs["time"]
+        
+        
             
     def add_xy(self, gridobj):
         self.xy = gridobj
@@ -33,6 +35,12 @@ class Coordinates:
            info = info + "[T]"
        return info
        
+    def get_xarray(self):
+        return self.xy._xarray
+        
+    def get_yarray(self):
+        return self.xy._yarray
+        
     def __str__(self):
         return self._info
     
@@ -40,10 +48,11 @@ class Coordinates:
         return self._info
         
     _info = property(_getinfo)
-    x = self.xy._xarray
-    y = self.xy._yarray
+    x = property(get_xarray)
+    y = property(get_yarray)
     
-class SubCoordinates:
+    
+class SubCoordinates(object):
     def __init__(self, **kwargs):
         self.x = None
         self.y = None
@@ -54,7 +63,7 @@ class SubCoordinates:
         if "y" in kwargs:
             self.y = kwargs["y"]
         if "z" in kwargs:
-            self.z = kwargs["Z"]
+            self.z = kwargs["z"]
         if "time" in kwargs:
             self.time = kwargs["time"]
        
