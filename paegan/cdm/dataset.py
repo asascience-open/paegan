@@ -6,6 +6,52 @@ from gridvar import Gridobj
 from variable import Coordinates as cachevar
 from variable import SubCoordinates as subs
 
+_possiblet = ["time", "TIME", "Time",
+           "t", "T",
+           "ocean_time", "OCEAN_TIME",
+           "jd", "JD",
+           "dn", "DN",
+           "times", "TIMES", "Times",
+           "mt", "MT",
+           "dt", "DT",
+          ]
+_possiblez = ["depth", "DEPTH",
+           "depths", "DEPTHS",
+           "height", "HEIGHT",
+           "altitude", "ALTITUDE",
+           "alt", "ALT", 
+           "Alt", "Altitude",
+           "h", "H",
+           "s_rho", "S_RHO",
+           "s_w", "S_W",
+           "z", "Z",
+           "siglay", "SIGLAY",
+           "siglev", "SIGLEV",
+          ]
+_possiblex = ["x", "X",
+           "lon", "LON",
+           "xlon", "XLON",
+           "lonx", "lonx",
+           "lon_u", "LON_U",
+           "lon_v", "LON_V",
+           "lonc", "LONC",
+           "Lon", "Longitude",
+           "longitude", "LONGITUDE",
+           "lon_rho", "LON_RHO",
+           "lon_psi", "LON_PSI",
+          ]
+_possibley = ["y", "Y",
+           "lat", "LAT",
+           "ylat", "YLAT",
+           "laty", "laty",
+           "lat_u", "LAT_U",
+           "lat_v", "LAT_V",
+           "latc", "LATC",
+           "Lat", "Latitude",
+           "latitude", "LATITUDE",
+           "lat_rho", "LAT_RHO",
+           "lat_psi", "LAT_PSI",
+          ]
     
 def CommonDataset(ncfile, xname='lon', yname='lat',
     zname='z', tname='time', **kwargs):
@@ -27,26 +73,26 @@ def CommonDataset(ncfile, xname='lon', yname='lat',
         nc = netCDF4.Dataset(ncfile)
     self.nc = nc
     self._filename = ncfile
-    self._datasettype = None
-    
-    if "dataset_type" in kwargs:
-        self._datasettype = kwargs["dataset_type"]
-    if "model" in kwargs:
+    self._datasettype = kwargs.get('dataset_type', None)
+    if kwargs.get('model', None) != None:
         pass
     
     # Find the coordinate variables for testing, unknown
     # if not found
     #print dir(self.nc.variables)
     keys = self.nc.variables.viewkeys()
+    keys = set(keys)
+    posx = set(_possiblex)
+    posy = set(_possibley)
+    xmatches = list(posx.intersection(keys))
+    ymatches = list(posy.intersection(keys))
+    
     if xname in keys and yname in keys:
         testvary = self.nc.variables[yname]
         testvarx = self.nc.variables[xname]
-    elif 'lat' in keys and 'lon' in keys:
-        testvary = self.nc.variables['lat']
-        testvarx = self.nc.variables['lon']
-    elif 'x' in keys and 'y' in keys:
-        testvary = self.nc.variables['y']
-        testvarx = self.nc.variables['x']
+    elif len(xmatches) > 0:
+        testvary = self.nc.variables[ymatches[0]]
+        testvarx = self.nc.variables[xmatches[0]]
     else:
         self._datasettype = "unknown"
     
@@ -77,9 +123,7 @@ def CommonDataset(ncfile, xname='lon', yname='lat',
             zname=zname, tname=tname, xname=xname, yname=yname)
     return dataobj
     
-    
-    
-    
+
 class Dataset:
     def __init__(self, nc, filename, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
@@ -88,49 +132,12 @@ class Dataset:
         self._filename = filename
         self._datasettype = datasettype
         self.metadata = self.nc.__dict__
-        self._possiblet = ["time", "TIME", "Time",
-                           "t", "T",
-                           "ocean_time", "OCEAN_TIME",
-                           "jd", "JD",
-                           "dn", "DN",
-                           "times", "TIMES", "Times",
-                           "mt", "MT",
-                           "dt", "DT",
-                          ]
-        self._possiblez = ["depth", "DEPTH",
-                           "depths", "DEPTHS",
-                           "height", "HEIGHT",
-                           "altitude", "ALTITUDE",
-                           "alt", "ALT", 
-                           "Alt", "Altitude",
-                           "h", "H",
-                           "s_rho", "S_RHO",
-                           "s_w", "S_W",
-                           "z", "Z",
-                           "siglay", "SIGLAY",
-                           "siglev", "SIGLEV",
-                          ]
-        self._possiblex = ["x", "X",
-                           "lon", "LON",
-                           "xlon", "XLON",
-                           "lonx", "lonx",
-                           "lon_u", "LON_U",
-                           "lon_v", "LON_V",
-                           "lonc", "LONC",
-                           "Lon", "Longitude",
-                           "longitude", "LONGITUDE",
-                          ]
-        self._possibley = ["y", "Y",
-                           "lat", "LAT",
-                           "ylat", "YLAT",
-                           "laty", "laty",
-                           "lat_u", "LAT_U",
-                           "lat_v", "LAT_V",
-                           "latc", "LATC",
-                           "Lat", "Latitude",
-                           "latitude", "LATITUDE",
-                          ]
-                          
+        
+        self._possiblet = _possiblet
+        self._possiblez = _possiblez
+        self._possiblex = _possiblex
+        self._possibley = _possibley
+                
         if xname not in self._possiblex:
             self._possiblex.append(xname)
         if yname not in self._possibley:
