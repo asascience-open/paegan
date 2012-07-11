@@ -16,6 +16,8 @@ from paegan.transport.bathymetry import Bathymetry
 from shapely.geometry import Point
 from shapely.geometry import MultiLineString
 
+import multiprocessing
+
 class ModelController(object):
     """
         Controls the models
@@ -64,10 +66,14 @@ class ModelController(object):
         # Create shoreline
         if self._use_shoreline == True:
             self._shoreline = Shoreline(point=self.point)
+        else:
+            self._shoreline = None
 
         # Create Bathymetry
         if self.use_bathymetry == True:
             self._bathymetry = Bathymetry(point=self.point)
+        else:
+            self._bathymetry = None
 
         # Errors
         if "nstep" in kwargs:
@@ -172,7 +178,7 @@ class ModelController(object):
                 "\nuse_bathymetry: " + str(self.use_bathymetry) +\
                 "\nuse_shoreline: " + str(self.use_shoreline)
 
-    def boundry_interaction(self, **kwargs):
+    def boundary_interaction(self, **kwargs):
         """
             Returns a list of Location4D objects
         """
@@ -251,7 +257,7 @@ class ModelController(object):
         c_lats = np.where((c_lats >= visual_bbox[1]) & (c_lats <= visual_bbox[3]), c_lats, np.nan)
 
         #add bathymetry
-        nc1 = netCDF4.Dataset('/home/dev/Development/paegan/paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd')
+        nc1 = netCDF4.Dataset('/media/sf_Python/paegan/paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd')
         x = nc1.variables['x']
         y = nc1.variables['y']
 
@@ -280,6 +286,7 @@ class ModelController(object):
         ax.set_ylabel('Latitude')
         ax.set_zlabel('Depth (m)')
         matplotlib.pyplot.show()
+        return fig
 
     def run(self):
         ######################################################
@@ -308,6 +315,105 @@ class ModelController(object):
             p.location = startloc
             self.particles.append(p)
 
+        # This is where it makes sense to implement the multiprocessing
+        # looping for particles and models. Can handle each particle in 
+        # parallel probably.
+        #
+        # Get the number of cores (may take some tuning) and create that
+        # many workers then pass particles into the queue for the workers
+        
+        nproc = multiprocessing.cpu_count() * 4
+        tasks = multiprocessing.JoinableQueue()
+        results = multiprocessing.Queue()
+        
+        # Create workers
+        procs = [ Consumer(tasks, results)
+                  for i in xrange(nproc) ]
+        
+        # Start workers
+        for w in procs:
+            w.start()
+
+	# loop over particles
+        for part in self.particles:
+            tasks.put(
+                      ForceParticle(part, 
+                                    times, 
+                                    start_time,
+                                    self._models,
+                                    u, v, z,
+                                    self.point,
+                                    self._use_bathymetry,
+                                    self._use_shoreline,
+                                    self._use_seasurface,))
+        [tasks.put(None) for i in xrange(nproc)]
+
+        # Wait for all tasks to finish
+        tasks.join()
+        
+        # Get results back from queue
+        for i,v in enumerate(self.particles):
+            self.particles[i] = results.get()
+
+class Consumer(multiprocessing.Process):
+    def __init__(self, task_queue, result_queue):
+        multiprocessing.Process.__init__(self)
+        self.task_queue = task_queue
+        self.result_queue = result_queue
+
+    def run(self):
+        proc_name = self.name
+        while True:
+            next_task = self.task_queue.get()
+            if next_task is None:
+                # Poison pill means shutdown
+                #print '%s: Exiting' % proc_name
+                self.task_queue.task_done()
+                break
+            #print '%s: %s' % (proc_name, next_task)
+            answer = next_task()
+            self.task_queue.task_done()
+            self.result_queue.put(answer)
+        return
+
+class ForceParticle(object):
+    from paegan.transport.shoreline import Shoreline
+    from paegan.transport.bathymetry import Bathymetry
+    def __str__(self):
+        return self.part.__str__()
+
+    def __init__(self, part, times, start_time, models, 
+                 u, v, z, point, usebathy, useshore, usesurface):
+        self.point = point
+        self.part = part
+        self.times = times
+        self.start_time = start_time
+        self.models = models
+        self.u = u
+        self.v = v
+        self.z = z
+        self.usebathy = usebathy
+        self.useshore = useshore
+        self.usesurface = usesurface
+
+    def __call__(self):
+        if self.usebathy == True:
+            self._bathymetry = Bathymetry(point=self.point)
+        else:
+            self._bathymetry = None
+        if self.useshore == True:
+            self._shoreline = Shoreline(point=self.point)
+        else:
+            self._shoreline = None
+
+        part = self.part
+        times = self.times
+        start_time = self.start_time
+        models = self.models
+        u = self.u
+        v = self.v
+        z = self.z
+
         # loop over timesteps
         for i in xrange(0, len(times)-1): 
             try:
@@ -316,15 +422,66 @@ class ModelController(object):
             except:
                 modelTimestep = times[i] - times[i-1]
                 calculatedTime = times[i] + modelTimestep
-                
+               
             newtime = start_time + timedelta(seconds=calculatedTime)
             newloc = None
             
-            # loop over particles
-            for part in self.particles:
-                # loop over models - sort these in the order you want them to run
-                for model in self._models:
-                    movement = model.move(part.location, u[i], v[i], z[i], modelTimestep)
-                    newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtime)
-                    if newloc:
-                        self.boundry_interaction(particle=part, starting=p.location, ending=newloc, distance=movement['distance'], angle=movement['angle'], azimuth=movement['azimuth'], reverse_azimuth=movement['reverse_azimuth'], vertical_distance=movement['vertical_distance'], vertical_angle=movement['vertical_angle'])
+            # loop over models - sort these in the order you want them to run
+            for model in models:
+                movement = model.move(part.location, u[i], v[i], z[i], modelTimestep)
+                newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtime)
+                if newloc: # changed p.location to part.location
+                    self.boundary_interaction(self._bathymetry, self._shoreline, self.usebathy,self.useshore,self.usesurface,
+                        particle=part, starting=part.location, ending=newloc,
+                        distance=movement['distance'], angle=movement['angle'], 
+                        azimuth=movement['azimuth'], reverse_azimuth=movement['reverse_azimuth'], 
+                        vertical_distance=movement['vertical_distance'], vertical_angle=movement['vertical_angle'])
+        return part
+    
+    def boundary_interaction(self, bathy, shore, usebathy, useshore, usesurface,
+                             **kwargs):
+        """
+            Returns a list of Location4D objects
+        """
+        
+        particle = kwargs.pop('particle')
+        starting = kwargs.pop('starting')
+        ending = kwargs.pop('ending')
+
+        # bathymetry
+        if usebathy:
+            pt = bathy.intersect(start_point=starting.point,
+                                 end_point=ending.point,
+                                 distance=kwargs.get('vertical_distance'),
+                                 angle=kwargs.get('vertical_angle'))
+            if pt:
+                ending.latitude = pt.latitude
+                ending.longitude = pt.longitude
+                ending.depth = pt.depth
+
+        # shoreline
+        if useshore:
+            intersection_point = shore.intersect(start_point=starting.point, end_point=ending.point)
+            if intersection_point:
+                # Set the intersection point
+                hitpoint = Location4D(point=intersection_point['point'])
+                particle.location = hitpoint
+                resulting_point = shore.react(start_point=starting,
+                                              end_point=ending,
+                                              hit_point=hitpoint,
+                                              feature=intersection_point['feature'],
+                                              distance=kwargs.get('distance'),
+                                              angle=kwargs.get('angle'),
+                                              azimuth=kwargs.get('azimuth'),
+                                              reverse_azimuth=kwargs.get('reverse_azimuth'))
+                ending.latitude = resulting_point.latitude
+                ending.longitude = resulting_point.longitude
+                ending.depth = resulting_point.depth
+
+        # sea-surface
+        if usesurface:
+            if ending.depth > 0:
+                ending.depth = 0
+
+        particle.location = ending
+    
