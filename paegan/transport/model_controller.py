@@ -16,6 +16,7 @@ from paegan.transport.bathymetry import Bathymetry
 from shapely.geometry import Point
 from shapely.geometry import MultiLineString
 
+from multiprocessing import Value
 import multiprocessing
 
 class ModelController(object):
@@ -297,6 +298,7 @@ class ModelController(object):
             z.append(0)
             u.append(abs(AsaRandom.random()))
             v.append(abs(AsaRandom.random()))
+        url = "/media/sf_Python/paegan/paegan/resources/models/pws/pws_L2_2012040100.nc"
         #######################################################
         times = range(0,(self._step*self._nstep)+1,self._step)
         start_lat = self._latitude
@@ -321,20 +323,32 @@ class ModelController(object):
         #
         # Get the number of cores (may take some tuning) and create that
         # many workers then pass particles into the queue for the workers
-        
+        mgr = multiprocessing.Manager()
         nproc = multiprocessing.cpu_count() * 4
+        
+        # Create the task and result queues
         tasks = multiprocessing.JoinableQueue()
         results = multiprocessing.Queue()
         
+        # Create the shared state objects
+        get_data = mgr.Value('bool', True)
+        n_run = mgr.Value('int', nproc)
+        updating = mgr.Value('bool', False)
+        
         # Create workers
-        procs = [ Consumer(tasks, results)
+        procs = [ Consumer(tasks, results, n_run)
                   for i in xrange(nproc) ]
         
         # Start workers
         for w in procs:
             w.start()
 
-	# loop over particles
+        # Add data controller to the queue first so that it 
+        # can get the initial data and is not blocked
+        tasks.put(DataController(url, n_run, get_data, updating,
+                  'u','v',None, 1))
+               
+	    # loop over particles
         for part in self.particles:
             tasks.put(
                       ForceParticle(part, 
@@ -345,9 +359,12 @@ class ModelController(object):
                                     self.point,
                                     self._use_bathymetry,
                                     self._use_shoreline,
-                                    self._use_seasurface,))
+                                    self._use_seasurface,
+                                    get_data,
+                                    n_run,
+                                    updating,))
         [tasks.put(None) for i in xrange(nproc)]
-
+        
         # Wait for all tasks to finish
         tasks.join()
         
@@ -356,11 +373,13 @@ class ModelController(object):
             self.particles[i] = results.get()
 
 class Consumer(multiprocessing.Process):
-    def __init__(self, task_queue, result_queue):
+    
+    def __init__(self, task_queue, result_queue, n_run):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.result_queue = result_queue
-
+        self.n_run = n_run
+        
     def run(self):
         proc_name = self.name
         while True:
@@ -369,6 +388,8 @@ class Consumer(multiprocessing.Process):
                 # Poison pill means shutdown
                 #print '%s: Exiting' % proc_name
                 self.task_queue.task_done()
+                #print dir(self.n_run)
+                self.n_run.value = self.n_run.value - 1
                 break
             #print '%s: %s' % (proc_name, next_task)
             answer = next_task()
@@ -376,14 +397,93 @@ class Consumer(multiprocessing.Process):
             self.result_queue.put(answer)
         return
 
+class DataController(object):
+    def __init__(self, url, n_run, get_data, updating,
+                 uname, vname, kname, init_size):
+        self.url = url
+        #self.local = Dataset(".cache/localcache.nc", 'w')
+        self.n_run = n_run
+        self.get_data = get_data
+        self.updating = updating
+        self.uname = uname
+        self.vname = vname
+        self.kname = kname
+        self.inds = range(init_size)
+        self.init_size = init_size
+    def __call__(self):
+        c = 0
+        self.remote = netCDF4.Dataset(self.url)
+        while self.n_run.value > 1:
+            print self.n_run.value
+            if self.get_data.value == True:
+                if c == 0:
+                    self.updating.value = True
+                    self.local = netCDF4.Dataset("localcache.nc", 'w')
+                    
+                    # Create dimensions for u and v variables
+                    self.local.createDimension('time', None)
+                    self.local.createDimension('level', None)
+                    self.local.createDimension('x', None)
+                    self.local.createDimension('y', None)
+                    
+                    # Create 3d or 4d u and v variables
+                    if self.remote.variables[self.uname].ndim == 4:
+                        self.ndim = 4
+                        u = self.local.createVariable(self.uname, 
+                            'f8', ('time', 'level', 'y', 'x',), zlib=False)
+                        v = self.local.createVariable(self.vname, 
+                            'f8', ('time', 'level', 'y', 'x',), zlib=False)
+                        if self.kname != None:
+                            k = self.local.createVariable(self.kname, 
+                                'f8', ('time', 'level', 'y', 'x',), zlib=False)
+                    elif self.remote.variables[self.uname].ndim == 3:
+                        self.ndim = 3
+                        u = self.local.createVariable(self.uname, 
+                            'f8', ('time', 'y', 'x',), zlib=False)
+                        v = self.local.createVariable(self.vname, 
+                            'f8', ('time', 'y', 'x',), zlib=False)
+                        if self.kname != None:
+                            k = self.local.createVariable(self.kname, 
+                                'f8', ('time', 'y', 'x',), zlib=False)
+                    u[:] = self.remote.variables[self.uname][self.inds, :]
+                    v[:] = self.remote.variables[self.vname][self.inds, :]
+                    if self.kname != None:
+                        k[:] = self.remote.variables[self.kname][self.inds, :]
+                    self.local.sync()
+                    self.local.close()
+                    c += 1
+                    self.inds = self.inds + self.init_size
+                    self.updating.value = False
+                else:
+                    self.updating.value = True
+                    self.local = netCDF4.Dataset("localcache.nc", 'a')                    
+                    self.local.variables[self.uname][self.inds,:] = \
+                        self.remote.variables[self.uname][self.inds,:]
+                    self.local.variables[self.vname][self.inds,:] = \
+                        self.remote.variables[self.vname][self.inds,:]
+                    if self.kname != None:
+                        self.local.variables[self.kname][self.inds,:] = \
+                            self.remote.variables[self.kname][self.inds,:]
+                    self.local.sync()
+                    self.local.close()
+                    c += 1
+                    self.updating.value = False
+                self.get_data.value == False
+            else:
+                break
+        return
+            
+        
 class ForceParticle(object):
     from paegan.transport.shoreline import Shoreline
     from paegan.transport.bathymetry import Bathymetry
+    #from paegan.cdm.dataset import CommonDataset
     def __str__(self):
         return self.part.__str__()
 
     def __init__(self, part, times, start_time, models, 
-                 u, v, z, point, usebathy, useshore, usesurface):
+                 u, v, z, point, usebathy, useshore, usesurface,
+                 get_data, n_run, updating):
         self.point = point
         self.part = part
         self.times = times
@@ -395,7 +495,10 @@ class ForceParticle(object):
         self.usebathy = usebathy
         self.useshore = useshore
         self.usesurface = usesurface
-
+        self.get_data = get_data
+        self.n_run = n_run
+        self.updating = updating
+        
     def __call__(self):
         if self.usebathy == True:
             self._bathymetry = Bathymetry(point=self.point)
@@ -410,9 +513,16 @@ class ForceParticle(object):
         times = self.times
         start_time = self.start_time
         models = self.models
-        u = self.u
-        v = self.v
-        z = self.z
+        
+        # Get data from local netcdf here
+        # dataset = CommonDataset(".cache/localcache.nc")
+        # if need a time that is outside of what we have:
+        #     self.get_data = True
+        while self.get_data == True and self.updating == True:
+            pass
+        u = self.u # dataset.get_values(self.uname, )
+        v = self.v # dataset.get_values(self.vname, )
+        z = self.z # dataset.get_values(self.kname, )
 
         # loop over timesteps
         for i in xrange(0, len(times)-1): 
