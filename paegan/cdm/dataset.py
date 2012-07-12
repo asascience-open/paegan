@@ -558,20 +558,20 @@ class CGridDataset(Dataset):
             pass
             
         if ndims == 1:
-            data = np.asarray(var[indarray])
+            data = var[indarray]
         elif ndims == 2:
-            data = np.asarray(var[indarray[0], indarray[1]])
+            data = var[indarray[0], indarray[1]]
         elif ndims == 3:
-            data = np.asarray(var[indarray[0], indarray[1], indarray[2]])
+            data = var[indarray[0], indarray[1], indarray[2]]
         elif ndims == 4:
-            data = np.asarray(var[indarray[0], indarray[1], indarray[2], 
-                       indarray[3]])
+            data = var[indarray[0], indarray[1], indarray[2], 
+                       indarray[3]]
         elif ndims == 5:
-            data = np.asarray(var[indarray[0], indarray[1], indarray[2], 
-                       indarray[3], indarray[4]])
+            data = var[indarray[0], indarray[1], indarray[2], 
+                       indarray[3], indarray[4]]
         elif ndims == 6:
-            data = np.asarray(var[indarray[0], indarray[1], indarray[2], 
-                       indarray[3], indarray[4], indarray[5]])
+            data = var[indarray[0], indarray[1], indarray[2], 
+                       indarray[3], indarray[4], indarray[5]]
         return data
         
         
@@ -612,20 +612,20 @@ class RGridDataset(Dataset):
         else:
             pass
         if ndims == 1:
-            data = np.asarray(var[indarray])
+            data = var[indarray]
         elif ndims == 2:
-            data = np.asarray(var[indarray[0], indarray[1]])
+            data = var[indarray[0], indarray[1]]
         elif ndims == 3:
-            data = np.asarray(var[indarray[0], indarray[1], indarray[2]])
+            data = var[indarray[0], indarray[1], indarray[2]]
         elif ndims == 4:
-            data = np.asarray(var[indarray[0], indarray[1], indarray[2], 
-                       indarray[3]])
+            data = var[indarray[0], indarray[1], indarray[2], 
+                       indarray[3]]
         elif ndims == 5:
-            data = np.asarray(var[indarray[0], indarray[1], indarray[2], 
-                       indarray[3], indarray[4]])
+            data = var[indarray[0], indarray[1], indarray[2], 
+                       indarray[3], indarray[4]]
         elif ndims == 6:
-            data = np.asarray(var[indarray[0], indarray[1], indarray[2], 
-                       indarray[3], indarray[4], indarray[5]])
+            data = var[indarray[0], indarray[1], indarray[2], 
+                       indarray[3], indarray[4], indarray[5]]
         return data
 
 
@@ -668,23 +668,23 @@ class NCellDataset(Dataset):
         else:
             pass
         if ndims == 1:
-            data = np.asarray(var[:])
+            data = var[:]
             data = data[indarray]
         elif ndims == 2:
-            data = np.asarray(var[indarray[0], :])
+            data = var[indarray[0], :]
             data = data[:, indarray[1]]
         elif ndims == 3:
-            data = np.asarray(var[indarray[0], indarray[1], :])
+            data = var[indarray[0], indarray[1], :]
             data = data[:, :, indarray[2]]
         elif ndims == 4:
-            data = np.asarray(var[indarray[0], indarray[1], indarray[2], 
-                       indarray[3]])
+            data = var[indarray[0], indarray[1], indarray[2], 
+                       indarray[3]]
         elif ndims == 5:
-            data = np.asarray(var[indarray[0], indarray[1], indarray[2], 
-                       indarray[3], indarray[4]])
+            data = var[indarray[0], indarray[1], indarray[2], 
+                       indarray[3], indarray[4]]
         elif ndims == 6:
-            data = np.asarray(var[indarray[0], indarray[1], indarray[2], 
-                       indarray[3], indarray[4], indarray[5]])
+            data = var[indarray[0], indarray[1], indarray[2], 
+                       indarray[3], indarray[4], indarray[5]]
         return data
         
         
