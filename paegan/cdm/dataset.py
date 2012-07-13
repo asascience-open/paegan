@@ -80,7 +80,7 @@ def CommonDataset(ncfile, xname='lon', yname='lat',
     # Find the coordinate variables for testing, unknown
     # if not found
     #print dir(self.nc.variables)
-    keys = self.nc.variables.viewkeys()
+    keys = self.nc.variables
     keys = set(keys)
     posx = set(_possiblex)
     posy = set(_possibley)
@@ -93,8 +93,6 @@ def CommonDataset(ncfile, xname='lon', yname='lat',
     elif len(xmatches) > 0:
         testvary = self.nc.variables[ymatches[0]]
         testvarx = self.nc.variables[xmatches[0]]
-    else:
-        self._datasettype = "unknown"
     
     # Test the shapes of the coordinate variables to 
     # determine the grid type
@@ -121,6 +119,8 @@ def CommonDataset(ncfile, xname='lon', yname='lat',
         dataobj = CGridDataset(self.nc,
             self._filename, self._datasettype,
             zname=zname, tname=tname, xname=xname, yname=yname)
+    else:
+        dataobj = None
     return dataobj
     
 
@@ -159,6 +159,14 @@ class Dataset:
     def ind2lat(self, var=None, **kwargs):
         pass
         
+    def closenc(self):
+        self.metadata = None
+        self.nc.close()
+        
+    def opennc(self):
+        self.nc = netCDF4.Dataset(self._filename)
+        self.metadata = self.nc.__dict__
+        
     def gettimebounds(self, var=None, **kwargs):
         assert var in self.nc.variables
         time = self.gettimevar(var)
@@ -184,38 +192,42 @@ class Dataset:
         test = var in self._coordcache
         return test
 
-    def gettimevar(self, var=None):
+    def gettimevar(self, var=None, use_cache=True):
         #return self._timevar
         assert var in self.nc.variables
         timevar = None
-        if self._checkcache(var):
-            timevar = self._coordcache[var].time
-        else:
-            self._coordcache[var] = cachevar()
+        if use_cache == True:
+            if self._checkcache(var):
+                timevar = self._coordcache[var].time
+            else:
+                self._coordcache[var] = cachevar()
         if timevar == None:
             names = self.get_coord_names(var)
             if names['tname'] != None:
                 timevar = Timevar(self.nc, names["tname"])
             else:
-                timevar = None  
-            self._coordcache[var].time = timevar
+                timevar = None
+            if use_cache == True:  
+                self._coordcache[var].time = timevar
         return timevar
  
-    def getdepthvar(self, var=None):
+    def getdepthvar(self, var=None, use_cache=True):
         #return self._depthvar
         assert var in self.nc.variables
         depthvar = None
-        if self._checkcache(var):
-            depthvar = self._coordcache[var].z
-        else:
-            self._coordcache[var] = cachevar()
+        if use_cache == True:
+            if self._checkcache(var):
+                depthvar = self._coordcache[var].z
+            else:
+                self._coordcache[var] = cachevar()
         if depthvar == None:
             names = self.get_coord_names(var)
             if names['zname'] != None:
                 depthvar = Depthvar(self.nc, names["zname"])
             else:
                 depthvar = None
-            self._coordcache[var].add_z(depthvar)
+            if use_cache == True:
+                self._coordcache[var].add_z(depthvar)
         return depthvar
         
     def getgridobj(self, var=None):
@@ -236,17 +248,17 @@ class Dataset:
             self._coordcache[var].add_xy(gridobj)
         return gridobj
         
-    def get_tind_from_bounds(self, var, bounds, convert=False):
+    def get_tind_from_bounds(self, var, bounds, convert=False, use_cache=True):
         assert var in self.nc.variables
-        time = self.gettimevar(var)
+        time = self.gettimevar(var, use_cache)
         if convert:
             bounds = netCDF4.date2num(bounds)
         inds = np.where(np.logical_and(time >= bounds[0], time <= bounds[1]))
         return inds
     
-    def get_zind_from_bounds(self, var, bounds):
+    def get_zind_from_bounds(self, var, bounds, use_cache=True):
         assert var in self.nc.variables
-        depths = self.getdepthvar(var)
+        depths = self.getdepthvar(var, use_cache)
         inds = np.where(np.logical_and(depths >= bounds[0], depths <= bounds[1]))
         return inds
         
