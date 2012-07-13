@@ -198,7 +198,6 @@ class ForceParticle(object):
                 while self.get_data.value == True:
                     pass
                 self.dataset.opennc()
-                print "opendata"
                 u = np.mean(np.mean(np.mean(self.dataset.nc.variables['u'][i,0,9,9])))#self.u # dataset.get_values(self.uname, )
                 v = np.mean(np.mean(np.mean(self.dataset.nc.variables['v'][i,0,9,9])))#self.v # dataset.get_values(self.vname, )
                 w = 0#self.z # dataset.get_values('w', )
