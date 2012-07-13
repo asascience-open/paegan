@@ -16,6 +16,10 @@ from paegan.transport.bathymetry import Bathymetry
 from shapely.geometry import Point
 from shapely.geometry import MultiLineString
 
+from multiprocessing import Value
+import multiprocessing
+import paegan.transport.parallel_manager as parallel
+
 class ModelController(object):
     """
         Controls the models
@@ -64,10 +68,14 @@ class ModelController(object):
         # Create shoreline
         if self._use_shoreline == True:
             self._shoreline = Shoreline(point=self.point)
+        else:
+            self._shoreline = None
 
         # Create Bathymetry
         if self.use_bathymetry == True:
             self._bathymetry = Bathymetry(point=self.point)
+        else:
+            self._bathymetry = None
 
         # Errors
         if "nstep" in kwargs:
@@ -172,7 +180,7 @@ class ModelController(object):
                 "\nuse_bathymetry: " + str(self.use_bathymetry) +\
                 "\nuse_shoreline: " + str(self.use_shoreline)
 
-    def boundry_interaction(self, **kwargs):
+    def boundary_interaction(self, **kwargs):
         """
             Returns a list of Location4D objects
         """
@@ -251,7 +259,7 @@ class ModelController(object):
         c_lats = np.where((c_lats >= visual_bbox[1]) & (c_lats <= visual_bbox[3]), c_lats, np.nan)
 
         #add bathymetry
-        nc1 = netCDF4.Dataset('/home/dev/Development/paegan/paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd')
+        nc1 = netCDF4.Dataset('/media/sf_Python/paegan/paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd')
         x = nc1.variables['x']
         y = nc1.variables['y']
 
@@ -280,6 +288,7 @@ class ModelController(object):
         ax.set_ylabel('Latitude')
         ax.set_zlabel('Depth (m)')
         matplotlib.pyplot.show()
+        return fig
 
     def run(self):
         ######################################################
@@ -290,6 +299,7 @@ class ModelController(object):
             z.append(0)
             u.append(abs(AsaRandom.random()))
             v.append(abs(AsaRandom.random()))
+        url = "/media/sf_Python/paegan/paegan/resources/models/pws/pws_L2_2012040100.nc"
         #######################################################
         times = range(0,(self._step*self._nstep)+1,self._step)
         start_lat = self._latitude
@@ -308,23 +318,61 @@ class ModelController(object):
             p.location = startloc
             self.particles.append(p)
 
-        # loop over timesteps
-        for i in xrange(0, len(times)-1): 
-            try:
-                modelTimestep = times[i+1] - times[i]
-                calculatedTime = times[i+1]
-            except:
-                modelTimestep = times[i] - times[i-1]
-                calculatedTime = times[i] + modelTimestep
-                
-            newtime = start_time + timedelta(seconds=calculatedTime)
-            newloc = None
-            
-            # loop over particles
-            for part in self.particles:
-                # loop over models - sort these in the order you want them to run
-                for model in self._models:
-                    movement = model.move(part.location, u[i], v[i], z[i], modelTimestep)
-                    newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtime)
-                    if newloc:
-                        self.boundry_interaction(particle=part, starting=p.location, ending=newloc, distance=movement['distance'], angle=movement['angle'], azimuth=movement['azimuth'], reverse_azimuth=movement['reverse_azimuth'], vertical_distance=movement['vertical_distance'], vertical_angle=movement['vertical_angle'])
+        # This is where it makes sense to implement the multiprocessing
+        # looping for particles and models. Can handle each particle in 
+        # parallel probably.
+        #
+        # Get the number of cores (may take some tuning) and create that
+        # many workers then pass particles into the queue for the workers
+        mgr = multiprocessing.Manager()
+        nproc = multiprocessing.cpu_count() * 4
+        
+        # Create the task and result queues
+        tasks = multiprocessing.JoinableQueue()
+        results = multiprocessing.Queue()
+        
+        # Create the shared state objects
+        get_data = mgr.Value('bool', True)
+        n_run = mgr.Value('int', nproc)
+        updating = mgr.Value('bool', False)
+        
+        # Create workers
+        procs = [ parallel.Consumer(tasks, results, n_run)
+                  for i in xrange(nproc) ]
+        
+        # Start workers
+        for w in procs:
+            w.start()
+
+        # Add data controller to the queue first so that it 
+        # can get the initial data and is not blocked
+        tasks.put(parallel.DataController(url, n_run, get_data, updating,
+                                          'u','v',None, 1))
+               
+	    # loop over particles
+        for part in self.particles:
+            tasks.put(parallel.ForceParticle(part, 
+                                            times, 
+                                            start_time,
+                                            self._models,
+                                            #u, v, z,
+                                            self.point,
+                                            self._use_bathymetry,
+                                            self._use_shoreline,
+                                            self._use_seasurface,
+                                            get_data,
+                                            n_run,
+                                            updating,
+                                            url, 
+                                            'u',
+                                            'v',
+                                            None))
+        [tasks.put(None) for i in xrange(nproc)]
+        
+        # Wait for all tasks to finish
+        tasks.join()
+        
+        # Get results back from queue
+        for i,v in enumerate(self.particles):
+            self.particles[i] = results.get()
+    
