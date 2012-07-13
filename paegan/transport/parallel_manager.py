@@ -99,17 +99,19 @@ class DataController(object):
                     self.get_data.value = False
                 else:
                     self.updating.value = True
-                    self.local = netCDF4.Dataset(cachepath, 'a')                    
-                    self.local.variables[self.uname][self.inds,:] = \
-                        self.remote.variables[self.uname][self.inds,:]
-                    self.local.variables[self.vname][self.inds,:] = \
-                        self.remote.variables[self.vname][self.inds,:]
+                    print self.inds
+                    self.local = netCDF4.Dataset(cachepath, 'a')                  
+                    self.local.variables[self.uname][self.inds, :10,:10,:10] = \
+                        self.remote.variables[self.uname][0, :10,:10, :10]
+                    self.local.variables[self.vname][self.inds, :10,:10,:10] = \
+                        self.remote.variables[self.vname][0, :10,:10, :10]
                     if self.wname != None:
                         self.local.variables[self.wname][self.inds,:] = \
                             self.remote.variables[self.wname][self.inds,:]
                     self.local.sync()
                     self.local.close()
                     c += 1
+                    self.inds = self.inds + self.init_size
                     self.updating.value = False
                     self.get_data.value = False
             else:
@@ -184,11 +186,24 @@ class ForceParticle(object):
                 pass
             self.dataset.opennc()
             #self.dataset = netCDF4.Dataset(self.url)
-            u = np.squeeze(self.dataset.nc.variables['u'][0,0,9,9])#self.u # dataset.get_values(self.uname, )
-            v = np.squeeze(self.dataset.nc.variables['v'][0,0,9,9])#self.v # dataset.get_values(self.vname, )
-            w = 0#self.z # dataset.get_values('w', )
-            self.dataset.closenc()
-        
+            try:
+                u = np.mean(np.mean(np.mean(self.dataset.nc.variables['u'][i,0,9,9])))#self.u # dataset.get_values(self.uname, )
+                v = np.mean(np.mean(np.mean(self.dataset.nc.variables['v'][i,0,9,9])))#self.v # dataset.get_values(self.vname, )
+                w = 0#self.z # dataset.get_values('w', )
+                self.dataset.closenc()
+            except:
+                self.dataset.closenc()
+                if self.get_data.value != True:
+                    self.get_data.value = True
+                while self.get_data.value == True:
+                    pass
+                self.dataset.opennc()
+                print "opendata"
+                u = np.mean(np.mean(np.mean(self.dataset.nc.variables['u'][i,0,9,9])))#self.u # dataset.get_values(self.uname, )
+                v = np.mean(np.mean(np.mean(self.dataset.nc.variables['v'][i,0,9,9])))#self.v # dataset.get_values(self.vname, )
+                w = 0#self.z # dataset.get_values('w', )
+                self.dataset.closenc()
+                
             # loop over models - sort these in the order you want them to run
             for model in models:
                 movement = model.move(part.location, u, v, w, modelTimestep)
