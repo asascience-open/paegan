@@ -19,6 +19,7 @@ from shapely.geometry import MultiLineString
 from multiprocessing import Value
 import multiprocessing
 import paegan.transport.parallel_manager as parallel
+import os
 
 class ModelController(object):
     """
@@ -363,10 +364,11 @@ class ModelController(object):
                                             get_data,
                                             n_run,
                                             updating,
-                                            url, 
-                                            'u',
-                                            'v',
-                                            None))
+                                            #url, 
+                                            #'u',
+                                            #'v',
+                                            #None))
+                                            ))
         [tasks.put(None) for i in xrange(nproc)]
         
         # Wait for all tasks to finish

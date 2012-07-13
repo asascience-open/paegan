@@ -11,10 +11,10 @@ from paegan.transport.shoreline import Shoreline
 from paegan.transport.bathymetry import Bathymetry
 from multiprocessing import Value
 import multiprocessing
-
+from paegan.cdm.dataset import CommonDataset
+import os
     
 class Consumer(multiprocessing.Process):
-    
     def __init__(self, task_queue, result_queue, n_run):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
@@ -40,7 +40,7 @@ class Consumer(multiprocessing.Process):
 
 class DataController(object):
     def __init__(self, url, n_run, get_data, updating,
-                 uname, vname, kname, init_size):
+                 uname, vname, wname, init_size):
         self.url = url
         #self.local = Dataset(".cache/localcache.nc", 'w')
         self.n_run = n_run
@@ -48,18 +48,19 @@ class DataController(object):
         self.updating = updating
         self.uname = uname
         self.vname = vname
-        self.kname = kname
+        self.wname = wname
         self.inds = np.arange(init_size)
         self.init_size = init_size
     def __call__(self):
         c = 0
         self.remote = netCDF4.Dataset(self.url)
+        cachepath = os.path.join(os.path.dirname(__file__),"_cache","localcache.nc")
         while self.n_run.value > 1:
             #print self.n_run.value
             if self.get_data.value == True:
                 if c == 0:
                     self.updating.value = True
-                    self.local = netCDF4.Dataset("localcache.nc", 'w')
+                    self.local = netCDF4.Dataset(cachepath, 'w')
                     
                     # Create dimensions for u and v variables
                     self.local.createDimension('time', None)
@@ -75,21 +76,21 @@ class DataController(object):
                         self.ndim = 3
                         dimensions = ('time', 'y', 'x')
                         
-                    u = self.local.createVariable(self.uname, 
+                    u = self.local.createVariable('u', 
                         'f8', dimensions, zlib=False,
                         fill_value=self.remote.variables[self.uname].missing_value)
-                    v = self.local.createVariable(self.vname, 
+                    v = self.local.createVariable('v', 
                         'f8', dimensions, zlib=False,
                         fill_value=self.remote.variables[self.vname].missing_value)
-                    if self.kname != None:
-                        k = self.local.createVariable(self.kname, 
+                    if self.wname != None:
+                        w = self.local.createVariable('w', 
                             'f8', dimensions, zlib=False,
-                            fill_value=self.remote.variables[self.kname].missing_value)
+                            fill_value=self.remote.variables[self.wname].missing_value)
                             
                     u[:] = self.remote.variables[self.uname][self.inds, :10,:10, :10] #:]
                     v[:] = self.remote.variables[self.vname][self.inds, :10,:10, :10] #:]
-                    if self.kname != None:
-                        k[:] = self.remote.variables[self.kname][self.inds, :]
+                    if self.wname != None:
+                        w[:] = self.remote.variables[self.wname][self.inds, :]
                     self.local.sync()
                     self.local.close()
                     c += 1
@@ -98,14 +99,14 @@ class DataController(object):
                     self.get_data.value = False
                 else:
                     self.updating.value = True
-                    self.local = netCDF4.Dataset("localcache.nc", 'a')                    
+                    self.local = netCDF4.Dataset(cachepath, 'a')                    
                     self.local.variables[self.uname][self.inds,:] = \
                         self.remote.variables[self.uname][self.inds,:]
                     self.local.variables[self.vname][self.inds,:] = \
                         self.remote.variables[self.vname][self.inds,:]
-                    if self.kname != None:
-                        self.local.variables[self.kname][self.inds,:] = \
-                            self.remote.variables[self.kname][self.inds,:]
+                    if self.wname != None:
+                        self.local.variables[self.wname][self.inds,:] = \
+                            self.remote.variables[self.wname][self.inds,:]
                     self.local.sync()
                     self.local.close()
                     c += 1
@@ -125,11 +126,11 @@ class ForceParticle(object):
 
     def __init__(self, part, times, start_time, models, 
                  point, usebathy, useshore, usesurface,
-                 get_data, n_run, updating, url, uname,vname,wname):
-        self.url = url
-        self.uname = uname
-        self.vname = vname
-        self.wname = wname
+                 get_data, n_run, updating):
+        self.url =  os.path.join(os.path.dirname(__file__),"_cache","localcache.nc")
+        #self.uname = uname
+        #self.vname = vname
+        #self.wname = wname
         self.point = point
         self.part = part
         self.times = times
@@ -159,7 +160,8 @@ class ForceParticle(object):
         times = self.times
         start_time = self.start_time
         models = self.models
-        
+        self.dataset = CommonDataset(self.url, dataset_type='cgrid')
+        self.dataset.closenc()
         # loop over timesteps
         for i in xrange(0, len(times)-1): 
             try:
@@ -175,15 +177,17 @@ class ForceParticle(object):
             
             # Get data from local netcdf here
             # dataset = CommonDataset(".cache/localcache.nc")
+            
             # if need a time that is outside of what we have:
             #     self.get_data = True
-            while self.get_data == True and self.updating == True:
+            while self.get_data.value == True and self.updating.value == True:
                 pass
-            self.dataset = netCDF4.Dataset(self.url)
-            u = np.squeeze(self.dataset.variables[self.uname][0,0,9,9])#self.u # dataset.get_values(self.uname, )
-            v = np.squeeze(self.dataset.variables[self.vname][0,0,9,9])#self.v # dataset.get_values(self.vname, )
-            w = 0#self.z # dataset.get_values(self.kname, )
-            self.dataset.close()
+            self.dataset.opennc()
+            #self.dataset = netCDF4.Dataset(self.url)
+            u = np.squeeze(self.dataset.nc.variables['u'][0,0,9,9])#self.u # dataset.get_values(self.uname, )
+            v = np.squeeze(self.dataset.nc.variables['v'][0,0,9,9])#self.v # dataset.get_values(self.vname, )
+            w = 0#self.z # dataset.get_values('w', )
+            self.dataset.closenc()
         
             # loop over models - sort these in the order you want them to run
             for model in models:
