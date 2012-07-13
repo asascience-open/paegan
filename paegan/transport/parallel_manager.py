@@ -124,16 +124,20 @@ class ForceParticle(object):
         return self.part.__str__()
 
     def __init__(self, part, times, start_time, models, 
-                 u, v, z, point, usebathy, useshore, usesurface,
-                 get_data, n_run, updating):
+                 point, usebathy, useshore, usesurface,
+                 get_data, n_run, updating, url, uname,vname,wname):
+        self.url = url
+        self.uname = uname
+        self.vname = vname
+        self.wname = wname
         self.point = point
         self.part = part
         self.times = times
         self.start_time = start_time
         self.models = models
-        self.u = u
-        self.v = v
-        self.z = z
+        #self.u = u
+        #self.v = v
+        #self.z = z
         self.usebathy = usebathy
         self.useshore = useshore
         self.usesurface = usesurface
@@ -156,16 +160,6 @@ class ForceParticle(object):
         start_time = self.start_time
         models = self.models
         
-        # Get data from local netcdf here
-        # dataset = CommonDataset(".cache/localcache.nc")
-        # if need a time that is outside of what we have:
-        #     self.get_data = True
-        while self.get_data == True and self.updating == True:
-            pass
-        u = self.u # dataset.get_values(self.uname, )
-        v = self.v # dataset.get_values(self.vname, )
-        z = self.z # dataset.get_values(self.kname, )
-
         # loop over timesteps
         for i in xrange(0, len(times)-1): 
             try:
@@ -178,9 +172,22 @@ class ForceParticle(object):
             newtime = start_time + timedelta(seconds=calculatedTime)
             newloc = None
             
+            
+            # Get data from local netcdf here
+            # dataset = CommonDataset(".cache/localcache.nc")
+            # if need a time that is outside of what we have:
+            #     self.get_data = True
+            while self.get_data == True and self.updating == True:
+                pass
+            self.dataset = netCDF4.Dataset(self.url)
+            u = np.squeeze(self.dataset.variables[self.uname][0,0,9,9])#self.u # dataset.get_values(self.uname, )
+            v = np.squeeze(self.dataset.variables[self.vname][0,0,9,9])#self.v # dataset.get_values(self.vname, )
+            w = 0#self.z # dataset.get_values(self.kname, )
+            self.dataset.close()
+        
             # loop over models - sort these in the order you want them to run
             for model in models:
-                movement = model.move(part.location, u[i], v[i], z[i], modelTimestep)
+                movement = model.move(part.location, u, v, w, modelTimestep)
                 newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtime)
                 if newloc: # changed p.location to part.location
                     self.boundary_interaction(self._bathymetry, self._shoreline, self.usebathy,self.useshore,self.usesurface,

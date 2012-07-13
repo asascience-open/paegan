@@ -355,14 +355,18 @@ class ModelController(object):
                                             times, 
                                             start_time,
                                             self._models,
-                                            u, v, z,
+                                            #u, v, z,
                                             self.point,
                                             self._use_bathymetry,
                                             self._use_shoreline,
                                             self._use_seasurface,
                                             get_data,
                                             n_run,
-                                            updating,))
+                                            updating,
+                                            url, 
+                                            'u',
+                                            'v',
+                                            None))
         [tasks.put(None) for i in xrange(nproc)]
         
         # Wait for all tasks to finish
