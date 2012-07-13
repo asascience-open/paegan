@@ -56,7 +56,8 @@ class ModelController(object):
         self.models = kwargs.pop('models', None)
         self._dirty = True
         self._particles = []
-
+        self._time_chunk = kwargs.get('time_chunk', 1)
+        
         # Inerchangeables
         if "point" in kwargs:
             self.point = kwargs.pop('point')
@@ -291,23 +292,25 @@ class ModelController(object):
         matplotlib.pyplot.show()
         return fig
 
-    def run(self):
+    def run(self, dataset, uname='u', vname='v', wname=None):
         ######################################################
-        u=[] # random u,v,z generator
-        v=[]
-        z=[]
-        for w in xrange(0,self._nstep):
-            z.append(0)
-            u.append(abs(AsaRandom.random()))
-            v.append(abs(AsaRandom.random()))
-        url = "/media/sf_Python/paegan/paegan/resources/models/pws/pws_L2_2012040100.nc"
+        #u=[] # random u,v,z generator
+        #v=[]
+        #z=[]
+        #for w in xrange(0,self._nstep):
+        #    z.append(0)
+        #    u.append(abs(AsaRandom.random()))
+        #    v.append(abs(AsaRandom.random()))
+        # 
         #######################################################
         times = range(0,(self._step*self._nstep)+1,self._step)
         start_lat = self._latitude
         start_lon = self._longitude
         start_depth = self._depth
         start_time = self._start
-
+        time_chunk = self._time_chunk
+        dataset = dataset
+        
         if start_time == None:
             raise TypeError("must provide a start time to run the models")
 
@@ -347,8 +350,9 @@ class ModelController(object):
 
         # Add data controller to the queue first so that it 
         # can get the initial data and is not blocked
-        tasks.put(parallel.DataController(url, n_run, get_data, updating,
-                                          'u','v',None, 1))
+        tasks.put(parallel.DataController(
+                  dataset, n_run, get_data, updating,
+                  uname, vname, wname, time_chunk))
                
 	    # loop over particles
         for part in self.particles:
@@ -356,7 +360,6 @@ class ModelController(object):
                                             times, 
                                             start_time,
                                             self._models,
-                                            #u, v, z,
                                             self.point,
                                             self._use_bathymetry,
                                             self._use_shoreline,
@@ -364,10 +367,6 @@ class ModelController(object):
                                             get_data,
                                             n_run,
                                             updating,
-                                            #url, 
-                                            #'u',
-                                            #'v',
-                                            #None))
                                             ))
         [tasks.put(None) for i in xrange(nproc)]
         
