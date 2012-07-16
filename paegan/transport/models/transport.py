@@ -30,7 +30,7 @@ class Transport:
     vertDisp = property(get_vertDisp, set_vertDisp)
 
     
-    def move(self, location, u, v, z, modelTimestep):
+    def move(self, location, u, v, z, modelTimestep, **kwargs):
         """
         Returns the lat, lon, H, and velocity of a projected point given a starting
         lat and lon (dec deg), a depth (m) below sea surface (positive up), u, v, and z velocity components (m/s), a horizontal and vertical
