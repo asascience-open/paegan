@@ -28,3 +28,20 @@ class Particle(object):
 
     def linestring(self):
         return LineString(map(lambda x: list(x.point.coords)[0], self.locations))
+        
+        
+class ChemistryParticle(Particle):
+    """
+        A chemical particle for time and chemistry dependent
+        tracers
+    """
+    def __init__(self):
+        pass
+        
+
+class OilParticle(Particle):
+    """
+        An oil particle for special oil physics and chemistry
+    """
+    def __init__(self):
+        pass
