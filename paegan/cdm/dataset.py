@@ -279,7 +279,10 @@ class Dataset:
     def get_coord_names(self, var=None, **kwargs):
         assert var in self.nc.variables
         ncvar = self.nc.variables[var]
-        coordinates = ncvar.coordinates.split()
+        try:
+            coordinates = ncvar.coordinates.split()
+        except:
+            coordinates = []
         # If the coordinate names not in kwargs, then figure
         # out the remaining coordinate names
         if "xname" in kwargs:
@@ -333,9 +336,12 @@ class Dataset:
                     except:
                         pass 
         total = np.unique(np.asarray(total))
+
         for missing in range(ndim):
             if missing not in total:
+
                 missing_dim = dims[missing]
+
                 if missing_dim in self.nc.variables:
                     if missing_dim in self._possiblex:
                         name2 = "xname"
@@ -549,7 +555,8 @@ class CGridDataset(Dataset):
     def ind2lat(self, var=None, **kwargs):
         pass
         
-    def get_xyind_from_bbox(self, var, bbox):
+    def get_xyind_from_bbox(self, var, bbox, **kwargs):
+ 
         grid = self.getgridobj(var)
         xbool = grid.get_xbool_from_bbox(bbox)
         ybool = grid.get_ybool_from_bbox(bbox)

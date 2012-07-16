@@ -228,10 +228,10 @@ class ModelController(object):
 
         particle.location = ending
 
-    def generate_map(self):
-        fig = matplotlib.pyplot.figure() # call a blank figure
-        ax = fig.gca(projection='3d') # line with points
-
+    def generate_map(self, point):
+        fig = matplotlib.pyplot.figure(figsize=(20,16)) # call a blank figure
+        #ax = fig.gca(projection='3d') # line with points
+        ax = fig.add_axes(projection='3d')
         tracks = []
 
         #for x in range(len(arr)):
@@ -244,15 +244,15 @@ class ModelController(object):
             ax.plot(p_proj_lons, p_proj_lats, p_proj_depths, marker='o', c='red') # particles
 
         #add shoreline
-        tracks = MultiLineString(tracks)
-        midpoint = tracks.centroid
+        #tracks = MultiLineString(tracks)
+        midpoint = point#tracks.centroid
 
-        bbox = tracks.bounds
-        visual_bbox = tracks.buffer(1).bounds
+        #bbox = tracks.bounds
+        visual_bbox = (point.x-1, point.y-1, point.x+1, point.y+1)#tracks.buffer(1).bounds
 
-        max_distance = max(abs(bbox[0] - bbox[2]), abs(bbox[1] - bbox[3])) + 0.25
+        #max_distance = max(abs(bbox[0] - bbox[2]), abs(bbox[1] - bbox[3])) + 0.25
 
-        coast_line = Shoreline(point=midpoint, spatialbuffer=max_distance).linestring
+        coast_line = Shoreline(point=midpoint, spatialbuffer=1.5).linestring
 
         c_lons, c_lats = coast_line.xy
         c_lons = np.array(c_lons)
@@ -281,18 +281,22 @@ class ModelController(object):
 
         mpl_extent = matplotlib.transforms.Bbox.from_extents(visual_bbox[0],visual_bbox[1],visual_bbox[2],visual_bbox[3])
         
-        ax.plot_surface(x_grid,y_grid,bath, rstride=5, cstride=5) # bathymetry
-        ax.plot(c_lons, c_lats, clip_box=mpl_extent, clip_on=True) # shoreline
+        ax.plot_surface(x_grid,y_grid,bath, rstride=1, cstride=1,
+            cmap="gist_earth", shade=True, linewidth=0, antialiased=False,
+            edgecolors=None) # bathymetry
+
+        ax.plot(c_lons, c_lats, clip_box=mpl_extent, clip_on=True, color='c') # shoreline
         ax.set_xlim3d(visual_bbox[0],visual_bbox[2])
         ax.set_ylim3d(visual_bbox[1],visual_bbox[3])
         ax.set_zmargin(0.1)
+        ax.view_init(0, -90)
         ax.set_xlabel('Longitude')
         ax.set_ylabel('Latitude')
         ax.set_zlabel('Depth (m)')
         matplotlib.pyplot.show()
         return fig
 
-    def run(self, dataset, uname='u', vname='v', wname=None):
+    def run(self, hydrodataset, uname='u', vname='v', wname=None):
         ######################################################
         #u=[] # random u,v,z generator
         #v=[]
@@ -309,7 +313,7 @@ class ModelController(object):
         start_depth = self._depth
         start_time = self._start
         time_chunk = self._time_chunk
-        dataset = dataset
+        hydrodataset = hydrodataset
         
         if start_time == None:
             raise TypeError("must provide a start time to run the models")
@@ -329,7 +333,7 @@ class ModelController(object):
         # Get the number of cores (may take some tuning) and create that
         # many workers then pass particles into the queue for the workers
         mgr = multiprocessing.Manager()
-        nproc = multiprocessing.cpu_count() * 4
+        nproc = multiprocessing.cpu_count() * 2
         
         # Create the task and result queues
         tasks = multiprocessing.JoinableQueue()
@@ -339,6 +343,7 @@ class ModelController(object):
         get_data = mgr.Value('bool', True)
         n_run = mgr.Value('int', nproc)
         updating = mgr.Value('bool', False)
+        particle_get = mgr.Value('bool', False)
         
         # Create workers
         procs = [ parallel.Consumer(tasks, results, n_run)
@@ -351,8 +356,8 @@ class ModelController(object):
         # Add data controller to the queue first so that it 
         # can get the initial data and is not blocked
         tasks.put(parallel.DataController(
-                  dataset, n_run, get_data, updating,
-                  uname, vname, wname, time_chunk))
+                  hydrodataset, n_run, get_data, updating,
+                  uname, vname, wname, time_chunk, particle_get))
                
 	    # loop over particles
         for part in self.particles:
@@ -367,6 +372,7 @@ class ModelController(object):
                                             get_data,
                                             n_run,
                                             updating,
+                                            particle_get
                                             ))
         [tasks.put(None) for i in xrange(nproc)]
         
@@ -375,5 +381,9 @@ class ModelController(object):
         
         # Get results back from queue
         for i,v in enumerate(self.particles):
-            self.particles[i] = results.get()
+            tempres = results.get()
+            self.particles[i] = tempres
+            while tempres == None:
+                tempres = results.get()
+                self.particles[i] = tempres
     
