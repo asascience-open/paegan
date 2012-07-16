@@ -13,6 +13,7 @@ from multiprocessing import Value
 import multiprocessing
 from paegan.cdm.dataset import CommonDataset
 import os
+import random
     
 class Consumer(multiprocessing.Process):
     def __init__(self, task_queue, result_queue, n_run):
@@ -29,7 +30,7 @@ class Consumer(multiprocessing.Process):
                 # Poison pill means shutdown
                 #print '%s: Exiting' % proc_name
                 self.task_queue.task_done()
-                #print dir(self.n_run)
+
                 self.n_run.value = self.n_run.value - 1
                 break
             #print '%s: %s' % (proc_name, next_task)
@@ -40,7 +41,7 @@ class Consumer(multiprocessing.Process):
 
 class DataController(object):
     def __init__(self, url, n_run, get_data, updating,
-                 uname, vname, wname, init_size):
+                 uname, vname, wname, init_size, particle_get):
         self.url = url
         #self.local = Dataset(".cache/localcache.nc", 'w')
         self.n_run = n_run
@@ -51,6 +52,7 @@ class DataController(object):
         self.wname = wname
         self.inds = np.arange(init_size)
         self.init_size = init_size
+        self.particle_get = particle_get
     def __call__(self):
         c = 0
         self.remote = netCDF4.Dataset(self.url)
@@ -60,6 +62,8 @@ class DataController(object):
             if self.get_data.value == True:
                 if c == 0:
                     self.updating.value = True
+                    while self.particle_get == True:
+                        pass
                     self.local = netCDF4.Dataset(cachepath, 'w')
                     
                     # Create dimensions for u and v variables
@@ -75,22 +79,40 @@ class DataController(object):
                     elif self.remote.variables[self.uname].ndim == 3:
                         self.ndim = 3
                         dimensions = ('time', 'y', 'x')
+                    try:
+                        fill = self.remote.variables[self.uname].missing_value
+                        print fill
                         
-                    u = self.local.createVariable('u', 
-                        'f8', dimensions, zlib=False,
-                        fill_value=self.remote.variables[self.uname].missing_value)
-                    v = self.local.createVariable('v', 
-                        'f8', dimensions, zlib=False,
-                        fill_value=self.remote.variables[self.vname].missing_value)
-                    if self.wname != None:
-                        w = self.local.createVariable('w', 
+
+                        u = self.local.createVariable('u', 
                             'f8', dimensions, zlib=False,
-                            fill_value=self.remote.variables[self.wname].missing_value)
-                            
-                    u[:] = self.remote.variables[self.uname][self.inds, :10,:10, :10] #:]
-                    v[:] = self.remote.variables[self.vname][self.inds, :10,:10, :10] #:]
+                            fill_value=fill)
+                        v = self.local.createVariable('v', 
+                            'f8', dimensions, zlib=False,
+                            fill_value=fill)
+                        if self.wname != None:
+                            w = self.local.createVariable('w', 
+                                'f8', dimensions, zlib=False,
+                                fill_value=fill)
+
+                    except:
+                        u = self.local.createVariable('u', 
+                            'f8', dimensions, zlib=False,
+                            )
+                        v = self.local.createVariable('v', 
+                            'f8', dimensions, zlib=False,
+                            )
+                        if self.wname != None:
+                            w = self.local.createVariable('w', 
+                                'f8', dimensions, zlib=False,
+                                )
+
+                    u[:] = self.remote.variables[self.uname][self.inds, 1:3, :10, :10] #:]
+                    v[:] = self.remote.variables[self.vname][self.inds, 1:3, :10, :10] #:]
+
                     if self.wname != None:
                         w[:] = self.remote.variables[self.wname][self.inds, :]
+                        
                     self.local.sync()
                     self.local.close()
                     c += 1
@@ -98,17 +120,18 @@ class DataController(object):
                     self.updating.value = False
                     self.get_data.value = False
                 else:
+                    
                     self.updating.value = True
-                    print self.inds
                     self.local = netCDF4.Dataset(cachepath, 'a')                  
-                    self.local.variables[self.uname][self.inds, :10,:10,:10] = \
-                        self.remote.variables[self.uname][0, :10,:10, :10]
-                    self.local.variables[self.vname][self.inds, :10,:10,:10] = \
-                        self.remote.variables[self.vname][0, :10,:10, :10]
+                    self.local.variables[self.uname][self.inds, 0:2, :10, :10] = \
+                        self.remote.variables[self.uname][self.inds, 1:3, :10, :10]
+                    self.local.variables[self.vname][self.inds, 0:2, :10, :10] = \
+                        self.remote.variables[self.vname][self.inds, 1:3, :10, :10]
                     if self.wname != None:
                         self.local.variables[self.wname][self.inds,:] = \
                             self.remote.variables[self.wname][self.inds,:]
                     self.local.sync()
+                    print self.local.variables['u'].shape
                     self.local.close()
                     c += 1
                     self.inds = self.inds + self.init_size
@@ -128,7 +151,7 @@ class ForceParticle(object):
 
     def __init__(self, part, times, start_time, models, 
                  point, usebathy, useshore, usesurface,
-                 get_data, n_run, updating):
+                 get_data, n_run, updating, particle_get):
         self.url =  os.path.join(os.path.dirname(__file__),"_cache","localcache.nc")
         #self.uname = uname
         #self.vname = vname
@@ -147,6 +170,7 @@ class ForceParticle(object):
         self.get_data = get_data
         self.n_run = n_run
         self.updating = updating
+        self.particle_get = particle_get
         
     def __call__(self):
         if self.usebathy == True:
@@ -162,6 +186,8 @@ class ForceParticle(object):
         times = self.times
         start_time = self.start_time
         models = self.models
+        while self.get_data.value == True:
+            pass
         self.dataset = CommonDataset(self.url, dataset_type='cgrid')
         self.dataset.closenc()
         # loop over timesteps
@@ -180,29 +206,36 @@ class ForceParticle(object):
             # Get data from local netcdf here
             # dataset = CommonDataset(".cache/localcache.nc")
             
-            # if need a time that is outside of what we have:
-            #     self.get_data = True
-            while self.get_data.value == True and self.updating.value == True:
+            # if need a time that is outside of what we have:e
+            while self.get_data.value == True:
                 pass
+            self.particle_get.value = True
             self.dataset.opennc()
-            #self.dataset = netCDF4.Dataset(self.url)
+
+            bbox = (part.location.longitude-.15, part.location.latitude-.15,
+                    part.location.longitude+.15, part.location.latitude+.15)
             try:
-                u = np.mean(np.mean(np.mean(self.dataset.nc.variables['u'][i,0,9,9])))#self.u # dataset.get_values(self.uname, )
-                v = np.mean(np.mean(np.mean(self.dataset.nc.variables['v'][i,0,9,9])))#self.v # dataset.get_values(self.vname, )
+                #print i
+                #print self.dataset.nc.variables['u'].shape
+                #u = self.dataset.get_values('u', timeinds=i, zinds=0, bbox=bbox )#nc.variables['u'][i,0,9,9]))#self.u # dataset.get_values(self.uname, )
+                #v = self.dataset.get_values('v', timeinds=i, zinds=0, bbox=bbox )#nc.variables['v'][i,0,9,9]))#self.v # dataset.get_values(self.vname, )
                 w = 0#self.z # dataset.get_values('w', )
                 self.dataset.closenc()
-            except:
+                u, v = random.uniform(-1,1), random.uniform(-1,1)
+            except IndexError:
                 self.dataset.closenc()
+                self.particle_get.value = False
                 if self.get_data.value != True:
                     self.get_data.value = True
                 while self.get_data.value == True:
                     pass
+                self.particle_get.value = True
                 self.dataset.opennc()
-                u = np.mean(np.mean(np.mean(self.dataset.nc.variables['u'][i,0,9,9])))#self.u # dataset.get_values(self.uname, )
-                v = np.mean(np.mean(np.mean(self.dataset.nc.variables['v'][i,0,9,9])))#self.v # dataset.get_values(self.vname, )
+                #u = self.dataset.get_values('u', timeinds=i, zinds=0, bbox=bbox )#nc.variables['u'][i,0,9,9]))#self.u # dataset.get_values(self.uname, )
+                #v = self.dataset.get_values('v', timeinds=i, zinds=0, bbox=bbox )#nc.variables['v'][i,0,9,9]))#self.v # dataset.get_values(self.vname, )
                 w = 0#self.z # dataset.get_values('w', )
                 self.dataset.closenc()
-                
+                u, v = random.uniform(-1,1),random.uniform(-1,1)
             # loop over models - sort these in the order you want them to run
             for model in models:
                 movement = model.move(part.location, u, v, w, modelTimestep)
