@@ -30,7 +30,7 @@ class Depthvar(np.ndarray):
             try:
                 self._units = self._nc.variables[name].units
             except:
-                self._units = units
+                self._units = 'meters'
         else:
             self._units = units
                
@@ -53,7 +53,7 @@ class Depthvar(np.ndarray):
         return data.view(self)
     
     def nearest_index(self, depth):
-        return where(abs(self.meters-depth) == min(abs(self.jd-depth)))[0]
+        return np.where(abs(self.meters-depth) == min(abs(self.meters-depth)))[0]
     
     def nearest(self, depth):
         """

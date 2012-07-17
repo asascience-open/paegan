@@ -97,7 +97,7 @@ def CommonDataset(ncfile, xname='lon', yname='lat',
     # Test the shapes of the coordinate variables to 
     # determine the grid type
     if self._datasettype is None:
-        if len(testvary.shape) > 1:
+        if testvary.ndim > 1:
             self._datasettype = "cgrid"
         else:
             if testvary.shape[0] != testvarx.shape[0]:
@@ -261,6 +261,16 @@ class Dataset:
         depths = self.getdepthvar(var, use_cache)
         inds = np.where(np.logical_and(depths >= bounds[0], depths <= bounds[1]))
         return inds
+        
+    def get_nearest_tind(self, var, point, use_cache=True):
+        assert var in self.nc.variables
+        time = self.gettimevar(var, use_cache)
+        return time.nearest_index(point.time)
+        
+    def get_nearest_zind(self, var, point, use_cache=True):
+        assert var in self.nc.variables
+        depths = self.getdepthvar(var, use_cache)
+        return depths.nearest_index(point.depth)
         
     def __str__(self):
         k = []
@@ -427,7 +437,8 @@ class Dataset:
         return subs(x=x, y=y, z=z, time=time)
         
     def get_values(self, var, zbounds=None, bbox=None,
-        timebounds=None, zinds=None, timeinds=None, use_local=False):
+        timebounds=None, zinds=None, timeinds=None, 
+        point=None, use_local=False):
         """
         
         Get smallest chunck of data that encompasses the 4-d
@@ -478,7 +489,10 @@ class Dataset:
                 tinds = self.get_tind_from_bounds(var, timebounds)
             else:
                 if timeinds == None:
-                    tinds = np.arange(0, ncvar.shape[positions["time"]]+1)
+                    if point != None:
+                        tinds = np.asarray([self.get_nearest_tind(var, point)])
+                    else:
+                        tinds = np.arange(0, ncvar.shape[positions["time"]]+1)
                 else:
                     tinds = timeinds
         if positions["z"] != None:
@@ -486,14 +500,21 @@ class Dataset:
                 zinds = self.get_zind_from_bounds(var, zbounds)
             else:
                 if zinds == None:
-                    zinds = np.arange(0, ncvar.shape[positions["z"]]+1)
+                    if point != None:
+                        zinds = np.asarray([self.get_nearest_zind(var, point)])
+                    else:
+                        zinds = np.arange(0, ncvar.shape[positions["z"]]+1)
                 else:
                     pass
         if bbox != None:
             xinds, yinds = self.get_xyind_from_bbox(var, bbox)
         else:
-            xinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["x"]]
-            yinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["y"]]
+            if point != None:
+                xinds, yinds = self.get_xyind_from_point(var, point)
+                print xinds, yinds
+            else:
+                xinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["x"]]
+                yinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["y"]]
         #if len(tinds) > 0 and len(zinds) > 0 and \
         #    len(xinds) > 0 and len(yinds) > 0:
         # Now take time inds, z inds, x and y inds and put them 
@@ -516,7 +537,8 @@ class Dataset:
         if np.all([i.size >0 for i in indices]):
             data = self._get_data(var, indices, use_local)
         else:
-            data = np.ndarray()
+            # data = None
+            raise ValueError("no data inside the domian specified")
         return data
         
     def _get_data(self, var, **kwargs):
@@ -567,6 +589,12 @@ class CGridDataset(Dataset):
         maxcol = np.max(inds[1])
         inds = (np.arange(minrow, maxrow+1), np.arange(mincol, maxcol+1))
         return inds, inds #xinds, yinds
+    
+    def get_xyind_from_point(self, var, point):
+        grid = self.getgridobj(var)
+        indexr, indexc = grid.near_xy(point=point)
+        inds = indexr, indexc
+        return inds, inds
         
 
     def _get_data(self, var, indarray, use_local=False):
@@ -620,9 +648,21 @@ class RGridDataset(Dataset):
         grid = self.getgridobj(var)
         xbool = grid.get_xbool_from_bbox(bbox)
         ybool = grid.get_ybool_from_bbox(bbox)
-        xinds = np.where(xbool)
-        yinds = np.where(ybool)
+        xinds = [np.where(xbool)]
+        yinds = [np.where(ybool)]
         return xinds, yinds #xinds, yinds
+        
+    def get_xyind_from_point(self, var, point):
+        grid = self.getgridobj(var)
+        index = grid.near_xy(point=point)
+        col = int(np.floor(index[0]/len(grid._yarray)))
+        rem = index[0] / len(grid._yarray) - col
+        if rem > 0:
+            col = col + 1 - 1
+            row = int(rem * len(grid._yarray)) - 1
+        else:
+            row = len(grid._yarray) - 1
+        return np.asarray([col]), np.asarray([[row]])
 
     def _get_data(self, var, indarray, use_local=False):
         ndims = len(indarray)
@@ -679,6 +719,12 @@ class NCellDataset(Dataset):
         ybool = grid.get_ybool_from_bbox(bbox)
         inds = np.where(np.logical_and(xbool, ybool))
         return inds, inds #xinds, yinds
+        
+    def get_xyind_from_point(self, var, point):
+        grid = self.getgridobj(var)
+        index = grid.near_xy(point=point)
+        # do some stuff
+        return inds, inds
 
     def _get_data(self, var, indarray, use_local=False):
         ndims = len(indarray)
