@@ -297,7 +297,8 @@ class ModelController(object):
         return fig
 
     def run(self, hydrodataset, uname='u', vname='v', wname=None, 
-            xname='lon', yname='lat', tname=None, zname=None):
+            xname='lon', yname='lat', tname=None, zname=None,
+            temp_name=None, salt_name=None ):
         ######################################################
         #u=[] # random u,v,z generator
         #v=[]

@@ -511,7 +511,6 @@ class Dataset:
         else:
             if point != None:
                 xinds, yinds = self.get_xyind_from_point(var, point)
-                print xinds, yinds
             else:
                 xinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["x"]]
                 yinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["y"]]
