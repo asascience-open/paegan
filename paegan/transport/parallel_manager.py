@@ -161,8 +161,8 @@ class DataController(object):
                     if self.tname != None:
                         time[:] = self.remote.variables[self.tname][self.inds]  
                     
-                    u[:] = self.remote.variables[self.uname][self.inds, 1:3, 50:60, 50:60] #:]
-                    v[:] = self.remote.variables[self.vname][self.inds, 1:3, 50:60, 50:60] #:]
+                    u[:] = self.remote.variables[self.uname][self.inds, 1:3, 80:90, 150:155] #:]
+                    v[:] = self.remote.variables[self.vname][self.inds, 1:3, 80:90, 150:155] #:]
                     u.coordinates = coordinates
                     v.coordinates = coordinates
                     if self.wname != None:
@@ -178,10 +178,10 @@ class DataController(object):
                     
                     self.updating.value = True
                     self.local = netCDF4.Dataset(cachepath, 'a')                  
-                    self.local.variables["u"][self.inds, 0:2, :10, :10] = \
-                        self.remote.variables[self.uname][self.inds, 1:3, 50:60, 50:60]
-                    self.local.variables["v"][self.inds, 0:2, :10, :10] = \
-                        self.remote.variables[self.vname][self.inds, 1:3, 50:60, 50:60]
+                    self.local.variables["u"][self.inds, 0:2, :10, :5] = \
+                        self.remote.variables[self.uname][self.inds, 1:3, 80:90, 150:155]
+                    self.local.variables["v"][self.inds, 0:2, :10, :5] = \
+                        self.remote.variables[self.vname][self.inds, 1:3, 80:90, 150:155]
                     if self.tname != None:
                         self.local.variables["time"][self.inds] = \
                             self.remote.variables[self.tname][self.inds]
@@ -293,6 +293,12 @@ class ForceParticle(object):
                 #v = np.mean(np.mean(np.ma.masked_array(v, np.isnan(v))))
                 w = 0#self.z # dataset.get_values('w', )
                 self.dataset.closenc()
+            
+            u = u[0]
+            v = v[0]
+            #if np.isnan(u) or np.isnan(v):
+            #    u, v = random.uniform(-1, 1), random.uniform(-1, 1)
+
             # loop over models - sort these in the order you want them to run
             for model in models:
                 movement = model.move(part.location, u, v, w, modelTimestep)
@@ -310,7 +316,6 @@ class ForceParticle(object):
         """
             Returns a list of Location4D objects
         """
-        
         particle = kwargs.pop('particle')
         starting = kwargs.pop('starting')
         ending = kwargs.pop('ending')
