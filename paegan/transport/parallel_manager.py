@@ -41,7 +41,8 @@ class Consumer(multiprocessing.Process):
 
 class DataController(object):
     def __init__(self, url, n_run, get_data, updating,
-                 uname, vname, wname, init_size, particle_get):
+                 uname, vname, wname, init_size, particle_get,
+                 xname, yname, tname, zname):
         self.url = url
         #self.local = Dataset(".cache/localcache.nc", 'w')
         self.n_run = n_run
@@ -50,6 +51,10 @@ class DataController(object):
         self.uname = uname
         self.vname = vname
         self.wname = wname
+        self.xname = xname
+        self.yname = yname
+        self.zname = zname
+        self.tname = tname
         self.inds = np.arange(init_size)
         self.init_size = init_size
         self.particle_get = particle_get
@@ -76,26 +81,29 @@ class DataController(object):
                     if self.remote.variables[self.uname].ndim == 4:
                         self.ndim = 4
                         dimensions = ('time', 'level', 'y', 'x')
+                        coordinates = "time z lon lat"
                     elif self.remote.variables[self.uname].ndim == 3:
                         self.ndim = 3
                         dimensions = ('time', 'y', 'x')
+                        coordinates = "time lon lat"
                     try:
                         fill = self.remote.variables[self.uname].missing_value
-                        print fill
-                        
-
-                        u = self.local.createVariable('u', 
-                            'f8', dimensions, zlib=False,
-                            fill_value=fill)
-                        v = self.local.createVariable('v', 
-                            'f8', dimensions, zlib=False,
-                            fill_value=fill)
-                        if self.wname != None:
-                            w = self.local.createVariable('w', 
-                                'f8', dimensions, zlib=False,
-                                fill_value=fill)
-
                     except:
+                        fill = np.nan
+                        
+                    u = self.local.createVariable('u', 
+                        'f8', dimensions, zlib=False,
+                        fill_value=fill)
+                    v = self.local.createVariable('v', 
+                        'f8', dimensions, zlib=False,
+                        fill_value=fill)
+                    if self.wname != None:
+                        w = self.local.createVariable('w', 
+                            'f8', dimensions, zlib=False,
+                            fill_value=fill)
+                    '''    
+                    except:
+                       
                         u = self.local.createVariable('u', 
                             'f8', dimensions, zlib=False,
                             )
@@ -106,13 +114,60 @@ class DataController(object):
                             w = self.local.createVariable('w', 
                                 'f8', dimensions, zlib=False,
                                 )
-
-                    u[:] = self.remote.variables[self.uname][self.inds, 1:3, :10, :10] #:]
-                    v[:] = self.remote.variables[self.vname][self.inds, 1:3, :10, :10] #:]
-
+                    '''
+                    if self.remote.variables[self.xname].ndim == 2:
+                        lon = self.local.createVariable('lon',
+                                'f8', ("y", "x"), zlib=False,
+                                )
+                        lat = self.local.createVariable('lat',
+                                'f8', ("y", "x"), zlib=False,
+                                )
+                        lon[:] = self.remote.variables[self.xname][50:60, 50:60]
+                        lat[:] = self.remote.variables[self.yname][50:60, 50:60]
+                    if self.remote.variables[self.xname].ndim == 1:
+                        lon = self.local.createVariable('lon',
+                                'f8', ("x"), zlib=False,
+                                )
+                        lat = self.local.createVariable('lat',
+                                'f8', ("y"), zlib=False,
+                                )
+                        lon[:] = self.remote.variables[self.xname][50:60]
+                        lat[:] = self.remote.variables[self.yname][50:60]
+                    
+                    if self.zname != None:            
+                        if self.remote.variables[self.zname].ndim == 4:
+                            z = self.local.createVariable('z',
+                                'f8', ("time","level","y","x"), zlib=False,
+                                )  
+                            z[:] = self.remote.variables[self.zname][self.inds, :, :, :]
+                        elif self.remote.variables[self.zname].ndim == 3:
+                            z = self.local.createVariable('z',
+                                'f8', ("level","y","x"), zlib=False,
+                                )
+                            z[:] = self.remote.variables[self.zname][:, :, :]
+                        #elif self.remote.variables[zname].ndim == 2:
+                        #    z = self.local.createVariable('lon',
+                        #        'f8', ("",), zlib=False,
+                        #        )
+                        elif self.remote.variables[self.zname].ndim ==1:
+                            z = self.local.createVariable('z',
+                                'f8', ("level",), zlib=False,
+                                )
+                            z[:] = self.remote.variables[self.zname][1:3]
+                    
+                    time = self.local.createVariable('time',
+                                'f8', ("time",), zlib=False,
+                                )
+                    if self.tname != None:
+                        time[:] = self.remote.variables[self.tname][self.inds]  
+                    
+                    u[:] = self.remote.variables[self.uname][self.inds, 1:3, 50:60, 50:60] #:]
+                    v[:] = self.remote.variables[self.vname][self.inds, 1:3, 50:60, 50:60] #:]
+                    u.coordinates = coordinates
+                    v.coordinates = coordinates
                     if self.wname != None:
                         w[:] = self.remote.variables[self.wname][self.inds, :]
-                        
+                        w.coordinates = coordinates
                     self.local.sync()
                     self.local.close()
                     c += 1
@@ -123,15 +178,17 @@ class DataController(object):
                     
                     self.updating.value = True
                     self.local = netCDF4.Dataset(cachepath, 'a')                  
-                    self.local.variables[self.uname][self.inds, 0:2, :10, :10] = \
-                        self.remote.variables[self.uname][self.inds, 1:3, :10, :10]
-                    self.local.variables[self.vname][self.inds, 0:2, :10, :10] = \
-                        self.remote.variables[self.vname][self.inds, 1:3, :10, :10]
+                    self.local.variables["u"][self.inds, 0:2, :10, :10] = \
+                        self.remote.variables[self.uname][self.inds, 1:3, 50:60, 50:60]
+                    self.local.variables["v"][self.inds, 0:2, :10, :10] = \
+                        self.remote.variables[self.vname][self.inds, 1:3, 50:60, 50:60]
+                    if self.tname != None:
+                        self.local.variables["time"][self.inds] = \
+                            self.remote.variables[self.tname][self.inds]
                     if self.wname != None:
-                        self.local.variables[self.wname][self.inds,:] = \
+                        self.local.variables["w"][self.inds,:] = \
                             self.remote.variables[self.wname][self.inds,:]
                     self.local.sync()
-                    print self.local.variables['u'].shape
                     self.local.close()
                     c += 1
                     self.inds = self.inds + self.init_size
@@ -188,7 +245,7 @@ class ForceParticle(object):
         models = self.models
         while self.get_data.value == True:
             pass
-        self.dataset = CommonDataset(self.url, dataset_type='cgrid')
+        self.dataset = CommonDataset(self.url, dataset_type="rgrid")
         self.dataset.closenc()
         # loop over timesteps
         for i in xrange(0, len(times)-1): 
@@ -212,16 +269,15 @@ class ForceParticle(object):
             self.particle_get.value = True
             self.dataset.opennc()
 
-            bbox = (part.location.longitude-.15, part.location.latitude-.15,
-                    part.location.longitude+.15, part.location.latitude+.15)
             try:
                 #print i
                 #print self.dataset.nc.variables['u'].shape
-                #u = self.dataset.get_values('u', timeinds=i, zinds=0, bbox=bbox )#nc.variables['u'][i,0,9,9]))#self.u # dataset.get_values(self.uname, )
-                #v = self.dataset.get_values('v', timeinds=i, zinds=0, bbox=bbox )#nc.variables['v'][i,0,9,9]))#self.v # dataset.get_values(self.vname, )
+                u = self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )
+                v = self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )
+                #u = np.mean(np.mean(np.ma.masked_array(u, np.isnan(u))))
+                #v = np.mean(np.mean(np.ma.masked_array(v, np.isnan(v))))
                 w = 0#self.z # dataset.get_values('w', )
                 self.dataset.closenc()
-                u, v = random.uniform(-1,1), random.uniform(-1,1)
             except IndexError:
                 self.dataset.closenc()
                 self.particle_get.value = False
@@ -231,11 +287,12 @@ class ForceParticle(object):
                     pass
                 self.particle_get.value = True
                 self.dataset.opennc()
-                #u = self.dataset.get_values('u', timeinds=i, zinds=0, bbox=bbox )#nc.variables['u'][i,0,9,9]))#self.u # dataset.get_values(self.uname, )
-                #v = self.dataset.get_values('v', timeinds=i, zinds=0, bbox=bbox )#nc.variables['v'][i,0,9,9]))#self.v # dataset.get_values(self.vname, )
+                u = self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )
+                v = self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )
+                #u = np.mean(np.mean(np.ma.masked_array(u, np.isnan(u))))
+                #v = np.mean(np.mean(np.ma.masked_array(v, np.isnan(v))))
                 w = 0#self.z # dataset.get_values('w', )
                 self.dataset.closenc()
-                u, v = random.uniform(-1,1),random.uniform(-1,1)
             # loop over models - sort these in the order you want them to run
             for model in models:
                 movement = model.move(part.location, u, v, w, modelTimestep)

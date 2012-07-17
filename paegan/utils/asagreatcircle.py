@@ -32,7 +32,7 @@ class AsaGreatCircle(object):
         return {'latitude': math.degrees(lat_result), 'longitude': math.degrees(lon_result), 'reverse_azimuth': math.degrees(angle_result)}
 
     @classmethod
-    def great_distance(self, **kwargs):
+    def great_distance(self, start_point, end_point, **kwargs):
         """
             Named arguments:
             start_point = Location4D obect representing start point
@@ -47,8 +47,8 @@ class AsaGreatCircle(object):
 
         """
 
-        start_point = kwargs.pop('start_point')
-        end_point = kwargs.pop('end_point')
+        #start_point = kwargs.pop('start_point')
+        #end_point = kwargs.pop('end_point')
         rmajor = kwargs.pop('rmajor', 6378137.0)
         rminor = kwargs.pop('rminor', 6356752.3142)
         f = (rmajor - rminor) / rmajor

@@ -230,8 +230,8 @@ class ModelController(object):
 
     def generate_map(self, point):
         fig = matplotlib.pyplot.figure(figsize=(20,16)) # call a blank figure
-        #ax = fig.gca(projection='3d') # line with points
-        ax = fig.add_axes(projection='3d')
+        ax = fig.gca(projection='3d') # line with points
+        
         tracks = []
 
         #for x in range(len(arr)):
@@ -289,14 +289,15 @@ class ModelController(object):
         ax.set_xlim3d(visual_bbox[0],visual_bbox[2])
         ax.set_ylim3d(visual_bbox[1],visual_bbox[3])
         ax.set_zmargin(0.1)
-        ax.view_init(0, -90)
+        ax.view_init(75, -90)
         ax.set_xlabel('Longitude')
         ax.set_ylabel('Latitude')
         ax.set_zlabel('Depth (m)')
         matplotlib.pyplot.show()
         return fig
 
-    def run(self, hydrodataset, uname='u', vname='v', wname=None):
+    def run(self, hydrodataset, uname='u', vname='v', wname=None, 
+            xname='lon', yname='lat', tname=None, zname=None):
         ######################################################
         #u=[] # random u,v,z generator
         #v=[]
@@ -357,7 +358,8 @@ class ModelController(object):
         # can get the initial data and is not blocked
         tasks.put(parallel.DataController(
                   hydrodataset, n_run, get_data, updating,
-                  uname, vname, wname, time_chunk, particle_get))
+                  uname, vname, wname, time_chunk, particle_get,
+                  xname, yname, tname, zname))
                
 	    # loop over particles
         for part in self.particles:

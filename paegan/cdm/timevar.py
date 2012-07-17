@@ -60,7 +60,7 @@ class Timevar(np.ndarray):
     
     def nearest_index(self, dateo):
         to = pylab.date2num(dateo)
-        return where(abs(self.jd-to) == min(abs(self.jd-to)))[0]
+        return np.where(abs(self.jd-to) == min(abs(self.jd-to)))[0]
     
     def nearest(self, dateo):
         """
