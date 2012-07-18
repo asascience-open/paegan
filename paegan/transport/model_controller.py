@@ -360,7 +360,8 @@ class ModelController(object):
         tasks.put(parallel.DataController(
                   hydrodataset, n_run, get_data, updating,
                   uname, vname, wname, time_chunk, particle_get,
-                  xname, yname, tname, zname))
+                  xname, yname, tname, zname, temp_name,
+                  salt_name))
                
 	    # loop over particles
         for part in self.particles:
