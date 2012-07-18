@@ -42,25 +42,64 @@ class Consumer(multiprocessing.Process):
 class DataController(object):
     def __init__(self, url, n_run, get_data, updating,
                  uname, vname, wname, init_size, particle_get,
-                 xname, yname, tname, zname):
+                 xname, yname, tname, zname, temp_name,
+                 salt_name):
         self.url = url
         #self.local = Dataset(".cache/localcache.nc", 'w')
         self.n_run = n_run
         self.get_data = get_data
         self.updating = updating
-        self.uname = uname
-        self.vname = vname
-        self.wname = wname
-        self.xname = xname
-        self.yname = yname
-        self.zname = zname
-        self.tname = tname
+        #self.uname = uname
+        #self.vname = vname
+        #self.wname = wname
+        #self.xname = xname
+        #self.yname = yname
+        #self.zname = zname
+        #self.tname = tname
+        #self.temp_name = temp_name
+        #self.salt_name = salt_name
         self.inds = np.arange(init_size)
         self.init_size = init_size
         self.particle_get = particle_get
+    
+    def get_variablenames_for_model(self, dataset):
+        getname = dataset.get_varname_from_stdname
+        self.uname = getname('eastward_sea_water_velocity') 
+        self.vname = getname('northward_sea_water_velocity') 
+        self.wname = getname('upward_sea_water_velocity')
+        coords = dataset.get_coord_names(self.uname) 
+        self.xname = coords['xname'] 
+        self.yname = coords['yname']
+        self.zname = coords['zname']
+        self.tname = coords['tname']
+        self.temp_name = getname('sea_water_temperature') 
+        self.salt_name = getname('sea_water_salinity')
+        if len(self.uname) > 0:
+            self.uname = self.uname[0]
+        else:
+            self.uname = None
+        if len(self.vname) > 0:
+            self.vname = self.vname[0]
+        else:
+            self.vname = None
+        if len(self.wname) > 0:
+            self.wname = self.wname[0]
+        else:
+            self.wname = None
+        if len(self.temp_name) > 0:
+            self.temp_name = self.temp_name[0]
+        else:
+            self.temp_name = None       
+        if len(self.salt_name) > 0:
+            self.salt_name = self.salt_name[0]
+        else:
+            self.salt_name = None
+        
     def __call__(self):
         c = 0
-        self.remote = netCDF4.Dataset(self.url)
+        dataset = CommonDataset(self.url, dataset_type='rgrid')
+        
+        self.remote = dataset.nc
         cachepath = os.path.join(os.path.dirname(__file__),"_cache","localcache.nc")
         while self.n_run.value > 1:
             #print self.n_run.value
@@ -99,6 +138,13 @@ class DataController(object):
                         fill_value=fill)
                     if self.wname != None:
                         w = self.local.createVariable('w', 
+                            'f8', dimensions, zlib=False,
+                            fill_value=fill)
+                    if self.temp_name != None and self.salt_name != None:        
+                        temp = self.local.createVariable('temp', 
+                            'f8', dimensions, zlib=False,
+                            fill_value=fill)
+                        salt = self.local.createVariable('salt', 
                             'f8', dimensions, zlib=False,
                             fill_value=fill)
                     '''    
@@ -159,8 +205,13 @@ class DataController(object):
                                 'f8', ("time",), zlib=False,
                                 )
                     if self.tname != None:
-                        time[:] = self.remote.variables[self.tname][self.inds]  
+                        time[:] = self.remote.variables[self.tname][self.inds]
                     
+                    if self.temp_name != None and self.salt_name != None:
+                        temp[:] = self.remote.variables[self.temp_name][self.inds, 1:3, 80:90, 150:155]
+                        salt[:] = self.remote.variables[self.salt_name][self.inds, 1:3, 80:90, 150:155]
+                        temp.coordinates = coordinates
+                        salt.coordinates = coordinates
                     u[:] = self.remote.variables[self.uname][self.inds, 1:3, 80:90, 150:155] #:]
                     v[:] = self.remote.variables[self.vname][self.inds, 1:3, 80:90, 150:155] #:]
                     u.coordinates = coordinates
@@ -188,6 +239,11 @@ class DataController(object):
                     if self.wname != None:
                         self.local.variables["w"][self.inds,:] = \
                             self.remote.variables[self.wname][self.inds,:]
+                    if self.temp_name != None and self.salt_name != None:
+                        self.local.variables["temp"][self.inds, 0:2, :10, :5] = \
+                            self.remote.variables[self.temp_name][self.inds, 1:3, 80:90, 150:155]
+                        self.local.variables["salt"][self.inds, 0:2, :10, :5] = \
+                            self.remote.variables[self.salt_name][self.inds, 1:3, 80:90, 150:155]
                     self.local.sync()
                     self.local.close()
                     c += 1
