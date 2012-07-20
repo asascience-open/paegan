@@ -41,25 +41,17 @@ class Consumer(multiprocessing.Process):
 
 class DataController(object):
     def __init__(self, url, n_run, get_data, updating,
-                 init_size, particle_get,
+                 init_size, particle_get, **kwargs
                  ):
         self.url = url
         #self.local = Dataset(".cache/localcache.nc", 'w')
         self.n_run = n_run
         self.get_data = get_data
         self.updating = updating
-        #self.uname = None
-        #self.vname = None
-        #self.wname = None
-        #self.xname = None
-        #self.yname = None
-        #self.zname = None
-        #self.tname = None
-        #self.temp_name = None
-        #self.salt_name = None
         self.inds = np.arange(init_size)
         self.init_size = init_size
         self.particle_get = particle_get
+        self.low_memory = kwargs.get("low_memory", False)
     
     def get_variablenames_for_model(self):
         getname = self.dataset.get_varname_from_stdname
@@ -104,27 +96,32 @@ class DataController(object):
                     time_1 = shape[0]
                 else:
                     time_1 = time + 1
-                for z in range(shape[1]):
-                    if z + 1 > shape[1] - 1:
-                        z_1 = shape[1]
-                    else:
-                        z_1 = z + 1
-                    for y in range(shape[2]):
-                        if y + 1 > shape[2] - 1:
-                            y_1 = shape[2]
+                if self.low_memory:
+                 
+                    for z in range(0,1):#shape[1]):
+                        if z + 1 > shape[1] - 1:
+                            z_1 = shape[1]
                         else:
-                            y_1 = y + 1
-
-                        print time, time_1, z, z_1, y, y_1
+                            z_1 = z + 1
+                    #for y in range(0,shape[2],8):
+                    #    if y + 8 > shape[2] - 1:
+                    #        y_1 = shape[2]
+                    #    else:
+                    #        y_1 = y + 8
                         if len(shape) == 4:
-                            for x in range(shape[3]):
-                                if x + 1 > shape[3] - 1:
-                                    x_1 = shape[3]
-                                else:
-                                    x_1 = x + 1
-                                local[time:time_1, z:z_1, y:y_1, x:x_1] = remote[time:time_1, z:z_1, y:y_1, x:x_1]
+                            #    for x in range(shape[3]):
+                            #        if x + 1 > shape[3] - 1:
+                            #            x_1 = shape[3]
+                            #        else:
+                            #            x_1 = x + 1
+                            local[time:time_1, z:z_1, :, :] = remote[time:time_1,  z:z_1, :, :]
                         else:
-                            local[time:time_1, z:z_1, y:y_1] = remote[time:time_1, z:z_1, y:y_1]
+                            local[time:time_1, z:z_1, :] = remote[time:time_1, z:z_1, :]
+                else:
+                    if len(shape) == 4:
+                        local[time:time_1, :, :, :] = remote[time:time_1,  :, :, :]
+                    else:
+                        local[time:time_1, :, :] = remote[time:time_1, :, :]
        
     def __call__(self):
         c = 0
@@ -132,7 +129,7 @@ class DataController(object):
         
         self.get_variablenames_for_model()
         self.remote = self.dataset.nc
-        cachepath = os.path.join(os.path.dirname(__file__),"_cache","localcache.nc")
+        cachepath = os.path.join('/home/acrosby',"localcache.nc")#os.path.dirname(__file__),"_cache","localcache.nc")
         while self.n_run.value > 1:
             #print self.n_run.value
             if self.get_data.value == True:
@@ -290,7 +287,7 @@ class DataController(object):
                     time = self.local.variables['time']
                     remoteu = self.remote.variables[self.uname]
                     remotev = self.remote.variables[self.vname]
-                    remotetime = self.remote.variables[self.tname]
+                    
                     localvars = [u, v, ]
                     remotevars = [remoteu, remotev, ]
                     if self.salt_name != None and self.temp_name != None:
@@ -340,7 +337,7 @@ class ForceParticle(object):
     def __init__(self, part, times, start_time, models, 
                  point, usebathy, useshore, usesurface,
                  get_data, n_run, updating, particle_get):
-        self.url =  os.path.join(os.path.dirname(__file__),"_cache","localcache.nc")
+        self.url =  os.path.join('/home/acrosby',"localcache.nc")#os.path.dirname(__file__),"_cache","localcache.nc")
         self.point = point
         self.part = part
         self.times = times
@@ -370,7 +367,7 @@ class ForceParticle(object):
         models = self.models
         while self.get_data.value == True:
             pass
-        self.dataset = CommonDataset(self.url, dataset_type="rgrid")
+        self.dataset = CommonDataset(self.url)
         self.dataset.closenc()
         # loop over timesteps
         for i in xrange(0, len(times)-1): 
@@ -403,7 +400,7 @@ class ForceParticle(object):
                 #v = np.mean(np.mean(np.ma.masked_array(v, np.isnan(v))))
                 w = 0#self.z # dataset.get_values('w', )
                 self.dataset.closenc()
-            except IndexError:
+            except:
                 self.dataset.closenc()
                 self.particle_get.value = False
                 if self.get_data.value != True:
@@ -421,10 +418,11 @@ class ForceParticle(object):
             
             u = u[0]
             v = v[0]
-            print u,v
-            print self.part.location.longitude, self.part.location.latitude
-            #if np.isnan(u) or np.isnan(v):
-            #    u, v = random.uniform(-1, 1), random.uniform(-1, 1)
+            #print u, v
+            if np.isnan(u) or np.isnan(v):
+                #u, v = 0, 0
+                u = self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=4 )
+                v = self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=4 )
 
             # loop over models - sort these in the order you want them to run
             for model in models:
