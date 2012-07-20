@@ -438,7 +438,7 @@ class Dataset:
         
     def get_values(self, var, zbounds=None, bbox=None,
         timebounds=None, zinds=None, timeinds=None, 
-        point=None, use_local=False):
+        point=None, use_local=False, **kwargs):
         """
         
         Get smallest chunck of data that encompasses the 4-d
@@ -510,7 +510,8 @@ class Dataset:
             xinds, yinds = self.get_xyind_from_bbox(var, bbox)
         else:
             if point != None:
-                xinds, yinds = self.get_xyind_from_point(var, point)
+                num = kwargs.get("num", 1)
+                xinds, yinds = self.get_xyind_from_point(var, point, num=num)
             else:
                 xinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["x"]]
                 yinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["y"]]
@@ -589,10 +590,11 @@ class CGridDataset(Dataset):
         inds = (np.arange(minrow, maxrow+1), np.arange(mincol, maxcol+1))
         return inds, inds #xinds, yinds
     
-    def get_xyind_from_point(self, var, point):
+    def get_xyind_from_point(self, var, point, **kwargs):
         grid = self.getgridobj(var)
-        indexr, indexc = grid.near_xy(point=point)
-        inds = indexr, indexc
+        num = kwargs.get("num", None)
+        indexr, indexc = grid.near_xy(point=point, num=num)
+        inds = indexc, indexr
         return inds, inds
         
 
@@ -651,19 +653,12 @@ class RGridDataset(Dataset):
         yinds = [np.where(ybool)]
         return xinds, yinds #xinds, yinds
         
-    def get_xyind_from_point(self, var, point):
+    def get_xyind_from_point(self, var, point, **kwargs):
         grid = self.getgridobj(var)
-        index = grid.near_xy(point=point)
-        col = int(np.floor(index[0]/len(grid._yarray)))
-        rem = index[0] / len(grid._yarray) - col
-        if rem > 0:
-            col = col + 1 - 1
-            row = int(rem * len(grid._yarray)) - 1
-        else:
-            row = len(grid._yarray) - 1
-        print grid._xarray(col), grid._yarray(row)
-        return np.asarray([col]), np.asarray([[row]])
-
+        num = kwargs.get("num", 1)
+        index = grid.near_xy(point=point, num=num)
+        return index[1], index[0]
+        
     def _get_data(self, var, indarray, use_local=False):
         ndims = len(indarray)
         if use_local == False:

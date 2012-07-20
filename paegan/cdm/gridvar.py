@@ -14,6 +14,8 @@ class Gridobj:
         self._xname = xname
         self._yname = yname
         self._ndim = self._nc.variables[self._xname].ndim
+        self._ymesh = None
+        self._xmesh = None
         
         if self._xname != None:
             self._x_nc = self._nc.variables[self._xname]
@@ -93,24 +95,19 @@ class Gridobj:
             lat = kwargs.get("lat", None)
             lon = kwargs.get("lon", None)
             point = Location4D(latitude=lat, longitude=lon, depth=0, time=0)
+        num = kwargs.get("num", 1)
         if self._ndim == 2:
-            point1 = np.asarray([point for i in range(self._xarray.flat)])
-            point1.shape = self._xarray.shape
-            point2 = np.asarray(map(Location4D, latitude=self._yarray,
-                         longitude=self._xarray, depth=np.ones_like(self._xarray),
-                         time=np.ones_like(self._xarray))) 
+            distance = AsaGreatCircle.great_distance(
+                start_lats=self._yarray, start_lons=self._xarray,
+                end_lats=point.latitude, end_lons=point.longitude)["distance"]
+            yinds, xinds = np.where(distance == np.min(distance))
         else:
-            point1 = np.asarray([point for i in range(self._xarray.size * self._yarray.size)])
-            point2 = []
-            for x in self._xarray:
-                for y in self._yarray:
-                    point2.append(Location4D(latitude=x, longitude=y, depth=0, time=0))
-            point2 = np.asarray(point2)
-            point1.shape, point2.shape = (self._xarray.size,self._yarray.size,),(self._xarray.size,self._yarray.size)
-        gc = AsaGreatCircle()
-        vec_dist = np.vectorize(gc.great_distance)
-        distance = vec_dist( point1, point2 )
-        return np.where(distance == np.min(distance))
+            #if self._xmesh == None and self._ymesh == None:
+            #    self._xmesh, self._ymesh = np.meshgrid(self._xarray, self._yarray)
+            yinds = np.where((self._yarray - point.latitude) == np.min(np.abs(self._yarray - point.latitude)))
+            xinds = np.where((self._xarray - point.longitude) == np.min(np.abs(self._xarray - point.longitude)))
+        return yinds, xinds 
+
         
     is_projected = property(get_projectedbool, None)
     xmax = property(get_xmax, None)

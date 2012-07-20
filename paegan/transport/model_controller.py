@@ -248,7 +248,7 @@ class ModelController(object):
         midpoint = point#tracks.centroid
 
         #bbox = tracks.bounds
-        visual_bbox = (point.x-1, point.y-1, point.x+1, point.y+1)#tracks.buffer(1).bounds
+        visual_bbox = (point.x-.25, point.y-.25, point.x+.25, point.y+.25)#tracks.buffer(1).bounds
 
         #max_distance = max(abs(bbox[0] - bbox[2]), abs(bbox[1] - bbox[3])) + 0.25
 
@@ -289,24 +289,15 @@ class ModelController(object):
         ax.set_xlim3d(visual_bbox[0],visual_bbox[2])
         ax.set_ylim3d(visual_bbox[1],visual_bbox[3])
         ax.set_zmargin(0.1)
-        ax.view_init(75, -90)
+        ax.view_init(85, -90)
         ax.set_xlabel('Longitude')
         ax.set_ylabel('Latitude')
         ax.set_zlabel('Depth (m)')
         matplotlib.pyplot.show()
         return fig
 
-    def run(self, hydrodataset):
-        ######################################################
-        #u=[] # random u,v,z generator
-        #v=[]
-        #z=[]
-        #for w in xrange(0,self._nstep):
-        #    z.append(0)
-        #    u.append(abs(AsaRandom.random()))
-        #    v.append(abs(AsaRandom.random()))
-        # 
-        #######################################################
+    def run(self, hydrodataset, **kwargs):
+
         times = range(0,(self._step*self._nstep)+1,self._step)
         start_lat = self._latitude
         start_lon = self._longitude
@@ -314,6 +305,7 @@ class ModelController(object):
         start_time = self._start
         time_chunk = self._time_chunk
         hydrodataset = hydrodataset
+        low_memory = kwargs.get("low_memory", False)
         
         if start_time == None:
             raise TypeError("must provide a start time to run the models")
@@ -357,7 +349,7 @@ class ModelController(object):
         # can get the initial data and is not blocked
         tasks.put(parallel.DataController(
                   hydrodataset, n_run, get_data, updating,
-                  time_chunk, particle_get,
+                  time_chunk, particle_get, low_memory=low_memory
                   ))
                
 	    # loop over particles
