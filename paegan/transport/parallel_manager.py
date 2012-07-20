@@ -165,25 +165,25 @@ class DataController(object):
                     
                     if fill == None:
                         u = self.local.createVariable('u', 
-                            'f', dimensions, #zlib=False,
+                            'f', dimensions, zlib=False,
                             )
                         v = self.local.createVariable('v', 
-                            'f', dimensions, #zlib=False,
+                            'f', dimensions, zlib=False,
                             )
                         v.coordinates = coordinates
                         u.coordinates = coordinates
                         
                         if self.wname != None:
                             w = self.local.createVariable('w', 
-                                'f', dimensions, #zlib=False,
+                                'f', dimensions, zlib=False,
                                 )
                             w.coordinates = coordinates
                         if self.temp_name != None and self.salt_name != None:        
                             temp = self.local.createVariable('temp', 
-                                'f', dimensions, #zlib=False,
+                                'f', dimensions, zlib=False,
                                 )
                             salt = self.local.createVariable('salt', 
-                                'f', dimensions, #zlib=False,
+                                'f', dimensions, zlib=False,
                                 )
                             temp.coordinates = coordinates
                             salt.coordinates = coordinates
