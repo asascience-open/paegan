@@ -661,6 +661,7 @@ class RGridDataset(Dataset):
             row = int(rem * len(grid._yarray)) - 1
         else:
             row = len(grid._yarray) - 1
+        print grid._xarray(col), grid._yarray(row)
         return np.asarray([col]), np.asarray([[row]])
 
     def _get_data(self, var, indarray, use_local=False):

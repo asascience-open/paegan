@@ -41,39 +41,31 @@ class Consumer(multiprocessing.Process):
 
 class DataController(object):
     def __init__(self, url, n_run, get_data, updating,
-                 uname, vname, wname, init_size, particle_get,
-                 xname, yname, tname, zname, temp_name,
-                 salt_name):
+                 init_size, particle_get,
+                 ):
         self.url = url
         #self.local = Dataset(".cache/localcache.nc", 'w')
         self.n_run = n_run
         self.get_data = get_data
         self.updating = updating
-        #self.uname = uname
-        #self.vname = vname
-        #self.wname = wname
-        #self.xname = xname
-        #self.yname = yname
-        #self.zname = zname
-        #self.tname = tname
-        #self.temp_name = temp_name
-        #self.salt_name = salt_name
+        #self.uname = None
+        #self.vname = None
+        #self.wname = None
+        #self.xname = None
+        #self.yname = None
+        #self.zname = None
+        #self.tname = None
+        #self.temp_name = None
+        #self.salt_name = None
         self.inds = np.arange(init_size)
         self.init_size = init_size
         self.particle_get = particle_get
     
-    def get_variablenames_for_model(self, dataset):
-        getname = dataset.get_varname_from_stdname
+    def get_variablenames_for_model(self):
+        getname = self.dataset.get_varname_from_stdname
         self.uname = getname('eastward_sea_water_velocity') 
         self.vname = getname('northward_sea_water_velocity') 
         self.wname = getname('upward_sea_water_velocity')
-        coords = dataset.get_coord_names(self.uname) 
-        self.xname = coords['xname'] 
-        self.yname = coords['yname']
-        self.zname = coords['zname']
-        self.tname = coords['tname']
-        self.temp_name = getname('sea_water_temperature') 
-        self.salt_name = getname('sea_water_salinity')
         if len(self.uname) > 0:
             self.uname = self.uname[0]
         else:
@@ -86,6 +78,15 @@ class DataController(object):
             self.wname = self.wname[0]
         else:
             self.wname = None
+
+        coords = self.dataset.get_coord_names(self.uname) 
+        self.xname = coords['xname'] 
+        self.yname = coords['yname']
+        self.zname = coords['zname']
+        self.tname = coords['tname']
+        self.temp_name = getname('sea_water_temperature') 
+        self.salt_name = getname('sea_water_salinity')
+        
         if len(self.temp_name) > 0:
             self.temp_name = self.temp_name[0]
         else:
@@ -94,12 +95,43 @@ class DataController(object):
             self.salt_name = self.salt_name[0]
         else:
             self.salt_name = None
-        
+        self.tname = None ## temporary
+    
+    def get_remote_data(self, localvars, remotevars, inds, shape):
+        for local, remote in zip(localvars, remotevars):
+            for time in inds[:]:
+                if time + 1 > shape[0] - 1:
+                    time_1 = shape[0]
+                else:
+                    time_1 = time + 1
+                for z in range(shape[1]):
+                    if z + 1 > shape[1] - 1:
+                        z_1 = shape[1]
+                    else:
+                        z_1 = z + 1
+                    for y in range(shape[2]):
+                        if y + 1 > shape[2] - 1:
+                            y_1 = shape[2]
+                        else:
+                            y_1 = y + 1
+
+                        print time, time_1, z, z_1, y, y_1
+                        if len(shape) == 4:
+                            for x in range(shape[3]):
+                                if x + 1 > shape[3] - 1:
+                                    x_1 = shape[3]
+                                else:
+                                    x_1 = x + 1
+                                local[time:time_1, z:z_1, y:y_1, x:x_1] = remote[time:time_1, z:z_1, y:y_1, x:x_1]
+                        else:
+                            local[time:time_1, z:z_1, y:y_1] = remote[time:time_1, z:z_1, y:y_1]
+       
     def __call__(self):
         c = 0
-        dataset = CommonDataset(self.url, dataset_type='rgrid')
+        self.dataset = CommonDataset(self.url)
         
-        self.remote = dataset.nc
+        self.get_variablenames_for_model()
+        self.remote = self.dataset.nc
         cachepath = os.path.join(os.path.dirname(__file__),"_cache","localcache.nc")
         while self.n_run.value > 1:
             #print self.n_run.value
@@ -125,125 +157,168 @@ class DataController(object):
                         self.ndim = 3
                         dimensions = ('time', 'y', 'x')
                         coordinates = "time lon lat"
+                    shape = self.remote.variables[self.uname].shape
                     try:
                         fill = self.remote.variables[self.uname].missing_value
                     except:
-                        fill = np.nan
-                        
-                    u = self.local.createVariable('u', 
-                        'f8', dimensions, zlib=False,
-                        fill_value=fill)
-                    v = self.local.createVariable('v', 
-                        'f8', dimensions, zlib=False,
-                        fill_value=fill)
-                    if self.wname != None:
-                        w = self.local.createVariable('w', 
-                            'f8', dimensions, zlib=False,
-                            fill_value=fill)
-                    if self.temp_name != None and self.salt_name != None:        
-                        temp = self.local.createVariable('temp', 
-                            'f8', dimensions, zlib=False,
-                            fill_value=fill)
-                        salt = self.local.createVariable('salt', 
-                            'f8', dimensions, zlib=False,
-                            fill_value=fill)
-                    '''    
-                    except:
-                       
+                        fill = None
+                    
+                    if fill == None:
                         u = self.local.createVariable('u', 
-                            'f8', dimensions, zlib=False,
+                            'f', dimensions, #zlib=False,
                             )
                         v = self.local.createVariable('v', 
-                            'f8', dimensions, zlib=False,
+                            'f', dimensions, #zlib=False,
                             )
+                        v.coordinates = coordinates
+                        u.coordinates = coordinates
+                        
                         if self.wname != None:
                             w = self.local.createVariable('w', 
-                                'f8', dimensions, zlib=False,
+                                'f', dimensions, #zlib=False,
                                 )
-                    '''
+                            w.coordinates = coordinates
+                        if self.temp_name != None and self.salt_name != None:        
+                            temp = self.local.createVariable('temp', 
+                                'f', dimensions, #zlib=False,
+                                )
+                            salt = self.local.createVariable('salt', 
+                                'f', dimensions, #zlib=False,
+                                )
+                            temp.coordinates = coordinates
+                            salt.coordinates = coordinates
+                    else:    
+                        u = self.local.createVariable('u', 
+                            'f', dimensions, zlib=False,
+                            fill_value=fill)
+                        v = self.local.createVariable('v', 
+                            'f', dimensions, zlib=False,
+                            fill_value=fill)
+                        v.coordinates = coordinates
+                        u.coordinates = coordinates
+                        
+                        if self.wname != None:
+                            w = self.local.createVariable('w', 
+                                'f', dimensions, zlib=False,
+                                fill_value=fill)
+                            w.coordinates = coordinates
+                        if self.temp_name != None and self.salt_name != None:        
+                            temp = self.local.createVariable('temp', 
+                                'f', dimensions, zlib=False,
+                                fill_value=fill)
+                            salt = self.local.createVariable('salt', 
+                                'f', dimensions, zlib=False,
+                                fill_value=fill)
+                            temp.coordinates = coordinates
+                            salt.coordinates = coordinates
+                    
                     if self.remote.variables[self.xname].ndim == 2:
                         lon = self.local.createVariable('lon',
-                                'f8', ("y", "x"), zlib=False,
+                                'f', ("y", "x"), zlib=False,
                                 )
                         lat = self.local.createVariable('lat',
-                                'f8', ("y", "x"), zlib=False,
+                                'f', ("y", "x"), zlib=False,
                                 )
-                        lon[:] = self.remote.variables[self.xname][50:60, 50:60]
-                        lat[:] = self.remote.variables[self.yname][50:60, 50:60]
                     if self.remote.variables[self.xname].ndim == 1:
                         lon = self.local.createVariable('lon',
-                                'f8', ("x"), zlib=False,
+                                'f', ("x"), zlib=False,
                                 )
                         lat = self.local.createVariable('lat',
-                                'f8', ("y"), zlib=False,
+                                'f', ("y"), zlib=False,
                                 )
-                        lon[:] = self.remote.variables[self.xname][50:60]
-                        lat[:] = self.remote.variables[self.yname][50:60]
                     
+                    if self.remote.variables[self.xname].ndim == 2:             
+                        lon[:] = self.remote.variables[self.xname][:, :]
+                        lat[:] = self.remote.variables[self.yname][:, :]
+                    if self.remote.variables[self.xname].ndim == 1:
+                        lon[:] = self.remote.variables[self.xname][:]
+                        lat[:] = self.remote.variables[self.yname][:]
+                    
+                    localvars = [u, v,]
+                    remotevars = [self.remote.variables[self.uname], 
+                                  self.remote.variables[self.vname]]
+                                  
+                    if self.temp_name != None and self.salt_name != None:
+                        localvars.append(temp)
+                        localvars.append(salt)
+                        remotevars.append(self.remote.variables[self.temp_name])
+                        remotevars.append(self.remote.variables[self.salt_name])
+                    if self.wname != None:
+                        localvars.append(w)
+                        remotevars.append(self.remote.variables[self.wname])
+                        
                     if self.zname != None:            
                         if self.remote.variables[self.zname].ndim == 4:
                             z = self.local.createVariable('z',
-                                'f8', ("time","level","y","x"), zlib=False,
+                                'f', ("time","level","y","x"), zlib=False,
                                 )  
-                            z[:] = self.remote.variables[self.zname][self.inds, :, :, :]
+                            remotez = self.remote.variables[self.zname]
+                            localvars.append(z)
+                            remotevars.append(remotez)
                         elif self.remote.variables[self.zname].ndim == 3:
                             z = self.local.createVariable('z',
-                                'f8', ("level","y","x"), zlib=False,
+                                'f', ("level","y","x"), zlib=False,
                                 )
                             z[:] = self.remote.variables[self.zname][:, :, :]
-                        #elif self.remote.variables[zname].ndim == 2:
-                        #    z = self.local.createVariable('lon',
-                        #        'f8', ("",), zlib=False,
-                        #        )
                         elif self.remote.variables[self.zname].ndim ==1:
                             z = self.local.createVariable('z',
-                                'f8', ("level",), zlib=False,
+                                'f', ("level",), zlib=False,
                                 )
-                            z[:] = self.remote.variables[self.zname][1:3]
+                            z[:] = self.remote.variables[self.zname][:]
                     
                     time = self.local.createVariable('time',
                                 'f8', ("time",), zlib=False,
                                 )
                     if self.tname != None:
                         time[:] = self.remote.variables[self.tname][self.inds]
+
+                    self.get_remote_data(localvars, remotevars, self.inds, shape) 
                     
-                    if self.temp_name != None and self.salt_name != None:
-                        temp[:] = self.remote.variables[self.temp_name][self.inds, 1:3, 80:90, 150:155]
-                        salt[:] = self.remote.variables[self.salt_name][self.inds, 1:3, 80:90, 150:155]
-                        temp.coordinates = coordinates
-                        salt.coordinates = coordinates
-                    u[:] = self.remote.variables[self.uname][self.inds, 1:3, 80:90, 150:155] #:]
-                    v[:] = self.remote.variables[self.vname][self.inds, 1:3, 80:90, 150:155] #:]
-                    u.coordinates = coordinates
-                    v.coordinates = coordinates
-                    if self.wname != None:
-                        w[:] = self.remote.variables[self.wname][self.inds, :]
-                        w.coordinates = coordinates
                     self.local.sync()
                     self.local.close()
                     c += 1
                     self.inds = self.inds + self.init_size
                     self.updating.value = False
                     self.get_data.value = False
+
                 else:
                     
                     self.updating.value = True
-                    self.local = netCDF4.Dataset(cachepath, 'a')                  
-                    self.local.variables["u"][self.inds, 0:2, :10, :5] = \
-                        self.remote.variables[self.uname][self.inds, 1:3, 80:90, 150:155]
-                    self.local.variables["v"][self.inds, 0:2, :10, :5] = \
-                        self.remote.variables[self.vname][self.inds, 1:3, 80:90, 150:155]
-                    if self.tname != None:
-                        self.local.variables["time"][self.inds] = \
-                            self.remote.variables[self.tname][self.inds]
+                    self.local = netCDF4.Dataset(cachepath, 'a')  
+                    u = self.local.variables['u']
+                    v = self.local.variables['v']
+                    time = self.local.variables['time']
+                    remoteu = self.remote.variables[self.uname]
+                    remotev = self.remote.variables[self.vname]
+                    remotetime = self.remote.variables[self.tname]
+                    localvars = [u, v, ]
+                    remotevars = [remoteu, remotev, ]
+                    if self.salt_name != None and self.temp_name != None:
+                        salt = self.local.variables['salt']
+                        temp = self.local.variables['temp']
+                        remotesalt = self.remote.variables[self.salt_name]
+                        remotetemp = self.remote.variables[self.temp_name]
+                        localvars.append(salt)
+                        localvars.append(temp)
+                        remotevars.append(remotesalt)
+                        remotevars.append(remotetemp)
                     if self.wname != None:
-                        self.local.variables["w"][self.inds,:] = \
-                            self.remote.variables[self.wname][self.inds,:]
-                    if self.temp_name != None and self.salt_name != None:
-                        self.local.variables["temp"][self.inds, 0:2, :10, :5] = \
-                            self.remote.variables[self.temp_name][self.inds, 1:3, 80:90, 150:155]
-                        self.local.variables["salt"][self.inds, 0:2, :10, :5] = \
-                            self.remote.variables[self.salt_name][self.inds, 1:3, 80:90, 150:155]
+                        w = self.local.variables['w']
+                        remotew = self.remote.variables[self.wname]
+                        localvars.append(w)
+                        remotevars.append(remotew)
+                    if self.zname != None:
+                        remotez = self.remote.variables[self.zname]
+                        if remotez.ndim == 4:
+                            z = self.local.variables['z']
+                            localvars.append(z)
+                            remotevars.append(remotez)
+                    if self.tname != None:
+                        remotetime = self.remote.variables[self.tname]
+                        time[self.inds] = self.remote.variables[self.inds]
+                        
+                    self.get_remote_data(localvars, remotevars, self.inds, shape)
+                    
                     self.local.sync()
                     self.local.close()
                     c += 1
@@ -266,17 +341,11 @@ class ForceParticle(object):
                  point, usebathy, useshore, usesurface,
                  get_data, n_run, updating, particle_get):
         self.url =  os.path.join(os.path.dirname(__file__),"_cache","localcache.nc")
-        #self.uname = uname
-        #self.vname = vname
-        #self.wname = wname
         self.point = point
         self.part = part
         self.times = times
         self.start_time = start_time
         self.models = models
-        #self.u = u
-        #self.v = v
-        #self.z = z
         self.usebathy = usebathy
         self.useshore = useshore
         self.usesurface = usesurface
@@ -352,6 +421,8 @@ class ForceParticle(object):
             
             u = u[0]
             v = v[0]
+            print u,v
+            print self.part.location.longitude, self.part.location.latitude
             #if np.isnan(u) or np.isnan(v):
             #    u, v = random.uniform(-1, 1), random.uniform(-1, 1)
 

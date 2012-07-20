@@ -296,9 +296,7 @@ class ModelController(object):
         matplotlib.pyplot.show()
         return fig
 
-    def run(self, hydrodataset, uname='u', vname='v', wname=None, 
-            xname='lon', yname='lat', tname=None, zname=None,
-            temp_name=None, salt_name=None ):
+    def run(self, hydrodataset):
         ######################################################
         #u=[] # random u,v,z generator
         #v=[]
@@ -359,9 +357,8 @@ class ModelController(object):
         # can get the initial data and is not blocked
         tasks.put(parallel.DataController(
                   hydrodataset, n_run, get_data, updating,
-                  uname, vname, wname, time_chunk, particle_get,
-                  xname, yname, tname, zname, temp_name,
-                  salt_name))
+                  time_chunk, particle_get,
+                  ))
                
 	    # loop over particles
         for part in self.particles:
