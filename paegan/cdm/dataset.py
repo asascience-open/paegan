@@ -535,7 +535,7 @@ class Dataset:
                 elif name == "x":
                     for i,position in enumerate(positions[name]):
                         indices[position] = xinds[i]
-        print indices
+        #print indices
         if np.all([i.size >0 for i in indices]):
             data = self._get_data(var, indices, use_local)
         else:
