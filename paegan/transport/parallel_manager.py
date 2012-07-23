@@ -21,7 +21,7 @@ class Consumer(multiprocessing.Process):
         self.task_queue = task_queue
         self.result_queue = result_queue
         self.n_run = n_run
-        
+        self.n_run.value = self.n_run.value + 1
     def run(self):
         proc_name = self.name
         while True:
@@ -29,9 +29,10 @@ class Consumer(multiprocessing.Process):
             if next_task is None:
                 # Poison pill means shutdown
                 #print '%s: Exiting' % proc_name
+                self.n_run.value = self.n_run.value - 1
                 self.task_queue.task_done()
 
-                self.n_run.value = self.n_run.value - 1
+                
                 break
             #print '%s: %s' % (proc_name, next_task)
             answer = next_task()
@@ -48,7 +49,7 @@ class DataController(object):
         self.n_run = n_run
         self.get_data = get_data
         self.updating = updating
-        self.inds = np.arange(init_size)
+        self.inds = np.arange(init_size+1)
         self.init_size = init_size
         self.particle_get = particle_get
         self.low_memory = kwargs.get("low_memory", False)
@@ -90,12 +91,14 @@ class DataController(object):
         self.tname = None ## temporary
     
     def get_remote_data(self, localvars, remotevars, inds, shape):
+        print "updating local data"
         for local, remote in zip(localvars, remotevars):
             for time in inds[:]:
                 if time + 1 > shape[0] - 1:
                     time_1 = shape[0]
                 else:
                     time_1 = time + 1
+                #print time, time_1
                 if self.low_memory:
                  
                     for z in range(0,1):#shape[1]):
@@ -117,6 +120,7 @@ class DataController(object):
                             local[time:time_1, z:z_1, :, :] = remote[time:time_1,  z:z_1, :, :]
                         else:
                             local[time:time_1, z:z_1, :] = remote[time:time_1, z:z_1, :]
+                
                 else:
                     if len(shape) == 4:
                         local[time:time_1, :, :, :] = remote[time:time_1,  :, :, :]
@@ -130,6 +134,7 @@ class DataController(object):
         self.get_variablenames_for_model()
         self.remote = self.dataset.nc
         cachepath = os.path.join('/home/acrosby',"localcache.nc")#os.path.dirname(__file__),"_cache","localcache.nc")
+        
         while self.n_run.value > 1:
             #print self.n_run.value
             if self.get_data.value == True:
@@ -370,7 +375,8 @@ class ForceParticle(object):
         self.dataset = CommonDataset(self.url)
         self.dataset.closenc()
         # loop over timesteps
-        for i in xrange(0, len(times)-1): 
+        for i in xrange(0, len(times)-1):
+            print i, self.n_run.value
             try:
                 modelTimestep = times[i+1] - times[i]
                 calculatedTime = times[i+1]
@@ -394,8 +400,8 @@ class ForceParticle(object):
             try:
                 #print i
                 #print self.dataset.nc.variables['u'].shape
-                u = self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )
-                v = self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )
+                u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )))
+                v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )))
                 #u = np.mean(np.mean(np.ma.masked_array(u, np.isnan(u))))
                 #v = np.mean(np.mean(np.ma.masked_array(v, np.isnan(v))))
                 w = 0#self.z # dataset.get_values('w', )
@@ -409,21 +415,23 @@ class ForceParticle(object):
                     pass
                 self.particle_get.value = True
                 self.dataset.opennc()
-                u = self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )
-                v = self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )
+                u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )))
+                v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )))
                 #u = np.mean(np.mean(np.ma.masked_array(u, np.isnan(u))))
                 #v = np.mean(np.mean(np.ma.masked_array(v, np.isnan(v))))
                 w = 0#self.z # dataset.get_values('w', )
                 self.dataset.closenc()
             
-            u = u[0]
-            v = v[0]
+            #u = u[0]
+            #v = v[0]
             #print u, v
             if np.isnan(u) or np.isnan(v):
-                #u, v = 0, 0
-                u = self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=4 )
-                v = self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=4 )
-
+            #    u, v = 0, 0
+                self.dataset.opennc()
+                u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=2 )))
+                v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=2 )))
+                self.dataset.closenc()
+            
             # loop over models - sort these in the order you want them to run
             for model in models:
                 movement = model.move(part.location, u, v, w, modelTimestep)

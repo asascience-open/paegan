@@ -248,7 +248,7 @@ class ModelController(object):
         midpoint = point#tracks.centroid
 
         #bbox = tracks.bounds
-        visual_bbox = (point.x-.25, point.y-.25, point.x+.25, point.y+.25)#tracks.buffer(1).bounds
+        visual_bbox = (point.x-1.2, point.y-1.2, point.x+1.2, point.y+1.2)#tracks.buffer(1).bounds
 
         #max_distance = max(abs(bbox[0] - bbox[2]), abs(bbox[1] - bbox[3])) + 0.25
 
@@ -261,7 +261,7 @@ class ModelController(object):
         c_lats = np.where((c_lats >= visual_bbox[1]) & (c_lats <= visual_bbox[3]), c_lats, np.nan)
 
         #add bathymetry
-        nc1 = netCDF4.Dataset('/media/sf_Python/paegan/paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd')
+        nc1 = netCDF4.Dataset(os.path.normpath(os.path.join(__file__,"../../resources/bathymetry/ETOPO1_Bed_g_gmt4.grd")))
         x = nc1.variables['x']
         y = nc1.variables['y']
 
@@ -325,7 +325,7 @@ class ModelController(object):
         # Get the number of cores (may take some tuning) and create that
         # many workers then pass particles into the queue for the workers
         mgr = multiprocessing.Manager()
-        nproc = multiprocessing.cpu_count() * 2
+        nproc = multiprocessing.cpu_count()
         
         # Create the task and result queues
         tasks = multiprocessing.JoinableQueue()
@@ -333,7 +333,7 @@ class ModelController(object):
         
         # Create the shared state objects
         get_data = mgr.Value('bool', True)
-        n_run = mgr.Value('int', nproc)
+        n_run = mgr.Value('int', 0)
         updating = mgr.Value('bool', False)
         particle_get = mgr.Value('bool', False)
         

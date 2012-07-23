@@ -96,6 +96,7 @@ class Gridobj:
             lon = kwargs.get("lon", None)
             point = Location4D(latitude=lat, longitude=lon, depth=0, time=0)
         num = kwargs.get("num", 1)
+        
         if self._ndim == 2:
             distance = AsaGreatCircle.great_distance(
                 start_lats=self._yarray, start_lons=self._xarray,
@@ -104,8 +105,17 @@ class Gridobj:
         else:
             #if self._xmesh == None and self._ymesh == None:
             #    self._xmesh, self._ymesh = np.meshgrid(self._xarray, self._yarray)
-            yinds = np.where((self._yarray - point.latitude) == np.min(np.abs(self._yarray - point.latitude)))
-            xinds = np.where((self._xarray - point.longitude) == np.min(np.abs(self._xarray - point.longitude)))
+            if num > 1:
+                minlat = np.abs(self._yarray - point.latitude)
+                minlon = np.abs(self._xarray - point.longitude)
+                lat_cutoff = np.sort(minlat)[num-1]
+                lon_cutoff = np.sort(minlon)[num-1]
+            elif num == 1:
+                lat_cutoff = np.min(np.abs(self._yarray - point.latitude))
+                lon_cutoff = np.min(np.abs(self._xarray - point.longitude))
+            yinds = np.where(np.abs(self._yarray - point.latitude) <= lat_cutoff)
+            xinds = np.where(np.abs(self._xarray - point.longitude) <= lon_cutoff)
+
         return yinds, xinds 
 
         
