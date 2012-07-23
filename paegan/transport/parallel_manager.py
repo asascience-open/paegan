@@ -133,7 +133,7 @@ class DataController(object):
         
         self.get_variablenames_for_model()
         self.remote = self.dataset.nc
-        cachepath = os.path.join('/home/acrosby',"localcache.nc")#os.path.dirname(__file__),"_cache","localcache.nc")
+        cachepath = os.path.join(os.path.dirname(__file__),"_cache","localcache.nc")
         
         while self.n_run.value > 1:
             #print self.n_run.value
@@ -342,7 +342,7 @@ class ForceParticle(object):
     def __init__(self, part, times, start_time, models, 
                  point, usebathy, useshore, usesurface,
                  get_data, n_run, updating, particle_get):
-        self.url =  os.path.join('/home/acrosby',"localcache.nc")#os.path.dirname(__file__),"_cache","localcache.nc")
+        self.url =  os.path.join(os.path.dirname(__file__),"_cache","localcache.nc")
         self.point = point
         self.part = part
         self.times = times
