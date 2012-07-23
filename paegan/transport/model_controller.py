@@ -349,12 +349,14 @@ class ModelController(object):
         # can get the initial data and is not blocked
         tasks.put(parallel.DataController(
                   hydrodataset, n_run, get_data, updating,
-                  time_chunk, particle_get, low_memory=low_memory
+                  time_chunk, particle_get, times, start_time,
+                  low_memory=low_memory
                   ))
                
 	    # loop over particles
         for part in self.particles:
             tasks.put(parallel.ForceParticle(part, 
+                                            hydrodataset,
                                             times, 
                                             start_time,
                                             self._models,
