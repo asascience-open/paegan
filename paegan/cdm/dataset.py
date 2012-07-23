@@ -519,6 +519,7 @@ class Dataset:
         #    len(xinds) > 0 and len(yinds) > 0:
         # Now take time inds, z inds, x and y inds and put them 
         # into the request in the right places:
+       
         indices = [None for i in range(ndim)]
         for name in positions:
             if positions[name] != None:
@@ -534,6 +535,7 @@ class Dataset:
                 elif name == "x":
                     for i,position in enumerate(positions[name]):
                         indices[position] = xinds[i]
+        #print indices
         if np.all([i.size >0 for i in indices]):
             data = self._get_data(var, indices, use_local)
         else:
@@ -657,7 +659,7 @@ class RGridDataset(Dataset):
         grid = self.getgridobj(var)
         num = kwargs.get("num", 1)
         index = grid.near_xy(point=point, num=num)
-        return index[1], index[0]
+        return index[1], index[0] # could be more than 1 closest
         
     def _get_data(self, var, indarray, use_local=False):
         ndims = len(indarray)
