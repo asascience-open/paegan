@@ -42,17 +42,20 @@ class Consumer(multiprocessing.Process):
 
 class DataController(object):
     def __init__(self, url, n_run, get_data, updating,
-                 init_size, particle_get, **kwargs
+                 init_size, particle_get, times, start_time, 
+                 **kwargs
                  ):
         self.url = url
         #self.local = Dataset(".cache/localcache.nc", 'w')
         self.n_run = n_run
         self.get_data = get_data
         self.updating = updating
-        self.inds = np.arange(init_size+1)
+        self.inds = None#np.arange(init_size+1)
         self.init_size = init_size
         self.particle_get = particle_get
         self.low_memory = kwargs.get("low_memory", False)
+        self.start_time = start_time
+        self.times = times
     
     def get_variablenames_for_model(self):
         getname = self.dataset.get_varname_from_stdname
@@ -133,8 +136,30 @@ class DataController(object):
         
         self.get_variablenames_for_model()
         self.remote = self.dataset.nc
-        cachepath = os.path.join(os.path.dirname(__file__),"_cache","localcache.nc")
+        cachepath = os.path.join("/home/acrosby/local.nc")#os.path.dirname(__file__),"_cache","localcache.nc")
+        times = self.times
+        start_time = self.start_time
         
+        modelTimestep = []
+        calculatedTime = []
+        newtimes = []
+        for i in xrange(0, len(times)-1):
+            try:
+                modelTimestep.append(times[i+1] - times[i])
+                calculatedTime.append(times[i+1])
+            except:
+                modelTimestep.append(times[i] - times[i-1])
+                calculatedTime.append(times[i] + modelTimestep[i])
+               
+            newtimes.append(start_time + timedelta(seconds=calculatedTime[i]))
+      
+        remote_coord_names = self.dataset.get_coord_names(self.uname)
+        remote_nctime = self.remote.variables[remote_coord_names['tname']]
+        time_indexs = netCDF4.date2index(newtimes, remote_nctime,
+                                         select='nearest')
+                                         
+        self.inds = time_indexs
+                
         while self.n_run.value > 1:
             #print self.n_run.value
             if self.get_data.value == True:
@@ -273,13 +298,18 @@ class DataController(object):
                                 )
                     if self.tname != None:
                         time[:] = self.remote.variables[self.tname][self.inds]
-
-                    self.get_remote_data(localvars, remotevars, self.inds, shape) 
+                    
+                    try:
+                        current_inds = self.inds[0:(c+1) * self.init_size]
+                    except:
+                        current_inds = self.inds[0:]
+                        
+                    self.get_remote_data(localvars, remotevars, current_inds, shape) 
                     
                     self.local.sync()
                     self.local.close()
                     c += 1
-                    self.inds = self.inds + self.init_size
+                    #self.inds = self.inds + self.init_size
                     self.updating.value = False
                     self.get_data.value = False
 
@@ -318,13 +348,18 @@ class DataController(object):
                     if self.tname != None:
                         remotetime = self.remote.variables[self.tname]
                         time[self.inds] = self.remote.variables[self.inds]
+                    
+                    try:
+                        current_inds = self.inds[c*self.init_size:(c+1) * self.init_size]
+                    except:
+                        current_inds = self.inds[c*self.init_size:]
                         
-                    self.get_remote_data(localvars, remotevars, self.inds, shape)
+                    self.get_remote_data(localvars, remotevars, current_inds, shape)
                     
                     self.local.sync()
                     self.local.close()
                     c += 1
-                    self.inds = self.inds + self.init_size
+                    #self.inds = self.inds + self.init_size
                     self.updating.value = False
                     self.get_data.value = False
             else:
@@ -339,10 +374,11 @@ class ForceParticle(object):
     def __str__(self):
         return self.part.__str__()
 
-    def __init__(self, part, times, start_time, models, 
+    def __init__(self, part, remotehydro, times, start_time, models, 
                  point, usebathy, useshore, usesurface,
                  get_data, n_run, updating, particle_get):
-        self.url =  os.path.join(os.path.dirname(__file__),"_cache","localcache.nc")
+        self.remotehydropath = remotehydro
+        self.localpath =  os.path.join("/home/acrosby/local.nc")#os.path.dirname(__file__),"_cache","localcache.nc")
         self.point = point
         self.part = part
         self.times = times
@@ -370,21 +406,37 @@ class ForceParticle(object):
         times = self.times
         start_time = self.start_time
         models = self.models
+        
         while self.get_data.value == True:
             pass
-        self.dataset = CommonDataset(self.url)
+        self.dataset = CommonDataset(self.localpath)
         self.dataset.closenc()
-        # loop over timesteps
+        
+        modelTimestep = []
+        calculatedTime = []
+        newtimes = []
         for i in xrange(0, len(times)-1):
-            #print i, self.n_run.value
             try:
-                modelTimestep = times[i+1] - times[i]
-                calculatedTime = times[i+1]
+                modelTimestep.append(times[i+1] - times[i])
+                calculatedTime.append(times[i+1])
             except:
-                modelTimestep = times[i] - times[i-1]
-                calculatedTime = times[i] + modelTimestep
+                modelTimestep.append(times[i] - times[i-1])
+                calculatedTime.append(times[i] + modelTimestep[i])
                
-            newtime = start_time + timedelta(seconds=calculatedTime)
+            newtimes.append(start_time + timedelta(seconds=calculatedTime[i]))
+        
+        
+        remote = CommonDataset(self.remotehydropath)
+        remote_coord_names = remote.get_coord_names('u')
+        remote_nctime = remote.nc.variables[remote_coord_names['tname']]
+        time_indexs = netCDF4.date2index(newtimes, remote_nctime,
+                                         select='nearest')
+        
+        array_indexs = time_indexs - time_indexs[0]
+        
+        # loop over timesteps   
+        for i, loop_i in zip(time_indexs, array_indexs):
+            
             newloc = None
             
             
@@ -398,13 +450,12 @@ class ForceParticle(object):
             self.dataset.opennc()
 
             try:
-                #print i
-                #print self.dataset.nc.variables['u'].shape
                 u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )))
                 v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )))
-                #u = np.mean(np.mean(np.ma.masked_array(u, np.isnan(u))))
-                #v = np.mean(np.mean(np.ma.masked_array(v, np.isnan(v))))
-                w = 0#self.z # dataset.get_values('w', )
+                if 'w' in self.dataset.variables:
+                    w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
+                else:
+                    w = 0
                 self.dataset.closenc()
             except:
                 self.dataset.closenc()
@@ -417,25 +468,26 @@ class ForceParticle(object):
                 self.dataset.opennc()
                 u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )))
                 v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )))
-                #u = np.mean(np.mean(np.ma.masked_array(u, np.isnan(u))))
-                #v = np.mean(np.mean(np.ma.masked_array(v, np.isnan(v))))
-                w = 0#self.z # dataset.get_values('w', )
+                if 'w' in self.dataset.variables:
+                    w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
+                else:
+                    w = 0
                 self.dataset.closenc()
-            
-            #u = u[0]
-            #v = v[0]
             #print u, v
             if np.isnan(u) or np.isnan(v):
-            #    u, v = 0, 0
                 self.dataset.opennc()
                 u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=2 )))
                 v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=2 )))
+                if 'w' in self.dataset.variables:
+                    w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
+                else:
+                    w = 0
                 self.dataset.closenc()
             
             # loop over models - sort these in the order you want them to run
             for model in models:
-                movement = model.move(part.location, u, v, w, modelTimestep)
-                newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtime)
+                movement = model.move(part.location, u, v, w, modelTimestep[loop_i])
+                newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtime[loop_i])
                 if newloc: # changed p.location to part.location
                     self.boundary_interaction(self._bathymetry, self._shoreline, self.usebathy,self.useshore,self.usesurface,
                         particle=part, starting=part.location, ending=newloc,
