@@ -16,6 +16,7 @@ class Gridobj:
         self._ndim = self._nc.variables[self._xname].ndim
         self._ymesh = None
         self._xmesh = None
+        self._type = None
         
         if self._xname != None:
             self._x_nc = self._nc.variables[self._xname]

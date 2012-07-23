@@ -91,7 +91,7 @@ class DataController(object):
         self.tname = None ## temporary
     
     def get_remote_data(self, localvars, remotevars, inds, shape):
-        print "updating local data"
+        #print "updating local data"
         for local, remote in zip(localvars, remotevars):
             for time in inds[:]:
                 if time + 1 > shape[0] - 1:
@@ -376,7 +376,7 @@ class ForceParticle(object):
         self.dataset.closenc()
         # loop over timesteps
         for i in xrange(0, len(times)-1):
-            print i, self.n_run.value
+            #print i, self.n_run.value
             try:
                 modelTimestep = times[i+1] - times[i]
                 calculatedTime = times[i+1]

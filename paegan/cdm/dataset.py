@@ -659,7 +659,7 @@ class RGridDataset(Dataset):
         grid = self.getgridobj(var)
         num = kwargs.get("num", 1)
         index = grid.near_xy(point=point, num=num)
-        return index[1], index[0] # could be more than 1 closest
+        return index[1], index[0] 
         
     def _get_data(self, var, indarray, use_local=False):
         ndims = len(indarray)
