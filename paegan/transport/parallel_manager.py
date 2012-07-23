@@ -153,10 +153,8 @@ class DataController(object):
                
             newtimes.append(start_time + timedelta(seconds=calculatedTime[i]))
       
-        remote_coord_names = self.dataset.get_coord_names(self.uname)
-        remote_nctime = self.remote.variables[remote_coord_names['tname']]
-        time_indexs = netCDF4.date2index(newtimes, remote_nctime,
-                                         select='nearest')
+        timevar = self.dataset.gettimevar(self.uname)
+        time_indexs = timevar.nearest_index(newtimes)
                                          
         self.inds = time_indexs
                 
@@ -392,6 +390,42 @@ class ForceParticle(object):
         self.updating = updating
         self.particle_get = particle_get
         
+    def get_variablenames_for_model(self, dataset):
+        getname = dataset.get_varname_from_stdname
+        self.uname = getname('eastward_sea_water_velocity') 
+        self.vname = getname('northward_sea_water_velocity') 
+        self.wname = getname('upward_sea_water_velocity')
+        if len(self.uname) > 0:
+            self.uname = self.uname[0]
+        else:
+            self.uname = None
+        if len(self.vname) > 0:
+            self.vname = self.vname[0]
+        else:
+            self.vname = None
+        if len(self.wname) > 0:
+            self.wname = self.wname[0]
+        else:
+            self.wname = None
+
+        coords = dataset.get_coord_names(self.uname) 
+        self.xname = coords['xname'] 
+        self.yname = coords['yname']
+        self.zname = coords['zname']
+        self.tname = coords['tname']
+        self.temp_name = getname('sea_water_temperature') 
+        self.salt_name = getname('sea_water_salinity')
+        
+        if len(self.temp_name) > 0:
+            self.temp_name = self.temp_name[0]
+        else:
+            self.temp_name = None       
+        if len(self.salt_name) > 0:
+            self.salt_name = self.salt_name[0]
+        else:
+            self.salt_name = None
+        self.tname = None ## temporary
+        
     def __call__(self):
         if self.usebathy == True:
             self._bathymetry = Bathymetry(point=self.point)
@@ -427,11 +461,13 @@ class ForceParticle(object):
         
         
         remote = CommonDataset(self.remotehydropath)
-        remote_coord_names = remote.get_coord_names('u')
-        remote_nctime = remote.nc.variables[remote_coord_names['tname']]
-        time_indexs = netCDF4.date2index(newtimes, remote_nctime,
-                                         select='nearest')
-        
+        self.get_variablenames_for_model(remote)
+        #remote_coord_names = remote.get_coord_names('u')
+        #remote_nctime = remote.nc.variables[remote_coord_names['tname']]
+        #time_indexs = netCDF4.date2index(newtimes, remote_nctime,
+        #                                 select='nearest')
+        timevar = remote.gettimevar(self.uname)
+        time_indexs = timevar.nearest_index(newtimes)
         array_indexs = time_indexs - time_indexs[0]
         
         # loop over timesteps   
@@ -452,7 +488,7 @@ class ForceParticle(object):
             try:
                 u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )))
                 v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )))
-                if 'w' in self.dataset.variables:
+                if 'w' in self.dataset.nc.variables:
                     w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
                 else:
                     w = 0
@@ -468,7 +504,7 @@ class ForceParticle(object):
                 self.dataset.opennc()
                 u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )))
                 v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )))
-                if 'w' in self.dataset.variables:
+                if 'w' in self.dataset.nc.variables:
                     w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
                 else:
                     w = 0
@@ -478,7 +514,7 @@ class ForceParticle(object):
                 self.dataset.opennc()
                 u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=2 )))
                 v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=2 )))
-                if 'w' in self.dataset.variables:
+                if 'w' in self.dataset.nc.variables:
                     w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
                 else:
                     w = 0
@@ -487,7 +523,7 @@ class ForceParticle(object):
             # loop over models - sort these in the order you want them to run
             for model in models:
                 movement = model.move(part.location, u, v, w, modelTimestep[loop_i])
-                newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtime[loop_i])
+                newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtimes[loop_i])
                 if newloc: # changed p.location to part.location
                     self.boundary_interaction(self._bathymetry, self._shoreline, self.usebathy,self.useshore,self.usesurface,
                         particle=part, starting=part.location, ending=newloc,

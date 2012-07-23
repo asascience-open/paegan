@@ -29,8 +29,17 @@ class Timevar(np.ndarray):
         if type(ncfile) is str:
             ncfile = netCDF4.Dataset(ncfile)
         self._nc = ncfile
-
-        data = self._nc.variables[name][:]
+        
+        if self._nc.variables[name].ndim > 1:
+            _str_data = self._nc.variables[name][:,:]
+            if units == None:
+                units = 'seconds since 1990-01-01'
+            
+            dates = [parse(_str_data[i, :].tostring()) for i in range(len(_str_data[:,0]))]
+            data = netCDF4.date2num(dates, units)
+        else:
+            data = self._nc.variables[name][:]
+            
         if units == None:
             try:
                 self._units = self._nc.variables[name].units
@@ -59,8 +68,10 @@ class Timevar(np.ndarray):
         return data.view(self)
     
     def nearest_index(self, dateo):
-        to = pylab.date2num(dateo)
-        return np.where(abs(self.jd-to) == min(abs(self.jd-to)))[0]
+        #to = pylab.date2num(dateo)
+        to = netCDF4.date2num(dateo, self._units+' since '+self.origin.strftime("%Y-%m-%d"))
+        #return np.where(abs(self.jd-to) == min(abs(self.jd-to)))[0]
+        return [np.where(abs(self.jd-t) == min(abs(self.jd-t)))[0][0] for t in to]
     
     def nearest(self, dateo):
         """
