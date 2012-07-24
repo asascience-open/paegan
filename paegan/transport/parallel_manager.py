@@ -97,10 +97,10 @@ class DataController(object):
         #print "updating local data"
         for local, remote in zip(localvars, remotevars):
             for i, time in enumerate(inds[:]):
-                if inds[i + 1] > shape[0] - 1:
+                if time+1 > shape[0] - 1:
                     time_1 = shape[0]
                 else:
-                    time_1 = inds[i + 1]
+                    time_1 = time+1
                 #print time, time_1
                 if self.low_memory:
                  
@@ -155,7 +155,7 @@ class DataController(object):
       
         timevar = self.dataset.gettimevar(self.uname)
         time_indexs = timevar.nearest_index(newtimes)
-                                         
+        
         self.inds = np.unique(time_indexs)
                 
         while self.n_run.value > 1:
