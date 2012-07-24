@@ -304,6 +304,7 @@ class ModelController(object):
         start_depth = self._depth
         start_time = self._start
         time_chunk = self._time_chunk
+        horiz_chunk = self._horiz_chunk
         hydrodataset = hydrodataset
         low_memory = kwargs.get("low_memory", False)
         
@@ -349,7 +350,7 @@ class ModelController(object):
         # can get the initial data and is not blocked
         tasks.put(parallel.DataController(
                   hydrodataset, n_run, get_data, updating,
-                  time_chunk, particle_get, times, start_time,
+                  time_chunk, horiz_chunk, particle_get, times, start_time,
                   low_memory=low_memory
                   ))
                
