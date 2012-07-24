@@ -104,7 +104,7 @@ class DataController(object):
                 #print time, time_1
                 if self.low_memory:
                  
-                    for z in range(0,1):#shape[1]):
+                    for z in range(shape[1]):
                         if z + 1 > shape[1] - 1:
                             z_1 = shape[1]
                         else:
