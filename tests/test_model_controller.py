@@ -10,6 +10,7 @@ from paegan.transport.particles.particle import Particle
 from paegan.transport.location4d import Location4D
 from paegan.utils.asarandom import AsaRandom
 from paegan.transport.model_controller import ModelController
+from shapely.geometry import Point
 
 class ModelControllerTest(unittest.TestCase):
     def test_run_individual_particles(self):

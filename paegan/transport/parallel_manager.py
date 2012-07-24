@@ -42,7 +42,7 @@ class Consumer(multiprocessing.Process):
 
 class DataController(object):
     def __init__(self, url, n_run, get_data, updating,
-                 init_size, particle_get, times, start_time, 
+                 init_size, horiz_chunk, particle_get, times, start_time, 
                  **kwargs
                  ):
         self.url = url
@@ -51,7 +51,8 @@ class DataController(object):
         self.get_data = get_data
         self.updating = updating
         self.inds = None#np.arange(init_size+1)
-        self.init_size = init_size
+        self.time_size = init_size
+        self.horiz_size = horiz_chunk
         self.particle_get = particle_get
         self.low_memory = kwargs.get("low_memory", False)
         self.start_time = start_time
