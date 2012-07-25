@@ -98,6 +98,13 @@ class DataController(object):
     
     def get_remote_data(self, localvars, remotevars, inds, shape):
         #print "updating local data"
+        if self.horiz_chunk == 'all':
+            y, y_1 = 0, shape[-2]
+            x, x_1 = 0, shape[-1]
+        else:
+            r = self.horiz_chunk
+            x, x_1 = self.point_get[3]-r, self.point_get[3]+r+1
+            y, y_1 = self.point_get[2]-r, self.point_get[2]+r+1
         for local, remote in zip(localvars, remotevars):
             for i, time in enumerate(inds[:]):
                 if time+1 > shape[0] - 1:
@@ -123,16 +130,17 @@ class DataController(object):
                             #            x_1 = shape[3]
                             #        else:
                             #            x_1 = x + 1
-                            local[time:time_1, z:z_1, :, :] = remote[time:time_1,  z:z_1, :, :]
+                            local[time:time_1, z:z_1, y:y_1, x:x_1] = remote[time:time_1,  z:z_1, y:y_1, x:x_1]
                         else:
-                            local[time:time_1, z:z_1, :] = remote[time:time_1, z:z_1, :]
+                            if z == 0:
+                                local[time:time_1, y:y_1, x:x_1] = remote[time:time_1, y:y_1, x:x_1]
                 
                 else:
                     if len(shape) == 4:
-                        local[time:time_1, :, :, :] = remote[time:time_1,  :, :, :]
+                        local[time:time_1, :, y:y_1, x:x_1] = remote[time:time_1,  :, y:y_1, x:x_1]
                     else:
-                        local[time:time_1, :, :] = remote[time:time_1, :, :]
-       
+                        local[time:time_1, y:y_1, x:x_1] = remote[time:time_1, y:y_1, x:x_1]
+
     def __call__(self):
         c = 0
         self.dataset = CommonDataset(self.url)
@@ -350,11 +358,15 @@ class DataController(object):
                         remotetime = self.remote.variables[self.tname]
                         time[self.inds] = self.remote.variables[self.inds]
                     
-                    try:
-                        current_inds = self.inds[c*self.init_size:(c+1) * self.init_size]
-                    except:
-                        current_inds = self.inds[c*self.init_size:]
-                        
+                    #try:
+                    #    current_inds = self.inds[c*self.init_size:(c+1) * self.init_size]
+                    #except:
+                    #    current_inds = self.inds[c*self.init_size:]
+                    if self.point_get[0]+self.init+size > np.max(self.inds):
+                        current_inds = np.arange(self.point_get[0], np.max(self.inds)+1)
+                    else:
+                        current_inds = np.arange(self.point_get[0],self.point_get[0] + self.init_size)
+                           
                     self.get_remote_data(localvars, remotevars, current_inds, shape)
                     
                     self.local.sync()
@@ -431,6 +443,56 @@ class ForceParticle(object):
             self.salt_name = None
         self.tname = None ## temporary
         
+    def check_cache_for_data(self, i):
+        #need = True
+        #while need:
+        shape = self.dataset.nc.variables[self.uname].shape
+        if shape[0] < i:
+            time_need = True
+        else:
+            time_need = False
+        if np.mean(np.mean(self.dataset.get_values('domain', timeinds=[np.asarray([i])], point=self.part.location ))) == 0:
+            horiz_need = True
+        else:
+            horiz_need = False
+        return horiz_need or time_need # return true if need data or false if dont
+            
+        
+    def ask_for_new_data(self):
+        pass
+        
+    def make_sure_data_in_cache(self, i):
+        if self.get_data.value:
+            self.dataset.closenc()
+        while self.get_data.value == True:
+            pass
+        if self.dataset.nc == None:
+            self.dataset.opennc()
+        if self.check_cache_for_data(i):
+            indices = self.dataset.get_indices('u', timeinds=[np.asarray([i-1])], point=self.part.location )
+            self.point_get = [indices[0],indices[-2],indices[-1]]
+            self.get_data.value = True  # Checkout data controller for update
+            # Checkin data controller for update
+            
+      
+    def get_data(self, i):
+        if self.get_data.value:
+            self.dataset.closenc()
+        while self.get_data.value == True:
+            pass
+        self.particle_get.value = True
+        if self.dataset.nc == None:
+            self.dataset.opennc()
+        u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )))
+        v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )))
+        if 'w' in self.dataset.nc.variables:
+            w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
+        else:
+            w = 0
+        self.particle_get.value = False
+        
+        return u,v,w
+        
     def __call__(self):
         if self.usebathy == True:
             self._bathymetry = Bathymetry(point=self.point)
@@ -489,6 +551,10 @@ class ForceParticle(object):
                 pass
             self.particle_get.value = True
             self.dataset.opennc()
+            
+            self.make_sure_data_in_cache(i)
+            u, v, w = self.get_data(i)
+            '''
             try:
                 if np.mean(np.mean(self.dataset.get_values('domain', timeinds=[np.asarray([i])], point=self.part.location ))) == 0:
                     indices = self.dataset.get_indices('u', timeinds=[np.asarray([i])], point=self.part.location )
@@ -536,6 +602,8 @@ class ForceParticle(object):
                 else:
                     w = 0
                 self.dataset.closenc()
+            '''
+            
             #print u, v
             if np.isnan(u) or np.isnan(v):
                 self.dataset.opennc()
