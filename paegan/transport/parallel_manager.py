@@ -43,7 +43,7 @@ class Consumer(multiprocessing.Process):
 class DataController(object):
     def __init__(self, url, n_run, get_data, updating,
                  init_size, horiz_chunk, particle_get, times,
-                 start_time, point_get,
+                 start_time, point_get, start,
                  **kwargs
                  ):
         self.url = url
@@ -59,6 +59,9 @@ class DataController(object):
         self.low_memory = kwargs.get("low_memory", False)
         self.start_time = start_time
         self.times = times
+        
+        self.start = start
+
     
     def get_variablenames_for_model(self):
         getname = self.dataset.get_varname_from_stdname
@@ -98,13 +101,21 @@ class DataController(object):
     
     def get_remote_data(self, localvars, remotevars, inds, shape):
         #print "updating local data"
-        if self.horiz_chunk == 'all':
+        if self.horiz_size == 'all':
             y, y_1 = 0, shape[-2]
             x, x_1 = 0, shape[-1]
         else:
-            r = self.horiz_chunk
-            x, x_1 = self.point_get[3]-r, self.point_get[3]+r+1
-            y, y_1 = self.point_get[2]-r, self.point_get[2]+r+1
+            r = self.horiz_size
+            x, x_1 = self.point_get.value[2]-r, self.point_get.value[2]+r+1
+            y, y_1 = self.point_get.value[1]-r, self.point_get.value[1]+r+1
+            if y < 0:
+                y = 0
+            if x < 0:
+                x = 0
+            if y_1 > shape[-2]:
+                y_1 = shape[-2]
+            if x_1 > shape[-1]:
+                x_1 = shape[-1]
         for local, remote in zip(localvars, remotevars):
             for i, time in enumerate(inds[:]):
                 if time+1 > shape[0] - 1:
@@ -173,6 +184,9 @@ class DataController(object):
             #print self.n_run.value
             if self.get_data.value == True:
                 if c == 0:
+                    indices = self.dataset.get_indices(self.uname, timeinds=[np.asarray([0])], point=self.start)
+                    self.point_get.value = [self.inds[0], indices[-2], indices[-1]]
+                
                     self.updating.value = True
                     while self.particle_get == True:
                         pass
@@ -308,11 +322,15 @@ class DataController(object):
                     if self.tname != None:
                         time[:] = self.remote.variables[self.tname][self.inds]
                     
-                    try:
-                        current_inds = self.inds[0:(c+1) * self.init_size]
-                    except:
-                        current_inds = self.inds[0:]
-                        
+                    #try:
+                    #    current_inds = self.inds[0:(c+1) * self.init_size]
+                    #except:
+                    #    current_inds = self.inds[0:]
+                    if self.point_get.value[0]+self.time_size > np.max(self.inds):
+                        current_inds = np.arange(self.point_get.value[0], np.max(self.inds)+1)
+                    else:
+                        current_inds = np.arange(self.point_get.value[0],self.point_get.value[0] + self.time_size)
+                           
                     self.get_remote_data(localvars, remotevars, current_inds, shape) 
                     
                     self.local.sync()
@@ -362,10 +380,10 @@ class DataController(object):
                     #    current_inds = self.inds[c*self.init_size:(c+1) * self.init_size]
                     #except:
                     #    current_inds = self.inds[c*self.init_size:]
-                    if self.point_get[0]+self.init+size > np.max(self.inds):
-                        current_inds = np.arange(self.point_get[0], np.max(self.inds)+1)
+                    if self.point_get.value[0]+self.time_size > np.max(self.inds):
+                        current_inds = np.arange(self.point_get.value[0], np.max(self.inds)+1)
                     else:
-                        current_inds = np.arange(self.point_get[0],self.point_get[0] + self.init_size)
+                        current_inds = np.arange(self.point_get.value[0],self.point_get.value[0] + self.time_size)
                            
                     self.get_remote_data(localvars, remotevars, current_inds, shape)
                     

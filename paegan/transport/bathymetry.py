@@ -25,7 +25,7 @@ class Bathymetry():
             returns bool
         """
         end_point = kwargs.pop('end_point')
-        depth = np.mean(np.mean(self._nc.get_values(self._bathy_name, point=end_point))
+        depth = np.mean(np.mean(self._nc.get_values(self._bathy_name, point=end_point)))
         if depth > end_point.depth:
             inter = True
         else:
@@ -43,7 +43,7 @@ class Bathymetry():
             
     def __hover(self, **kwargs):
         end_point = kwargs.pop('end_point')
-        depth = np.mean(np.mean(self._nc.get_values(self._bathy_name, point=end_point))
+        depth = np.mean(np.mean(self._nc.get_values(self._bathy_name, point=end_point)))
         return Location4D(latitude=end_point.latitude, longitude=end_point.longitude, depth=depth + 1)
         
         
