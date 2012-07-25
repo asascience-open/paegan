@@ -353,7 +353,7 @@ class ModelController(object):
         tasks.put(parallel.DataController(
                   hydrodataset, n_run, get_data, updating,
                   time_chunk, horiz_chunk, particle_get, times,
-                  start_time, point_get,
+                  start_time, point_get, startloc,
                   low_memory=low_memory
                   ))
                
