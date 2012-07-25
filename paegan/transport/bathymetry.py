@@ -1,5 +1,6 @@
 import netCDF4
 from paegan.cdm.dataset import CommonDataset
+from paegan.transport.location4d import Location4D
 
 class Bathymetry():
     def __init__(self, **kwargs):
@@ -8,39 +9,41 @@ class Bathymetry():
             * file (local path or dap to bathymetry netcdf file)
 
         """
-
+        
         if "file" in kwargs:
             self._file = os.path.normpath(kwargs.pop('file'))
         else:
             self._file = os.path.normpath(os.path.join(__file__,"../../resources/bathymetry/ETOPO1_Bed_g_gmt4.grd"))
         
         self._type = kwargs.pop("type", "hover")
-        #nc = CommonDataset(self._file)
-        
-        
+        self._nc = CommonDataset(self._file)
+        self._bathy_name = kwargs.pop("bathy", "z")
 
     def intersect(self, **kwargs):
         """
-            Intersect a Line or Point Collection and the Bathymetry
+            Intersect Point and Bathymetry
+            returns bool
         """
-        ls = None
-        if "linestring" in kwargs:
-            ls = kwargs.pop('linestring')
-        elif "start_point" and "end_point" in kwargs:
-            ls = LineString(list(kwargs.pop('start_point').coords) + list(kwargs.pop('end_point').coords))
+        end_point = kwargs.pop('end_point')
+        depth = np.mean(np.mean(self._nc.get_values(self._bathy_name, point=end_point))
+        if depth > end_point.depth:
+            inter = True
         else:
-            raise TypeError( "must provide a LineString geometry object or (2) Point geometry objects" )
-        
-        inter = False
+            inter = False
         return inter
         
     def react(self, **kwargs):
     
         if self._type == 'hover':
-            pass
+            return self.__hover(**kwargs)
         elif self._type == 'stick':
             pass
         else:
             raise ValueError("Bathymetry interaction type not supported")
+            
+    def __hover(self, **kwargs):
+        end_point = kwargs.pop('end_point')
+        depth = np.mean(np.mean(self._nc.get_values(self._bathy_name, point=end_point))
+        return Location4D(latitude=end_point.latitude, longitude=end_point.longitude, depth=depth + 1)
         
         

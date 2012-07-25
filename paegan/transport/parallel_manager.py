@@ -42,7 +42,8 @@ class Consumer(multiprocessing.Process):
 
 class DataController(object):
     def __init__(self, url, n_run, get_data, updating,
-                 init_size, horiz_chunk, particle_get, times, start_time, 
+                 init_size, horiz_chunk, particle_get, times,
+                 start_time, point_get,
                  **kwargs
                  ):
         self.url = url
@@ -54,6 +55,7 @@ class DataController(object):
         self.time_size = init_size
         self.horiz_size = horiz_chunk
         self.particle_get = particle_get
+        self.point_get = point_get
         self.low_memory = kwargs.get("low_memory", False)
         self.start_time = start_time
         self.times = times
@@ -375,7 +377,8 @@ class ForceParticle(object):
 
     def __init__(self, part, remotehydro, times, start_time, models, 
                  point, usebathy, useshore, usesurface,
-                 get_data, n_run, updating, particle_get):
+                 get_data, n_run, updating, particle_get,
+                 point_get):
         self.remotehydropath = remotehydro
         self.localpath =  os.path.join("/home/acrosby/local.nc")#os.path.dirname(__file__),"_cache","localcache.nc")
         self.point = point
@@ -390,6 +393,7 @@ class ForceParticle(object):
         self.n_run = n_run
         self.updating = updating
         self.particle_get = particle_get
+        self.point_get = point_get
         
     def get_variablenames_for_model(self, dataset):
         getname = dataset.get_varname_from_stdname
@@ -485,8 +489,18 @@ class ForceParticle(object):
                 pass
             self.particle_get.value = True
             self.dataset.opennc()
-
             try:
+                if np.mean(np.mean(self.dataset.get_values('domain', timeinds=[np.asarray([i])], point=self.part.location ))) == 0:
+                    indices = self.dataset.get_indices('u', timeinds=[np.asarray([i])], point=self.part.location )
+                    self.point_get.value = [i, indices[-2], indices[-1]]
+                    self.dataset.closenc()
+                    self.particle_get.value = False
+                    if self.get_data.value != True:
+                        self.get_data.value = True
+                    while self.get_data.value == True:
+                        pass
+                    self.particle_get.value = True
+                    self.dataset.opennc()
                 u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )))
                 v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )))
                 if 'w' in self.dataset.nc.variables:
@@ -494,6 +508,7 @@ class ForceParticle(object):
                 else:
                     w = 0
                 self.dataset.closenc()
+                
             except:
                 self.dataset.closenc()
                 self.particle_get.value = False
@@ -503,6 +518,17 @@ class ForceParticle(object):
                     pass
                 self.particle_get.value = True
                 self.dataset.opennc()
+                if np.mean(np.mean(self.dataset.get_values('domain', timeinds=[np.asarray([i])], point=self.part.location ))) == 0:
+                    indices = self.dataset.get_indices('u', timeinds=[np.asarray([i])], point=self.part.location )
+                    self.point_get.value = [i, indices[-2], indices[-1]]
+                    self.dataset.closenc()
+                    self.particle_get.value = False
+                    if self.get_data.value != True:
+                        self.get_data.value = True
+                    while self.get_data.value == True:
+                        pass
+                    self.particle_get.value = True
+                    self.dataset.opennc()
                 u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )))
                 v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )))
                 if 'w' in self.dataset.nc.variables:
@@ -542,17 +568,6 @@ class ForceParticle(object):
         starting = kwargs.pop('starting')
         ending = kwargs.pop('ending')
 
-        # bathymetry
-        if usebathy:
-            pt = bathy.intersect(start_point=starting.point,
-                                 end_point=ending.point,
-                                 distance=kwargs.get('vertical_distance'),
-                                 angle=kwargs.get('vertical_angle'))
-            if pt:
-                ending.latitude = pt.latitude
-                ending.longitude = pt.longitude
-                ending.depth = pt.depth
-
         # shoreline
         if useshore:
             intersection_point = shore.intersect(start_point=starting.point, end_point=ending.point)
@@ -571,6 +586,17 @@ class ForceParticle(object):
                 ending.latitude = resulting_point.latitude
                 ending.longitude = resulting_point.longitude
                 ending.depth = resulting_point.depth
+                
+        # bathymetry
+        if usebathy:
+            bintersect = bathy.intersect(start_point=starting,
+                                         end_point=ending,
+                                        )
+            if bintersect:
+                pt = bathy.react(type='hover', end_point=ending)
+                ending.latitude = pt.latitude
+                ending.longitude = pt.longitude
+                ending.depth = pt.depth
 
         # sea-surface
         if usesurface:

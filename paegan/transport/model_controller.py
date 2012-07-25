@@ -56,7 +56,8 @@ class ModelController(object):
         self.models = kwargs.pop('models', None)
         self._dirty = True
         self._particles = []
-        self._time_chunk = kwargs.get('time_chunk', 1)
+        self._time_chunk = kwargs.get('time_chunk', 10)
+        self._horiz_chunk = kwargs.get('horiz_chunk', 4)
         
         # Inerchangeables
         if "point" in kwargs:
@@ -337,6 +338,7 @@ class ModelController(object):
         n_run = mgr.Value('int', 0)
         updating = mgr.Value('bool', False)
         particle_get = mgr.Value('bool', False)
+        point_get = mgr.Value('list', [0, 0, 0])
         
         # Create workers
         procs = [ parallel.Consumer(tasks, results, n_run)
@@ -350,7 +352,8 @@ class ModelController(object):
         # can get the initial data and is not blocked
         tasks.put(parallel.DataController(
                   hydrodataset, n_run, get_data, updating,
-                  time_chunk, horiz_chunk, particle_get, times, start_time,
+                  time_chunk, horiz_chunk, particle_get, times,
+                  start_time, point_get,
                   low_memory=low_memory
                   ))
                
@@ -368,7 +371,8 @@ class ModelController(object):
                                             get_data,
                                             n_run,
                                             updating,
-                                            particle_get
+                                            particle_get,
+                                            point_get,
                                             ))
         [tasks.put(None) for i in xrange(nproc)]
         

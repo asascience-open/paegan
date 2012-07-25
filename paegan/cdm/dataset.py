@@ -436,6 +436,100 @@ class Dataset:
                 y = xy._yarray[np.squeeze(yinds)]
         return subs(x=x, y=y, z=z, time=time)
         
+    def get_indices(self, var, zbounds=None, bbox=None,
+        timebounds=None, zinds=None, timeinds=None, 
+        point=None, use_local=False, **kwargs):
+        """
+        
+        Get smallest chunck of data that encompasses the 4-d
+        bounding box limits of the data completely.
+        
+        
+        """
+        assert var in self.nc.variables
+        ncvar = self.nc.variables[var]
+        names = self.get_coord_names(var)
+        # find how the shapes match up to var
+        # (should i use dim names or just sizes to figure out?)
+        # I'm going to use dim names
+        dims = ncvar.dimensions
+        ndim = ncvar.ndim
+        shape = ncvar.shape
+        positions = dict()
+        total = []
+        for i in names:
+            name = names[i]
+            if i == "tname":
+                common_name = "time"
+            elif i == "zname":
+                common_name = "z"
+            elif i == "xname":
+                common_name = "x"
+            elif i == "yname":
+                common_name = "y"
+            else:
+                common_name = None
+            if common_name != None:
+                positions[common_name] = None
+                if name != None:
+                    positions[common_name] = []
+                    cdims = self.nc.variables[name].dimensions
+                    for cdim in cdims:
+                        try:
+                            positions[common_name].append(dims.index(cdim))
+                        except:
+                            pass
+
+        if positions["time"] != None:
+            if timebounds != None:
+                tinds = self.get_tind_from_bounds(var, timebounds)
+            else:
+                if timeinds == None:
+                    if point != None:
+                        tinds = np.asarray([self.get_nearest_tind(var, point)])
+                    else:
+                        tinds = np.arange(0, ncvar.shape[positions["time"]]+1)
+                else:
+                    tinds = timeinds
+        if positions["z"] != None:
+            if zbounds != None:
+                zinds = self.get_zind_from_bounds(var, zbounds)
+            else:
+                if zinds == None:
+                    if point != None:
+                        zinds = np.asarray([self.get_nearest_zind(var, point)])
+                    else:
+                        zinds = np.arange(0, ncvar.shape[positions["z"]]+1)
+                else:
+                    pass
+        if bbox != None:
+            xinds, yinds = self.get_xyind_from_bbox(var, bbox)
+        else:
+            if point != None:
+                num = kwargs.get("num", 1)
+                xinds, yinds = self.get_xyind_from_point(var, point, num=num)
+            else:
+                xinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["x"]]
+                yinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["y"]]
+
+        indices = [None for i in range(ndim)]
+        for name in positions:
+            if positions[name] != None:
+                if name == "time":
+                    for i,position in enumerate(positions[name]):
+                        indices[position] = tinds[i] 
+                elif name == "z":
+                    for i,position in enumerate(positions[name]):
+                        indices[position] = zinds[i]
+                elif name == "y":
+                    for i,position in enumerate(positions[name]):
+                        indices[position] = yinds[i]
+                elif name == "x":
+                    for i,position in enumerate(positions[name]):
+                        indices[position] = xinds[i]
+        
+        return indices
+    
     def get_values(self, var, zbounds=None, bbox=None,
         timebounds=None, zinds=None, timeinds=None, 
         point=None, use_local=False, **kwargs):
