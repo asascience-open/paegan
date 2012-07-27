@@ -57,19 +57,19 @@ class Transport:
         depth = location.depth
         depth += distance_vert
 
+        if distance_horiz != 0:
+            # vertical angle
+            vertical_angle = math.degrees(math.atan(distance_vert / distance_horiz))
+                
+            # Great circle calculation
+            # Calculation takes in azimuth (heading from North, so convert our mathematical angle to azimuth)
+            azimuth = AsaMath.math_angle_to_azimuth(angle=s_and_d['direction'])
+            result = AsaGreatCircle.great_circle(distance=distance_horiz, azimuth=azimuth, start_point=location)
+        else:
+            result = location
+            vertical_angle = 0.
+            azimuth = AsaMath.math_angle_to_azimuth(angle=s_and_d['direction'])
         
-        # vertical angle
-        try:
-            vertical_angle = math.degrees(math.atan(distance_vert / distance_horiz))
-        except:
-            print s_and_d, distance_horiz, distance_vert
-            vertical_angle = math.degrees(math.atan(distance_vert / distance_horiz))
-            
-        # Great circle calculation
-        # Calculation takes in azimuth (heading from North, so convert our mathematical angle to azimuth)
-        azimuth = AsaMath.math_angle_to_azimuth(angle=s_and_d['direction'])
-        result = AsaGreatCircle.great_circle(distance=distance_horiz, azimuth=azimuth, start_point=location)
-
         return {'latitude':result['latitude'], 'azimuth': azimuth, 'reverse_azimuth': result['reverse_azimuth'], 'longitude':result['longitude'], 'depth':depth, 'u': u, 'v':v, 'z':z, 'distance':distance_horiz, 'angle': s_and_d['direction'], 'vertical_distance':distance_vert, 'vertical_angle':vertical_angle}
 
     def __str__(self):
