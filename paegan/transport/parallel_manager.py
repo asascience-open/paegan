@@ -178,7 +178,7 @@ class DataController(object):
                                 local[time:time_1, y:y_1, x:x_1] = remote[time:time_1, y:y_1, x:x_1]
                
                 else:
-                    #print "time", time, time_1
+                    print "time", time, time_1
                     #print "y", y, y_1
                     #print "x", x, x_1
                     if len(shape) == 4:
@@ -407,6 +407,8 @@ class DataController(object):
                 else:
                     print "updating appending"
                     self.updating.value = True
+                    while self.particle_get == True:
+                        pass
                     self.local = netCDF4.Dataset(cachepath, 'a')  
                     u = self.local.variables['u']
                     v = self.local.variables['v']
@@ -536,24 +538,25 @@ class ForceParticle(object):
                 need = False
         except:
             need = True
-        self.closenc()
+        self.dataset.closenc()
         self.particle_get.value = False
         print self.proc, need
         return need # return true if need data or false if dont
       
     def data(self, i):
-        while self.get_data == True:
+        while self.get_data.value == True:
             pass
-            
-        if self.need_data:
+        print self.proc, "done waiting"
+        if self.need_data(i):
+            print self.proc, "yes i do need data"
             self.request_lock.acquire()
-            if self.need_data:
+            if self.need_data(i):
                 self.dataset.opennc()
                 indices = self.dataset.get_indices('u', timeinds=[np.asarray([i-1])], point=self.part.location )
                 self.dataset.closenc()
-                self.point_get = [indices[0]+1, indices[-2], indices[-1]]
-                self.get_data = True
-                while self.get_data == True:
+                self.point_get.value = [indices[0]+1, indices[-2], indices[-1]]
+                self.get_data.value = True
+                while self.get_data.value == True:
                     pass 
             self.request_lock.release()
                
@@ -627,6 +630,7 @@ class ForceParticle(object):
             while self.get_data.value == True:
                 pass
             u, v, w = self.data(i)
+            print self.proc, u, v, w
             '''
             try:
                 if np.mean(np.mean(self.dataset.get_values('domain', timeinds=[np.asarray([i])], point=self.part.location ))) == 0:
