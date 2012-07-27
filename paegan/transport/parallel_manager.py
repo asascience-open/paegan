@@ -122,12 +122,38 @@ class DataController(object):
                 
         domain = self.local.variables['domain']
         
-        for i, time in enumerate(inds[:]):
-            if time+1 > shape[0] - 1:
-                time_1 = shape[0]
-            else:
-                time_1 = time+1
+        #for i, time in enumerate(inds[:]):
+            #if time+1 > shape[0] - 1:
+            #    time_1 = shape[0]
+            #else:
+            #    time_1 = time+1
             #print time, time_1
+        if self.low_memory:
+         
+            for z in range(shape[1]):
+                if z + 1 > shape[1] - 1:
+                    z_1 = shape[1]
+                else:
+                    z_1 = z + 1
+                if len(shape) == 4:
+                    domain[time:time_1, z:z_1, y:y_1, x:x_1] = np.ones((time_1-time, z_1-z, y_1-y, x_1-x))
+                elif len(shape) == 3:
+                    if z == self.inds[0]:
+                        domain[time:time_1, y:y_1, x:x_1] = np.ones((time_1-time, y_1-y, x_1-x))
+        
+        else:
+            if len(shape) == 4:
+                domain[inds[0]:inds[-1]+1, 0:shape[1], y:y_1, x:x_1] = np.ones((inds[-1]+1-inds[0], shape[1], y_1-y, x_1-x))
+            elif len(shape) == 3:
+                domain[inds[0]:inds[-1]+1, y:y_1, x:x_1] = np.ones((inds[-1]+1-inds[0], y_1-y, x_1-x))
+                        
+        for local, remote in zip(localvars, remotevars):
+        #    for i, time in enumerate(inds[:]):
+        #        if time+1 > shape[0] - 1:
+        #            time_1 = shape[0]
+        #        else:
+        #            time_1 = time+1
+                #print time, time_1
             if self.low_memory:
              
                 for z in range(shape[1]):
@@ -135,56 +161,30 @@ class DataController(object):
                         z_1 = shape[1]
                     else:
                         z_1 = z + 1
+                #for y in range(0,shape[2],8):
+                #    if y + 8 > shape[2] - 1:
+                #        y_1 = shape[2]
+                #    else:
+                #        y_1 = y + 8
                     if len(shape) == 4:
-                        domain[time:time_1, z:z_1, y:y_1, x:x_1] = np.ones((time_1-time, z_1-z, y_1-y, x_1-x))
-                    elif len(shape) == 3:
-                        if z == self.inds[0]:
-                            domain[time:time_1, y:y_1, x:x_1] = np.ones((time_1-time, y_1-y, x_1-x))
-            
-            else:
-                if len(shape) == 4:
-                    domain[time:time_1, 0:shape[1], y:y_1, x:x_1] = np.ones((time_1-time, shape[1], y_1-y, x_1-x))
-                elif len(shape) == 3:
-                    domain[time:time_1, y:y_1, x:x_1] = np.ones((time_1-time, y_1-y, x_1-x))
-                        
-        for local, remote in zip(localvars, remotevars):
-            for i, time in enumerate(inds[:]):
-                if time+1 > shape[0] - 1:
-                    time_1 = shape[0]
-                else:
-                    time_1 = time+1
-                #print time, time_1
-                if self.low_memory:
-                 
-                    for z in range(shape[1]):
-                        if z + 1 > shape[1] - 1:
-                            z_1 = shape[1]
-                        else:
-                            z_1 = z + 1
-                    #for y in range(0,shape[2],8):
-                    #    if y + 8 > shape[2] - 1:
-                    #        y_1 = shape[2]
-                    #    else:
-                    #        y_1 = y + 8
-                        if len(shape) == 4:
-                            #    for x in range(shape[3]):
-                            #        if x + 1 > shape[3] - 1:
-                            #            x_1 = shape[3]
-                            #        else:
-                            #            x_1 = x + 1
-                            local[time:time_1, z:z_1, y:y_1, x:x_1] = remote[time:time_1,  z:z_1, y:y_1, x:x_1]
-                        else:
-                            if z == 0:
-                                local[time:time_1, y:y_1, x:x_1] = remote[time:time_1, y:y_1, x:x_1]
-               
-                else:
-                    print "time", time, time_1
-                    #print "y", y, y_1
-                    #print "x", x, x_1
-                    if len(shape) == 4:
-                        local[time:time_1, 0:shape[1], y:y_1, x:x_1] = remote[time:time_1,  0:shape[1], y:y_1, x:x_1]
+                        #    for x in range(shape[3]):
+                        #        if x + 1 > shape[3] - 1:
+                        #            x_1 = shape[3]
+                        #        else:
+                        #            x_1 = x + 1
+                        local[time:time_1, z:z_1, y:y_1, x:x_1] = remote[time:time_1,  z:z_1, y:y_1, x:x_1]
                     else:
-                        local[time:time_1, y:y_1, x:x_1] = remote[time:time_1, y:y_1, x:x_1]
+                        if z == 0:
+                            local[time:time_1, y:y_1, x:x_1] = remote[time:time_1, y:y_1, x:x_1]
+           
+            else:
+                print "time", inds
+                #print "y", y, y_1
+                #print "x", x, x_1
+                if len(shape) == 4:
+                    local[inds[0]:inds[-1]+1, 0:shape[1], y:y_1, x:x_1] = remote[inds[0]:inds[-1]+1,  0:shape[1], y:y_1, x:x_1]
+                else:
+                    local[inds[0]:inds[-1]+1, y:y_1, x:x_1] = remote[inds[0]:inds[-1]+1, y:y_1, x:x_1]
 
     def __call__(self, proc):
         c = 0
@@ -567,7 +567,16 @@ class ForceParticle(object):
         if 'w' in self.dataset.nc.variables:
             w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
         else:
-            w = 0
+            w = 0.0
+        if np.isnan(u) or np.isnan(v) or np.isnan(w):
+            u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=2)))
+            v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=2 )))
+            if 'w' in self.dataset.nc.variables:
+                w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location, num=2)))
+            else:
+                w = 0.0
+        if np.isnan(u) or np.isnan(v) or np.isnan(w):
+            u, v, w = 0.0, 0.0, 0.0
         self.dataset.closenc()
         self.particle_get.value = False
         
@@ -679,7 +688,7 @@ class ForceParticle(object):
                 else:
                     w = 0
                 self.dataset.closenc()
-            '''
+            
             
             print u, v
             if np.isnan(u) or np.isnan(v):
@@ -691,7 +700,7 @@ class ForceParticle(object):
                 else:
                     w = 0
                 self.dataset.closenc()
-            
+            '''
             # loop over models - sort these in the order you want them to run
             for model in models:
                 movement = model.move(part.location, u, v, w, modelTimestep[loop_i])

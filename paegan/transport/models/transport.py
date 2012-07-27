@@ -12,8 +12,8 @@ class Transport:
     def __init__(self, **kwargs):
 
         if "horizDisp" and "vertDisp" in kwargs:
-            self._horizDisp = kwargs.pop('horizDisp')
-            self._vertDisp = kwargs.pop('vertDisp')
+            self._horizDisp = float(kwargs.pop('horizDisp'))
+            self._vertDisp = float(kwargs.pop('vertDisp'))
         else:
             raise TypeError( "must provide a horizontal and vertical dispersion coefficient (horizDisp and vertDisp)" )
 
@@ -40,12 +40,12 @@ class Transport:
 
         Returns [ lon, lat, depth, horizontal_velocity, vertical_velocity ] as a tuple
         """
-        u_wind, v_wind = kwargs.get("wind", (0,0,))
-        
+        print "orig", u, v, z
+        print self._horizDisp, self._vertDisp
         u += AsaRandom.random() * ((2 * self._horizDisp / modelTimestep) ** 0.5) # u transformation calcualtions
         v += AsaRandom.random() * ((2 * self._horizDisp / modelTimestep) ** 0.5) # v transformation calcualtions
         z += AsaRandom.random() * ((2 * self._vertDisp / modelTimestep) ** 0.5) # z transformation calculations
-
+        print "disperse", u, v, z
         # Move horizontally
         s_and_d = AsaMath.speed_direction_from_u_v(u=u,v=v) # calculates velocity in m/s from transformed u and v
         distance_horiz = s_and_d['speed'] * modelTimestep # calculate the horizontal distance in meters using the velocity and model timestep
@@ -57,9 +57,14 @@ class Transport:
         depth = location.depth
         depth += distance_vert
 
+        
         # vertical angle
-        vertical_angle = math.degrees(math.atan(distance_vert / distance_horiz))
-
+        try:
+            vertical_angle = math.degrees(math.atan(distance_vert / distance_horiz))
+        except:
+            print s_and_d, distance_horiz, distance_vert
+            vertical_angle = math.degrees(math.atan(distance_vert / distance_horiz))
+            
         # Great circle calculation
         # Calculation takes in azimuth (heading from North, so convert our mathematical angle to azimuth)
         azimuth = AsaMath.math_angle_to_azimuth(angle=s_and_d['direction'])
