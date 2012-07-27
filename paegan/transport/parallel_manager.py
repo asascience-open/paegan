@@ -35,7 +35,7 @@ class Consumer(multiprocessing.Process):
                 
                 break
             #print '%s: %s' % (proc_name, next_task)
-            answer = next_task()
+            answer = next_task(proc_name)
             self.task_queue.task_done()
             self.result_queue.put(answer)
         return
@@ -101,6 +101,7 @@ class DataController(object):
     
     def get_remote_data(self, localvars, remotevars, inds, shape):
         #print "updating local data"
+        #print self.point_get.value
         if self.horiz_size == 'all':
             y, y_1 = 0, shape[-2]
             x, x_1 = 0, shape[-1]
@@ -108,6 +109,8 @@ class DataController(object):
             r = self.horiz_size
             x, x_1 = self.point_get.value[2]-r, self.point_get.value[2]+r+1
             y, y_1 = self.point_get.value[1]-r, self.point_get.value[1]+r+1
+            x, x_1 = x[0], x_1[0]
+            y, y_1 = y[0], y_1[0]
             if y < 0:
                 y = 0
             if x < 0:
@@ -116,6 +119,34 @@ class DataController(object):
                 y_1 = shape[-2]
             if x_1 > shape[-1]:
                 x_1 = shape[-1]
+                
+        domain = self.local.variables['domain']
+        
+        for i, time in enumerate(inds[:]):
+            if time+1 > shape[0] - 1:
+                time_1 = shape[0]
+            else:
+                time_1 = time+1
+            #print time, time_1
+            if self.low_memory:
+             
+                for z in range(shape[1]):
+                    if z + 1 > shape[1] - 1:
+                        z_1 = shape[1]
+                    else:
+                        z_1 = z + 1
+                    if len(shape) == 4:
+                        domain[time:time_1, z:z_1, y:y_1, x:x_1] = np.ones((time_1-time, z_1-z, y_1-y, x_1-x))
+                    elif len(shape) == 3:
+                        if z == self.inds[0]:
+                            domain[time:time_1, y:y_1, x:x_1] = np.ones((time_1-time, y_1-y, x_1-x))
+            
+            else:
+                if len(shape) == 4:
+                    domain[time:time_1, 0:shape[1], y:y_1, x:x_1] = np.ones((time_1-time, shape[1], y_1-y, x_1-x))
+                elif len(shape) == 3:
+                    domain[time:time_1, y:y_1, x:x_1] = np.ones((time_1-time, y_1-y, x_1-x))
+                        
         for local, remote in zip(localvars, remotevars):
             for i, time in enumerate(inds[:]):
                 if time+1 > shape[0] - 1:
@@ -145,17 +176,20 @@ class DataController(object):
                         else:
                             if z == 0:
                                 local[time:time_1, y:y_1, x:x_1] = remote[time:time_1, y:y_1, x:x_1]
-                
+               
                 else:
+                    #print "time", time, time_1
+                    #print "y", y, y_1
+                    #print "x", x, x_1
                     if len(shape) == 4:
-                        local[time:time_1, :, y:y_1, x:x_1] = remote[time:time_1,  :, y:y_1, x:x_1]
+                        local[time:time_1, 0:shape[1], y:y_1, x:x_1] = remote[time:time_1,  0:shape[1], y:y_1, x:x_1]
                     else:
                         local[time:time_1, y:y_1, x:x_1] = remote[time:time_1, y:y_1, x:x_1]
 
-    def __call__(self):
+    def __call__(self, proc):
         c = 0
         self.dataset = CommonDataset(self.url)
-        
+        self.proc = proc
         self.get_variablenames_for_model()
         self.remote = self.dataset.nc
         cachepath = os.path.join("/home/acrosby/local.nc")#os.path.dirname(__file__),"_cache","localcache.nc")
@@ -213,6 +247,34 @@ class DataController(object):
                     except:
                         fill = None
                     
+                    domain = self.local.createVariable('domain',
+                            'i', dimensions, zlib=False, fill_value=0,
+                            )
+                    domain.coordinates = coordinates
+                    #for i, time in enumerate(self.inds):
+                    #    if time+1 > shape[0] - 1:
+                    #        time_1 = shape[0]
+                    #    else:
+                    #        time_1 = time+1
+                    #    if self.low_memory:
+                    #        for z in range(shape[1]):
+                    #            if z + 1 > shape[1] - 1:
+                    #                z_1 = shape[1]
+                    #            else:
+                    #                z_1 = z + 1
+                    #                
+                    #            if len(shape) == 4:
+                    #                domain[time:time_1, z:z_1, :, :] = np.zeros((time_1-time, z_1-z, shape[-2], shape[-1]))
+                    #            elif len(shape) == 3:
+                    #                if z == self.inds[0]:
+                    #                    domain[time:time_1, :, :] = np.zeros((time_1-time, shape[-2], shape[-1]))
+                    #    
+                    #    else:
+                    #        if len(shape) == 4:
+                    #            domain[time:time_1, :, :, :] = np.zeros((time_1-time, shape[1], shape[-2], shape[-1]))
+                    #        elif len(shape) == 3:
+                    #            domain[time:time_1, :, :] = np.zeros((time_1-time, shape[-2], shape[-1]))
+                            
                     if fill == None:
                         u = self.local.createVariable('u', 
                             'f', dimensions, zlib=False,
@@ -220,6 +282,7 @@ class DataController(object):
                         v = self.local.createVariable('v', 
                             'f', dimensions, zlib=False,
                             )
+                        
                         v.coordinates = coordinates
                         u.coordinates = coordinates
                         
@@ -244,6 +307,7 @@ class DataController(object):
                         v = self.local.createVariable('v', 
                             'f', dimensions, zlib=False,
                             fill_value=fill)
+                        
                         v.coordinates = coordinates
                         u.coordinates = coordinates
                         
@@ -341,7 +405,7 @@ class DataController(object):
                     self.get_data.value = False
 
                 else:
-                    
+                    print "updating appending"
                     self.updating.value = True
                     self.local = netCDF4.Dataset(cachepath, 'a')  
                     u = self.local.variables['u']
@@ -408,7 +472,7 @@ class ForceParticle(object):
     def __init__(self, part, remotehydro, times, start_time, models, 
                  point, usebathy, useshore, usesurface,
                  get_data, n_run, updating, particle_get,
-                 point_get):
+                 point_get, request_lock):
         self.remotehydropath = remotehydro
         self.localpath =  os.path.join("/home/acrosby/local.nc")#os.path.dirname(__file__),"_cache","localcache.nc")
         self.point = point
@@ -424,6 +488,7 @@ class ForceParticle(object):
         self.updating = updating
         self.particle_get = particle_get
         self.point_get = point_get
+        self.request_lock = request_lock
         
     def get_variablenames_for_model(self, dataset):
         getname = dataset.get_varname_from_stdname
@@ -461,57 +526,51 @@ class ForceParticle(object):
             self.salt_name = None
         self.tname = None ## temporary
         
-    def check_cache_for_data(self, i):
-        #need = True
-        #while need:
-        shape = self.dataset.nc.variables[self.uname].shape
-        if shape[0] < i:
-            time_need = True
-        else:
-            time_need = False
-        if np.mean(np.mean(self.dataset.get_values('domain', timeinds=[np.asarray([i])], point=self.part.location ))) == 0:
-            horiz_need = True
-        else:
-            horiz_need = False
-        return horiz_need or time_need # return true if need data or false if dont
-            
-        
-    def ask_for_new_data(self):
-        pass
-        
-    def make_sure_data_in_cache(self, i):
-        if self.get_data.value:
-            self.dataset.closenc()
-        while self.get_data.value == True:
-            pass
-        if self.dataset.nc == None:
-            self.dataset.opennc()
-        if self.check_cache_for_data(i):
-            indices = self.dataset.get_indices('u', timeinds=[np.asarray([i-1])], point=self.part.location )
-            self.point_get = [indices[0],indices[-2],indices[-1]]
-            self.get_data.value = True  # Checkout data controller for update
-            # Checkin data controller for update
-            
-      
-    def get_data(self, i):
-        if self.get_data.value:
-            self.dataset.closenc()
-        while self.get_data.value == True:
-            pass
+    def need_data(self, i):
         self.particle_get.value = True
-        if self.dataset.nc == None:
-            self.dataset.opennc()
+        self.dataset.opennc()
+        try:
+            if type(np.mean(np.mean(self.dataset.get_values('domain', timeinds=[np.asarray([i])], point=self.part.location )))) == np.ma.core.MaskedArray:
+                need = True
+            else:
+                need = False
+        except:
+            need = True
+        self.closenc()
+        self.particle_get.value = False
+        print self.proc, need
+        return need # return true if need data or false if dont
+      
+    def data(self, i):
+        while self.get_data == True:
+            pass
+            
+        if self.need_data:
+            self.request_lock.acquire()
+            if self.need_data:
+                self.dataset.opennc()
+                indices = self.dataset.get_indices('u', timeinds=[np.asarray([i-1])], point=self.part.location )
+                self.dataset.closenc()
+                self.point_get = [indices[0]+1, indices[-2], indices[-1]]
+                self.get_data = True
+                while self.get_data == True:
+                    pass 
+            self.request_lock.release()
+               
+        self.particle_get.value = True
+        self.dataset.opennc() 
         u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )))
         v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )))
         if 'w' in self.dataset.nc.variables:
             w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
         else:
             w = 0
+        self.dataset.closenc()
         self.particle_get.value = False
         
         return u,v,w
         
-    def __call__(self):
+    def __call__(self, proc):
         if self.usebathy == True:
             self._bathymetry = Bathymetry(point=self.point)
         else:
@@ -520,7 +579,7 @@ class ForceParticle(object):
             self._shoreline = Shoreline(point=self.point)
         else:
             self._shoreline = None
-
+        self.proc = proc
         part = self.part
         times = self.times
         start_time = self.start_time
@@ -567,11 +626,7 @@ class ForceParticle(object):
             # if need a time that is outside of what we have:e
             while self.get_data.value == True:
                 pass
-            self.particle_get.value = True
-            self.dataset.opennc()
-            
-            self.make_sure_data_in_cache(i)
-            u, v, w = self.get_data(i)
+            u, v, w = self.data(i)
             '''
             try:
                 if np.mean(np.mean(self.dataset.get_values('domain', timeinds=[np.asarray([i])], point=self.part.location ))) == 0:
@@ -622,7 +677,7 @@ class ForceParticle(object):
                 self.dataset.closenc()
             '''
             
-            #print u, v
+            print u, v
             if np.isnan(u) or np.isnan(v):
                 self.dataset.opennc()
                 u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=2 )))

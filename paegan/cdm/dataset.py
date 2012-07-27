@@ -162,6 +162,7 @@ class Dataset:
     def closenc(self):
         self.metadata = None
         self.nc.close()
+        self.nc = None
         
     def opennc(self):
         self.nc = netCDF4.Dataset(self._filename)
@@ -757,10 +758,13 @@ class RGridDataset(Dataset):
         
     def _get_data(self, var, indarray, use_local=False):
         ndims = len(indarray)
+        print "this is what im trying to get", indarray
+        
         if use_local == False:
             var = self.nc.variables[var]
         else:
             pass
+
         if ndims == 1:
             data = var[indarray]
         elif ndims == 2:
