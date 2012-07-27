@@ -328,6 +328,7 @@ class ModelController(object):
         # many workers then pass particles into the queue for the workers
         mgr = multiprocessing.Manager()
         nproc = multiprocessing.cpu_count()
+        request_lock = mgr.Lock()
         
         # Create the task and result queues
         tasks = multiprocessing.JoinableQueue()
@@ -373,6 +374,7 @@ class ModelController(object):
                                             updating,
                                             particle_get,
                                             point_get,
+                                            request_lock
                                             ))
         [tasks.put(None) for i in xrange(nproc)]
         
