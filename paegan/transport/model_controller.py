@@ -249,7 +249,7 @@ class ModelController(object):
         midpoint = point#tracks.centroid
 
         #bbox = tracks.bounds
-        visual_bbox = (point.x-1.2, point.y-1.2, point.x+1.2, point.y+1.2)#tracks.buffer(1).bounds
+        visual_bbox = (point.x-4, point.y-4, point.x+4, point.y+4)#tracks.buffer(1).bounds
 
         #max_distance = max(abs(bbox[0] - bbox[2]), abs(bbox[1] - bbox[3])) + 0.25
 

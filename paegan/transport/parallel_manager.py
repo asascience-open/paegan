@@ -569,10 +569,10 @@ class ForceParticle(object):
         else:
             w = 0.0
         if np.isnan(u) or np.isnan(v) or np.isnan(w):
-            u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=2)))
-            v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=2 )))
+            u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=4)))
+            v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=4)))
             if 'w' in self.dataset.nc.variables:
-                w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location, num=2)))
+                w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location, num=4)))
             else:
                 w = 0.0
         if np.isnan(u) or np.isnan(v) or np.isnan(w):
@@ -625,9 +625,11 @@ class ForceParticle(object):
         timevar = remote.gettimevar(self.uname)
         time_indexs = timevar.nearest_index(newtimes)
         array_indexs = time_indexs - time_indexs[0]
-        
+        #print np.min(time_indexs), np.max(time_indexs)
+        #print np.min(array_indexs), np.max(array_indexs)
+        #print len(array_indexs), len(time_indexs), len(modelTimestep)
         # loop over timesteps   
-        for i, loop_i in zip(time_indexs, array_indexs):
+        for loop_i, i in enumerate(time_indexs):
             
             newloc = None
             

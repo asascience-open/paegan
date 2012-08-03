@@ -17,7 +17,7 @@ class AsaMath(object):
 
     @classmethod
     def __direction_from_u_v(cls, u, v, **kwargs):
-        rads = atan2(u, v)
+        rads = atan2(v, u)
         if 'output' in kwargs:
             if kwargs.pop('output') == 'radians':
                 return rads
