@@ -8,7 +8,7 @@ import numpy as np
 import netCDF4
 from datetime import datetime, timedelta
 from paegan.transport.models.transport import Transport
-from paegan.transport.particles.particle import Particle
+from paegan.transport.particles.particle import LarvaParticle, Particle
 from paegan.transport.location4d import Location4D
 from paegan.utils.asarandom import AsaRandom
 from paegan.transport.shoreline import Shoreline
@@ -316,7 +316,7 @@ class ModelController(object):
 
         # Initialize the particles
         for x in xrange(0, self._npart):
-            p = Particle()
+            p = LarvaParticle()
             p.location = startloc
             self.particles.append(p)
 
@@ -388,4 +388,5 @@ class ModelController(object):
             while tempres == None:
                 tempres = results.get()
                 self.particles[i] = tempres
-    
+
+        
