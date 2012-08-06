@@ -178,7 +178,7 @@ class DataController(object):
                             local[time:time_1, y:y_1, x:x_1] = remote[time:time_1, y:y_1, x:x_1]
            
             else:
-                print "time", inds
+                print "time", inds, "rem", shape[1], y, y_1, x, x_1
                 #print "y", y, y_1
                 #print "x", x, x_1
                 if len(shape) == 4:
