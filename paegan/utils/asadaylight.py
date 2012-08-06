@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import pylab
 
 class Daylight(object):
     """
@@ -29,43 +30,45 @@ class Daylight(object):
             self.lon = kwargs.get("loc").longitude
             self.time = kwargs.get("loc").time
         
-        self.jd = self.time.jd
+        self.jd = pylab.date2num(self.time)
         self.longhr = self.lon / 15.
-        self.TimeZoneLoc = None
-        
-    def get_approx_rise(self):
-        return self.jd + ( (6 - self.longhr) / 24 ) # approx rise
         
     def get_approx_set(self):
         return self.jd + ( (18 - self.longhr) / 24 ) # approx set
-        
     def get_set_hr(self):
-        h, m = self._calc(self.get_approx_set(), 'set')
-        return h
-         
+        return self.get_set()['hour']
     def get_set_min(self):
+        return self.get_set()['minute']
+    def get_set(self):
         h, m = self._calc(self.get_approx_set(), 'set')
-        return m
+        if h == -1:
+            raise ValueError("Sun will not rise or set at this day at the given point")
+        return self.time.replace(hour=int(h)).replace(minute=int(m))
         
+    def get_approx_rise(self):
+        return self.jd + ( (6 - self.longhr) / 24 ) # approx rise
     def get_rise_hr(self):
-        h, m = self._calc(self.get_approx_rise(), 'rise')
-        return h
-        
+        return self.get_rise()['hour']
     def get_rise_min(self):
+        return self.get_rise()['minute']
+    def get_rise(self):
         h, m = self._calc(self.get_approx_rise(), 'rise')
-        return m
+        if h == -1:
+            raise ValueError("Sun will not rise or set at this day at the given point")
+        return self.time.replace(hour=int(h)).replace(minute=int(m))
         
     def _calc(self, apx, stage):
         sun_mean_anom = ( 0.9856 * apx ) - 3.289 # sun's mean anomaly
-        sun_lon = sun_mean_anom + (1.916 * np.sin(np.degrees( sun_mean_anom ))) \ #sun's longitude
-            + (0.02 * np.sin(np.degrees( 2 * sun_mean_anom ))) + 282.634
+        #sun's longitude
+        sun_lon = sun_mean_anom + (1.916 * np.sin(np.degrees( sun_mean_anom ))) \
+                + (0.02 * np.sin(np.degrees( 2 * sun_mean_anom ))) + 282.634
         
         if sun_lon > 360:
             sun_lon = sun_lon - 360
         elif sun_lon < 0:
             sun_lon = sun_lon + 360
             
-        right_ascension = np.atan(np.degrees( 0.91764 * np.tan(np.degrees( sun_lon )) )) # sun's right ascension
+        right_ascension = np.arctan(np.degrees( 0.91764 * np.tan(np.degrees( sun_lon )) )) # sun's right ascension
         
         if right_ascension > 360:
             right_ascension = right_ascension - 360
@@ -81,48 +84,45 @@ class Daylight(object):
         
         # Sun's declination
         sinDecl = 0.39782 * np.sin(np.degrees( sun_lon ))
-        cosDecl = np.cos( np.asin( sinDecl ) )
+        cosDecl = np.cos( np.arcsin( sinDecl ) )
         
         # Sun's local hour angle
-        cosHr = (np.cos(np.degrees( zenith )) - ( sinDecl * np.sin(np.degrees(self.lat)) )) \
-            ( cosDecl * np.cos(np.degrees( self.lat )) )
-            
+        cosHr = (np.cos(np.degrees( self.zenith )) - ( sinDecl * np.sin(np.degrees(self.lat)) )) \
+                * ( cosDecl * np.cos(np.degrees( self.lat )) )
+
         if cosHr > 1: # Sun doesnt rise on this loc on this date
-            sunriseHr = 23
-			sunriseMn = 59
-			sunsetHr = 0
-			sunsetMn = 0
-			return
+            return -1, -1
         elif cosHr < -1: # Sun doesnt set on this location on this date
-            unriseHr = 0
-			sunriseMn = 0
-			sunsetHr = 23
-			sunsetMn = 59 
-			return
+            return -1, -1
         elif stage == 'rise': # Sunrise
-            hr = 360 - np.acos(np.degrees( cosHr ))
+            hr = 360 - np.arccos(cosHr)
         elif stage == 'set':  # Sunset
-            hr = np.acos(np.degrees( cosHr ))
+            hr = np.arccos(cosHr)
+
+        print "angle: %s" % hr
             
         hr = hr / 15. # Convert angle to hours
-        
+
+        print "hours: %s" % hr
+
         localTime = hr + right_ascension - ( 0.06571 * apx ) # local meantime of rise/set
+
+        print "localtime: %s" % localTime
+
         UTtime = localTime - self.longhr # adjust to UTC
-        localTime = UTtime + self.TimeZoneLoc # convert to local time for real
-        if localTime < 0:
-            localTime = localTime + 24
-        elif localTime > 24:
-            localTime = localTime - 24
-            
-        
-        hour = np.floor(localTime)
-        minute = (localTime - hour) * 60
+
+        if UTtime < 0:
+            UTtime = UTtime + 24
+        elif UTtime > 24:
+            UTtime = UTtime - 24
+
+        print "utc: %s" % UTtime
+
+        hour = np.floor(UTtime)
+
+        minute = (UTtime - hour) * 60
         if minute == 60:
             hour = hour + 1
             minute = 0
-            
+
         return hour, minute
-        
-                
-        
-        
