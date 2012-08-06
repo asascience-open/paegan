@@ -568,6 +568,10 @@ class ForceParticle(object):
             w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
         else:
             w = 0.0
+        if self.temp_name != None and self.salt_name != None:
+            temp = np.mean(np.mean(self.dataset.get_values('temp', timeinds=[np.asarray([i])], point=self.part.location )))
+            salt = np.mean(np.mean(self.dataset.get_values('salt', timeinds=[np.asarray([i])], point=self.part.location )))
+        
         if np.isnan(u) or np.isnan(v) or np.isnan(w):
             u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=4)))
             v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=4)))
@@ -575,12 +579,17 @@ class ForceParticle(object):
                 w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location, num=4)))
             else:
                 w = 0.0
+            if self.temp_name != None and self.salt_name != None:
+                temp = np.mean(np.mean(self.dataset.get_values('temp', timeinds=[np.asarray([i])], point=self.part.location, num=4)))
+                salt = np.mean(np.mean(self.dataset.get_values('salt', timeinds=[np.asarray([i])], point=self.part.location, num=4)))
         if np.isnan(u) or np.isnan(v) or np.isnan(w):
             u, v, w = 0.0, 0.0, 0.0
         self.dataset.closenc()
         self.particle_get.value = False
-        
-        return u,v,w
+        if self.temp_name != None and self.salt_name != None:
+            return u, v, w, temp, salt
+        else:
+            return u,v,w, None, None
         
     def __call__(self, proc):
         if self.usebathy == True:
@@ -640,8 +649,9 @@ class ForceParticle(object):
             # if need a time that is outside of what we have:e
             while self.get_data.value == True:
                 pass
-            u, v, w = self.data(i)
-            print self.proc, u, v, w
+                
+            u, v, w, temp, salt = self.data(i)
+            print self.proc, u, v, w, temp, salt
             '''
             try:
                 if np.mean(np.mean(self.dataset.get_values('domain', timeinds=[np.asarray([i])], point=self.part.location ))) == 0:
