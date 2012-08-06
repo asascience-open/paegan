@@ -1,6 +1,8 @@
 import numpy as np
 import math
 import pylab
+import ephem
+import pytz
 
 class Daylight(object):
     """
@@ -39,6 +41,23 @@ class Daylight(object):
         return self.get_set()['hour']
     def get_set_min(self):
         return self.get_set()['minute']
+
+    def get_ephem_set(self):
+        loc = ephem.Observer()
+        loc.lon = "%s" % self.lon
+        loc.lat = "%s" % self.lat
+        loc.date = "%s/%s/%s 00:00" % (self.time.year, self.time.month, self.time.day)
+        sun = ephem.Sun()
+        return loc.next_setting(sun).datetime().replace(tzinfo=pytz.utc)
+
+    def get_ephem_rise(self):
+        loc = ephem.Observer()
+        loc.lon = "%s" % self.lon
+        loc.lat = "%s" % self.lat
+        loc.date = "%s/%s/%s 00:00" % (self.time.year, self.time.month, self.time.day)
+        sun = ephem.Sun()
+        return loc.next_rising(sun).datetime().replace(tzinfo=pytz.utc)
+
     def get_set(self):
         h, m = self._calc(self.get_approx_set(), 'set')
         if h == -1:
