@@ -38,29 +38,29 @@ class LarvaParticle(Particle):
         self._locations = []
         self.lifestage = 0
         self.lifestage_progress = 0.
-        self.temp = []
-        self.salt = []
-    """    
+        self._temp = []
+        self._salt = []
+      
     def set_temp(self, temp):
-        self.temp.append(temp)
+        self._temp.append(temp)
     def get_temp(self):
-        return self.temp[-1]
+        return self._temp[-1]
     temp = property(get_temp, set_temp)
     
     def get_temps(self):
-        return self.temp
+        return self._temp
     temps = property(get_temps, None)
     
     def set_salt(self, salt):
-        self.salt.append(salt)
+        self._salt.append(salt)
     def get_salt(self):
-        return self.salt[-1]
+        return self._salt[-1]
     salt = property(get_salt, set_salt)
     
     def get_salts(self):
-        return self.salt
+        return self._salt
     salts = property(get_salts, None)
-    """
+    
     def update_lifestage_progress(self, **kwargs):
         duration = float(kwargs.pop("lifestage_duration"))
         step = float(kwargs.pop("step"))
