@@ -95,11 +95,11 @@ class Daylight(object):
         elif cosHr < -1: # Sun doesnt set on this location on this date
             return -1, -1
         elif stage == 'rise': # Sunrise
-            hr = 360 - np.arccos(cosHr)
+            hr = 360 - np.degrees(np.arccos(cosHr))
         elif stage == 'set':  # Sunset
-            hr = np.arccos(cosHr)
+            hr = np.degrees(np.arccos(cosHr))
 
-        print "angle: %s" % hr
+        print "angle (degrees): %s" % hr
             
         hr = hr / 15. # Convert angle to hours
 
