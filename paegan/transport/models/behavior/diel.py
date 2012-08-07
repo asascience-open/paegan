@@ -1,4 +1,4 @@
-from paegan.utils.asadaylight import Daylight
+from paegan.utils.asasuncycles import SunCycles
 from paegan.transport.location4d import Location4D
 from datetime import datetime, timedelta
 import pytz
@@ -61,11 +61,11 @@ class Diel(object):
         """
         if self.pattern == self.PATTERN_CYCLE:
             if loc4d is not None:
-                dl = Daylight(loc=loc4d)
+                c = SunCycles(loc=loc4d)
                 if self.cycle == self.CYCLE_SUNRISE:
-                    r = dl.get_ephem_rise()
+                    r = c.get_rising()
                 elif self.cycle == self.CYCLE_SUNSET:
-                    r = dl.get_ephem_set()
+                    r = c.get_setting()
                 td = timedelta(hours=self.time_delta)
                 if self.plus_or_minus == self.HOURS_PLUS:
                     r = r + td

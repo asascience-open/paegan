@@ -2,7 +2,7 @@ import unittest
 from paegan.transport.location4d import Location4D
 from paegan.transport.models.behavior.diel import Diel
 from datetime import datetime, timedelta
-from paegan.utils.asadaylight import Daylight
+from paegan.utils.asasuncycles import SunCycles
 import pytz
 
 class DielTest(unittest.TestCase):
@@ -15,8 +15,9 @@ class DielTest(unittest.TestCase):
 
         t = datetime.utcnow().replace(tzinfo=pytz.utc)
         loc = Location4D(time=t, latitude=35, longitude=-76)
-        sunrise = Daylight(loc=loc).get_ephem_rise()
-        sunset = Daylight(loc=loc).get_ephem_set()
+        c = SunCycles(loc=loc)
+        sunrise = c.get_rising()
+        sunset = c.get_setting()
 
         d = Diel()
         d.min_depth = 4
@@ -26,7 +27,6 @@ class DielTest(unittest.TestCase):
         d.plus_or_minus = '+'
         d.time_delta = 4
         assert d.get_time(loc4d=loc) == sunrise + timedelta(hours=4)
-
 
         d = Diel()
         d.min_depth = 4
