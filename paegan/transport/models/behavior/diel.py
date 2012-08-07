@@ -1,7 +1,9 @@
 from paegan.utils.asasuncycles import SunCycles
 from paegan.transport.location4d import Location4D
+from paegan.utils.asamath import AsaMath
 from datetime import datetime, timedelta
 import pytz
+import json
 
 class Diel(object):
 
@@ -14,6 +16,31 @@ class Diel(object):
     HOURS_PLUS  = "+"
     HOURS_MINUS = "-"
 
+    def __init__(self, **kwargs):
+        data = {}
+
+        if 'json' in kwargs or 'data' in kwargs:
+
+            try:
+                data = json.loads(kwargs['json'])
+            except:
+                try:
+                    data = kwargs.get('data')
+                except:
+                    pass
+
+            self.pattern = data.get('type',None)
+            self.cycle = data.get('cycle', None)
+            t = data.get('time', None)
+            if t is not None:
+                # time is in microseconds in JSON
+                t = datetime.utcfromtimestamp(t / 1000)
+            self.time = t
+            self.plus_or_minus = data.get('plus_or_minus', None)
+            self.min_depth = data.get('min', None)
+            self.max_depth = data.get('max', None)
+            self.time_delta = data.get('hours', None)
+
     def get_pattern(self):
         return self._pattern
     def set_pattern(self, c):
@@ -23,7 +50,9 @@ class Diel(object):
     def get_time_delta(self):
         return self._time_delta
     def set_time_delta(self, hours):
-        self._time_delta = int(hours)
+        if AsaMath.is_number(hours):
+            hours = int(hours)
+        self._time_delta = hours
     time_delta = property(get_time_delta, set_time_delta)
 
     def get_cycle(self):
@@ -47,14 +76,19 @@ class Diel(object):
     def get_plus_or_minus(self):
         return self._plus_or_minus
     def set_plus_or_minus(self, pom):
-        if pom != self.HOURS_PLUS and pom != self.HOURS_MINUS:
-            raise ValueError("plus_or_minus must equal '%s' or '%s'" % (self.HOURS_PLUS, self.HOURS_MINUS))
+        if pom is not None:
+            if pom != self.HOURS_PLUS and pom != self.HOURS_MINUS:
+                raise ValueError("plus_or_minus must equal '%s' or '%s'" % (self.HOURS_PLUS, self.HOURS_MINUS))
         self._plus_or_minus = pom
     plus_or_minus = property(get_plus_or_minus, set_plus_or_minus)
 
     def set_time(self, t):
+        if t is not None:
+            if not isinstance(t, datetime):
+                raise ValueError("Time value must be a DateTime")
+            t = t.replace(tzinfo=pytz.utc)
         self._time = t
-    def get_time(self, loc4d):
+    def get_time(self, loc4d=None):
         """
             Based on a Location4D object and this Diel object, calculate
             the time at which this Diel migration is actually happening
@@ -77,3 +111,4 @@ class Diel(object):
 
         elif self.pattern == self.PATTERN_SPECIFICTIME:
             return self._time
+    time = property(get_time, set_time)

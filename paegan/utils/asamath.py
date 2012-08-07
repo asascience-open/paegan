@@ -36,3 +36,15 @@ class AsaMath(object):
     @classmethod
     def normalize_angle(cls, **kwargs):
         return kwargs.get('angle') % 360
+
+    @classmethod
+    def is_number(cls, num):
+        try:
+            float(num) # for int, long and float
+        except TypeError:
+            try:
+                complex(num) # for complex
+            except TypeError:
+                return False
+
+        return True
