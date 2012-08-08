@@ -2,6 +2,15 @@ import numpy as np
 import math
 import pylab
 
+def cosd(x):
+    return np.cos( np.radians( x ) )
+
+def sind(x):
+    return np.sin( np.radians( x ) )
+    
+def tand(x):
+    return np.tan( np.radians( x ) )
+
 class Daylight(object):
     """
       Determines the time of sunrise and sunset for the current julian day.
@@ -30,15 +39,15 @@ class Daylight(object):
             self.lon = kwargs.get("loc").longitude
             self.time = kwargs.get("loc").time
         
-        self.jd = pylab.date2num(self.time)
+        self.jd = self.time.timetuple().tm_yday
         self.longhr = self.lon / 15.
         
     def get_approx_set(self):
         return self.jd + ( (18 - self.longhr) / 24 ) # approx set
-    def get_set_hr(self):
-        return self.get_set()['hour']
-    def get_set_min(self):
-        return self.get_set()['minute']
+    #def get_set_hr(self):
+    #    return self.get_set()['hour']
+    #def get_set_min(self):
+    #    return self.get_set()['minute']
     def get_set(self):
         h, m = self._calc(self.get_approx_set(), 'set')
         if h == -1:
@@ -47,10 +56,10 @@ class Daylight(object):
         
     def get_approx_rise(self):
         return self.jd + ( (6 - self.longhr) / 24 ) # approx rise
-    def get_rise_hr(self):
-        return self.get_rise()['hour']
-    def get_rise_min(self):
-        return self.get_rise()['minute']
+    #def get_rise_hr(self):
+    #    return self.get_rise()['hour']
+    #def get_rise_min(self):
+    #    return self.get_rise()['minute']
     def get_rise(self):
         h, m = self._calc(self.get_approx_rise(), 'rise')
         if h == -1:
@@ -58,23 +67,26 @@ class Daylight(object):
         return self.time.replace(hour=int(h)).replace(minute=int(m))
         
     def _calc(self, apx, stage):
+
         sun_mean_anom = ( 0.9856 * apx ) - 3.289 # sun's mean anomaly
         #sun's longitude
-        sun_lon = sun_mean_anom + (1.916 * np.sin(np.degrees( sun_mean_anom ))) \
-                + (0.02 * np.sin(np.degrees( 2 * sun_mean_anom ))) + 282.634
+        sun_lon = sun_mean_anom + (1.916 * sind( sun_mean_anom )) \
+                + (0.02 * sind( 2 * sun_mean_anom )) + 282.634
         
         if sun_lon > 360:
             sun_lon = sun_lon - 360
         elif sun_lon < 0:
             sun_lon = sun_lon + 360
             
-        right_ascension = np.arctan(np.degrees( 0.91764 * np.tan(np.degrees( sun_lon )) )) # sun's right ascension
+        right_ascension = np.degrees(np.arctan( 0.91764 * tand( sun_lon ) )) # sun's right ascension
         
         if right_ascension > 360:
             right_ascension = right_ascension - 360
         elif right_ascension < 0:
             right_ascension = right_ascension + 360  
-            
+           
+          
+         
         # put sun's right ascension value in the same quadrant as the sun's
         # true longitude
         lQuad = 90. * np.floor(sun_lon / 90.)
@@ -82,13 +94,17 @@ class Daylight(object):
         right_ascension = right_ascension + ( lQuad - raQuad)
         right_ascension = right_ascension / 15. # Convert to hours
         
+        print "RA: ", right_ascension
+        
         # Sun's declination
-        sinDecl = 0.39782 * np.sin(np.degrees( sun_lon ))
+        sinDecl = 0.39782 * sind( sun_lon )
         cosDecl = np.cos( np.arcsin( sinDecl ) )
         
+        print sinDecl, cosDecl
+        
         # Sun's local hour angle
-        cosHr = (np.cos(np.degrees( self.zenith )) - ( sinDecl * np.sin(np.degrees(self.lat)) )) \
-                * ( cosDecl * np.cos(np.degrees( self.lat )) )
+        cosHr = (cosd( self.zenith ) - ( sinDecl * sind(self.lat) )) \
+                / ( cosDecl * cosd( self.lat ) )
 
         if cosHr > 1: # Sun doesnt rise on this loc on this date
             return -1, -1
@@ -105,7 +121,7 @@ class Daylight(object):
 
         print "hours: %s" % hr
 
-        localTime = hr + right_ascension - ( 0.06571 * apx ) # local meantime of rise/set
+        localTime = hr + right_ascension - ( 0.06571 * apx ) - 6.622# local meantime of rise/set
 
         print "localtime: %s" % localTime
 
