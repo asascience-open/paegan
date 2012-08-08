@@ -53,9 +53,9 @@ class DielTest(unittest.TestCase):
 
         t = datetime.utcnow().replace(tzinfo=pytz.utc)
         loc = Location4D(time=t, latitude=35, longitude=-76)
-        c = SunCycles(loc=loc)
-        sunrise = c.get_rising()
-        sunset = c.get_setting()
+        c = SunCycles.cycles(loc=loc)
+        sunrise = c[SunCycles.RISING]
+        sunset = c[SunCycles.SETTING]
 
         d = Diel()
         d.min_depth = 4

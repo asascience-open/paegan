@@ -95,11 +95,11 @@ class Diel(object):
         """
         if self.pattern == self.PATTERN_CYCLE:
             if loc4d is not None:
-                c = SunCycles(loc=loc4d)
+                c = SunCycles.cycles(loc=loc4d)
                 if self.cycle == self.CYCLE_SUNRISE:
-                    r = c.get_rising()
+                    r = c[SunCycles.RISING]
                 elif self.cycle == self.CYCLE_SUNSET:
-                    r = c.get_setting()
+                    r = c[SunCycles.SETTING]
                 td = timedelta(hours=self.time_delta)
                 if self.plus_or_minus == self.HOURS_PLUS:
                     r = r + td
