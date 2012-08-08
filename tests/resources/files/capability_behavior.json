@@ -1,0 +1,6 @@
+{
+  "nonswim_turning": "random", 
+  "variance": 0.0, 
+  "swim_turning": "random", 
+  "vss": 5.0
+}
