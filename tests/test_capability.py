@@ -25,12 +25,35 @@ class TaxisTest(unittest.TestCase):
         assert d.swim_turning == "random"
         assert d.calc_vss() == 5.0
 
-    def test_variance(self):
+    def test_gaussian_variance(self):
         d = Capability()
         d.vss = 4.0
         d.variance = 0.5
 
         max_deviation = d.variance * 6
 
-        assert d.calc_vss() >= d.vss - max_deviation
-        assert d.calc_vss() <= d.vss + max_deviation
+        real_vss = d.calc_vss(method='gaussian')
+        assert real_vss >= d.vss - max_deviation
+        assert real_vss <= d.vss + max_deviation
+
+    def test_random_variance(self):
+        d = Capability()
+        d.vss = 4.0
+        d.variance = 0.5
+
+        real_vss = d.calc_vss(method='random')
+        assert real_vss >= d.vss - d.variance
+        assert real_vss <= d.vss + d.variance
+
+    def test_error_variance(self):
+        d = Capability()
+        d.vss = 4.0
+        d.variance = 0.5
+
+        # Should result in a ValueError
+        try:
+            d.calc_vss(method='nada')
+        except ValueError:
+            assert True
+        else:
+            assert False
