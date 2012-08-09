@@ -60,7 +60,7 @@ class DielTest(unittest.TestCase):
         d = Diel()
         d.min_depth = 4
         d.max_depth = 10
-        d.pattern = 'cycle'
+        d.pattern = 'cycles'
         d.cycle = 'sunrise'
         d.plus_or_minus = '+'
         d.time_delta = 4
@@ -69,7 +69,7 @@ class DielTest(unittest.TestCase):
         d = Diel()
         d.min_depth = 4
         d.max_depth = 10
-        d.pattern = 'cycle'
+        d.pattern = 'cycles'
         d.cycle = 'sunset'
         d.plus_or_minus = '-'
         d.time_delta = 2

@@ -7,7 +7,7 @@ import json
 
 class Diel(object):
 
-    PATTERN_CYCLE        = "cycle"
+    PATTERN_CYCLE        = "cycles"
     PATTERN_SPECIFICTIME = "specifictime"
 
     CYCLE_SUNRISE = "sunrise"
