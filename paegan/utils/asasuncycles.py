@@ -111,8 +111,6 @@ class SunCycles(object):
         sinDecl = 0.39782 * np.sin( np.radians(sun_lon) )
         cosDecl = np.cos( np.arcsin( sinDecl ) )
         
-        print sinDecl, cosDecl
-        
         # Sun's local hour angle
         cosHr = (np.cos( np.radians(zenith) ) - ( sinDecl * np.sin(np.radians(lat)) )) \
                 / ( cosDecl * np.cos( np.radians(lat) ) )
