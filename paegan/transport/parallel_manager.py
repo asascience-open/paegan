@@ -651,68 +651,7 @@ class ForceParticle(object):
                 pass
                 
             u, v, w, temp, salt = self.data(i)
-            print self.proc, u, v, w, temp, salt
-            '''
-            try:
-                if np.mean(np.mean(self.dataset.get_values('domain', timeinds=[np.asarray([i])], point=self.part.location ))) == 0:
-                    indices = self.dataset.get_indices('u', timeinds=[np.asarray([i])], point=self.part.location )
-                    self.point_get.value = [i, indices[-2], indices[-1]]
-                    self.dataset.closenc()
-                    self.particle_get.value = False
-                    if self.get_data.value != True:
-                        self.get_data.value = True
-                    while self.get_data.value == True:
-                        pass
-                    self.particle_get.value = True
-                    self.dataset.opennc()
-                u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )))
-                v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )))
-                if 'w' in self.dataset.nc.variables:
-                    w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
-                else:
-                    w = 0
-                self.dataset.closenc()
-                
-            except:
-                self.dataset.closenc()
-                self.particle_get.value = False
-                if self.get_data.value != True:
-                    self.get_data.value = True
-                while self.get_data.value == True:
-                    pass
-                self.particle_get.value = True
-                self.dataset.opennc()
-                if np.mean(np.mean(self.dataset.get_values('domain', timeinds=[np.asarray([i])], point=self.part.location ))) == 0:
-                    indices = self.dataset.get_indices('u', timeinds=[np.asarray([i])], point=self.part.location )
-                    self.point_get.value = [i, indices[-2], indices[-1]]
-                    self.dataset.closenc()
-                    self.particle_get.value = False
-                    if self.get_data.value != True:
-                        self.get_data.value = True
-                    while self.get_data.value == True:
-                        pass
-                    self.particle_get.value = True
-                    self.dataset.opennc()
-                u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )))
-                v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )))
-                if 'w' in self.dataset.nc.variables:
-                    w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
-                else:
-                    w = 0
-                self.dataset.closenc()
-            
-            
-            print u, v
-            if np.isnan(u) or np.isnan(v):
-                self.dataset.opennc()
-                u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=2 )))
-                v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=2 )))
-                if 'w' in self.dataset.nc.variables:
-                    w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
-                else:
-                    w = 0
-                self.dataset.closenc()
-            '''
+
             # loop over models - sort these in the order you want them to run
             for model in models:
                 movement = model.move(part, u, v, w, modelTimestep[loop_i], temperature=temp, salinity=salt)
