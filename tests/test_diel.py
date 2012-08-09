@@ -1,6 +1,6 @@
 import unittest
 from paegan.transport.location4d import Location4D
-from paegan.transport.models.behavior.diel import Diel
+from paegan.transport.models.behaviors.diel import Diel
 from datetime import datetime, timedelta
 from paegan.utils.asasuncycles import SunCycles
 import pytz

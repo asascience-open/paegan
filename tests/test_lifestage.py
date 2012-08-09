@@ -1,5 +1,5 @@
 import unittest
-from paegan.transport.models.behavior.lifestage import LifeStage
+from paegan.transport.models.behaviors.lifestage import LifeStage
 import os
 import json
 from datetime import datetime

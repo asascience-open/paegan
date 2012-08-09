@@ -1,7 +1,7 @@
 import json
-from paegan.transport.models.behavior.diel import Diel
-from paegan.transport.models.behavior.taxis import Taxis
-from paegan.transport.models.behavior.capability import Capability
+from paegan.transport.models.behaviors.diel import Diel
+from paegan.transport.models.behaviors.taxis import Taxis
+from paegan.transport.models.behaviors.capability import Capability
 
 class LifeStage(object):
 
@@ -24,6 +24,3 @@ class LifeStage(object):
             self.diel = [Diel(data=d) for d in data.get('diel')]
             self.taxis = [Taxis(data=t) for t in data.get('taxis')]
             self.capability = Capability(data=data.get('capability'))
-
-    def get_models(self):
-        print len(self.diel)

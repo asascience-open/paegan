@@ -1,7 +1,7 @@
 # encoding: utf-8
 
 import unittest
-from paegan.transport.models.behavior.taxis import Taxis
+from paegan.transport.models.behaviors.taxis import Taxis
 import os
 import json
 

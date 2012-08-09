@@ -1,5 +1,5 @@
 import unittest
-from paegan.transport.models.behavior.capability import Capability
+from paegan.transport.models.behaviors.capability import Capability
 import os
 import json
 
