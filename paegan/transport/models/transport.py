@@ -16,8 +16,6 @@ class Transport:
             self._vertDisp = float(kwargs.pop('vertDisp'))
         else:
             raise TypeError( "must provide a horizontal and vertical dispersion coefficient (horizDisp and vertDisp)" )
-        
-        self._behaviors = kwargs.pop('behaviors', None)
 
     def set_horizDisp(self, hdisp):
         self._horizDisp = hdisp
