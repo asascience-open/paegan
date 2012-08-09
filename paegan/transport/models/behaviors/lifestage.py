@@ -23,4 +23,7 @@ class LifeStage(object):
             self.duration = data.get('duration', None)
             self.diel = [Diel(data=d) for d in data.get('diel')]
             self.taxis = [Taxis(data=t) for t in data.get('taxis')]
-            self.capability = Capability(data=data.get('capability'))
+            self.capability = None
+            if data.get('capability', None) is not None:
+                self.capability = Capability(data=data.get('capability'))
+

@@ -2,8 +2,9 @@ import math
 from paegan.utils.asamath import AsaMath
 from paegan.utils.asarandom import AsaRandom
 from paegan.utils.asagreatcircle import AsaGreatCircle
+from paegan.transport.models.base_model import BaseModel
 
-class Transport:
+class Transport(BaseModel):
     """
         Transport a particle in the x y and z direction. Requires horizontal and vertical dispersion coefficients.
         Will only move particle when self.move() is called with the proper arguments.
@@ -38,7 +39,19 @@ class Transport:
 
         GreatCircle calculations are done based on the Vincenty Direct method.
 
-        Returns [ lon, lat, depth, horizontal_velocity, vertical_velocity ] as a tuple
+        Returns a dict like:
+            {   'latitude': x, 
+                'azimuth': x,
+                'reverse_azimuth': x, 
+                'longitude': x, 
+                'depth': x, 
+                'u': x
+                'v': x, 
+                'z': x, 
+                'distance': x, 
+                'angle': x, 
+                'vertical_distance': x, 
+                'vertical_angle': x }
         """
         u += AsaRandom.random() * ((2 * self._horizDisp / modelTimestep) ** 0.5) # u transformation calcualtions
         v += AsaRandom.random() * ((2 * self._horizDisp / modelTimestep) ** 0.5) # v transformation calcualtions

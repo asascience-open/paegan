@@ -1,6 +1,8 @@
 import json
+from paegan.transport.models.base_model import BaseModel
+from paegan.transport.models.behaviors.lifestage import LifeStage
 
-class LarvaBehavior(object):
+class LarvaBehavior(BaseModel):
 
     def __init__(self, **kwargs):
 
@@ -14,9 +16,11 @@ class LarvaBehavior(object):
                 except:
                     pass
 
-        self.lifestages = [LifeStage(ls) for ls in data.get('lifestages')]
+        if data.get('lifestages', None) is not None:
+            self.lifestages = [LifeStage(data=ls) for ls in data.get('lifestages')]
 
-    def move(self, **kwargs):
+    def move(self, particle, u, v, z, modelTimestep, **kwargs):
 
         # Figure out how old the particle is, and which lifestage we should be using
         # Only run that lifestage model
+        pass
