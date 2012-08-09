@@ -40,10 +40,6 @@ class Transport:
 
         Returns [ lon, lat, depth, horizontal_velocity, vertical_velocity ] as a tuple
         """
-        if self._behaviors != None:
-            temp = kwargs.pop("temp")
-            salt = kwargs.pop("salt")
-            
         u += AsaRandom.random() * ((2 * self._horizDisp / modelTimestep) ** 0.5) # u transformation calcualtions
         v += AsaRandom.random() * ((2 * self._horizDisp / modelTimestep) ** 0.5) # v transformation calcualtions
         z += AsaRandom.random() * ((2 * self._vertDisp / modelTimestep) ** 0.5) # z transformation calculations
