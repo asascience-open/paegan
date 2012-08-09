@@ -3,7 +3,7 @@ from paegan.transport.models.behavior.capability import Capability
 import os
 import json
 
-class TaxisTest(unittest.TestCase):
+class CapabilityTest(unittest.TestCase):
 
     def test_from_json(self):
         data = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/capability_behavior.json"))).read()
