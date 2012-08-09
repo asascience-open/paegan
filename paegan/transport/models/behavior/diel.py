@@ -17,10 +17,9 @@ class Diel(object):
     HOURS_MINUS = "-"
 
     def __init__(self, **kwargs):
-        data = {}
-
+        
         if 'json' in kwargs or 'data' in kwargs:
-
+            data = {}
             try:
                 data = json.loads(kwargs['json'])
             except:

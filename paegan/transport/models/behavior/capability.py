@@ -4,9 +4,9 @@ from random import gauss, uniform
 class Capability(object):
 
     def __init__(self, **kwargs):
-        data = {}
+        
         if 'json' in kwargs or 'data' in kwargs:
-
+            data = {}
             try:
                 data = json.loads(kwargs['json'])
             except:
