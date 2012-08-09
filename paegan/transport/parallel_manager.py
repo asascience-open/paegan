@@ -715,7 +715,7 @@ class ForceParticle(object):
             '''
             # loop over models - sort these in the order you want them to run
             for model in models:
-                movement = model.move(part.location, u, v, w, modelTimestep[loop_i])
+                movement = model.move(part, u, v, w, modelTimestep[loop_i], temperature=temp, salinity=salt)
                 newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtimes[loop_i])
                 if newloc: # changed p.location to part.location
                     self.boundary_interaction(self._bathymetry, self._shoreline, self.usebathy,self.useshore,self.usesurface,

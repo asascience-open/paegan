@@ -29,16 +29,14 @@ class TransportTest(unittest.TestCase):
         z = [0.005, 0.002, 0.001, -0.003] # in m/s
 
         for i in xrange(0, len(times)):
-            #print p.get_current_location()
             transport_model = Transport(horizDisp=0.05, vertDisp=0.00003) # create a transport instance with horiz and vert dispersions
-            current_location = p.location
             try:
                 modelTimestep = times[i+1] - times[i]
                 calculatedTime = times[i+1]
             except:
                 modelTimestep = times[i] - times[i-1]
                 calculatedTime = times[i] + modelTimestep
-            movement = transport_model.move(current_location, u[i], v[i], z[i], modelTimestep)
+            movement = transport_model.move(p, u[i], v[i], z[i], modelTimestep)
             newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'])
             newloc.u = movement['u']
             newloc.v = movement['v']
@@ -76,17 +74,14 @@ class TransportTest(unittest.TestCase):
             p.location = loc # set particle location
 
             for i in xrange(0, len(times)-1):
-                #print t
-                #print p.get_current_location()
                 transport_model = Transport(horizDisp=0.05, vertDisp=0.00003) # create a transport instance
-                current_location = p.location
                 try:
                     modelTimestep = times[i+1] - times[i]
                     calculatedTime = times[i+1]
                 except:
                     modelTimestep = times[i] - times[i-1]
                     calculatedTime = times[i] + modelTimestep
-                movement = transport_model.move(current_location, u[i], v[i], z[i], modelTimestep)
+                movement = transport_model.move(p, u[i], v[i], z[i], modelTimestep)
 
                 newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'])
                 newloc.u = movement['u']

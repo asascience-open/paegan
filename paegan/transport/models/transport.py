@@ -30,7 +30,7 @@ class Transport:
     vertDisp = property(get_vertDisp, set_vertDisp)
 
     
-    def move(self, location, u, v, z, modelTimestep, **kwargs):
+    def move(self, particle, u, v, z, modelTimestep, **kwargs):
         """
         Returns the lat, lon, H, and velocity of a projected point given a starting
         lat and lon (dec deg), a depth (m) below sea surface (positive up), u, v, and z velocity components (m/s), a horizontal and vertical
@@ -52,7 +52,7 @@ class Transport:
         distance_vert = z * modelTimestep # calculate the vertical distance in meters using z and model timestep
 
         # We need to represent depths as positive up when transporting.
-        depth = location.depth
+        depth = particle.location.depth
         depth += distance_vert
 
         if distance_horiz != 0:
@@ -62,9 +62,9 @@ class Transport:
             # Great circle calculation
             # Calculation takes in azimuth (heading from North, so convert our mathematical angle to azimuth)
             azimuth = AsaMath.math_angle_to_azimuth(angle=s_and_d['direction'])
-            result = AsaGreatCircle.great_circle(distance=distance_horiz, azimuth=azimuth, start_point=location)
+            result = AsaGreatCircle.great_circle(distance=distance_horiz, azimuth=azimuth, start_point=particle.location)
         else:
-            result = location
+            result = particle.location
             vertical_angle = 0.
             azimuth = AsaMath.math_angle_to_azimuth(angle=s_and_d['direction'])
         
