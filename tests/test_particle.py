@@ -1,5 +1,5 @@
 import unittest
-from paegan.transport.particles.particle import Particle
+from paegan.transport.particles.particle import Particle, LarvaParticle
 from paegan.transport.location4d import Location4D
 
 class ParticleTest(unittest.TestCase):
@@ -35,3 +35,39 @@ class ParticleTest(unittest.TestCase):
         result = list(p.get_last_movement().coords)
         assert (-75, 39, 1) == result[0]
         assert (-74, 40, 2) == result[1]
+
+class LarvaParticleTest(unittest.TestCase):
+
+    def setUp(self):
+        self.p = LarvaParticle()
+
+    def test_particle_age_and_growth(self):
+        # A particle with 2 day lifestages
+        assert self.p.get_age(units='seconds') == 0
+        assert self.p.get_age() == 0
+
+        self.p.age(days=1)
+        assert self.p.get_age(units='minutes') == 24 * 60
+        assert self.p.get_age() == 1
+        
+        self.p.age(days=1)
+        assert self.p.get_age(units='hours') == 48
+        assert self.p.get_age() == 2
+
+    def test_growth(self):
+        assert self.p.lifestage_index == 0
+        self.p.grow(0.5)
+        assert self.p.lifestage_index == 0
+        self.p.grow(0.5)
+        assert self.p.lifestage_index == 1
+        self.p.grow(0.5)
+        assert self.p.lifestage_index == 1
+        assert self.p.lifestage_progress == 0.5
+
+    def test_over_growth(self):
+        self.p.grow(1.5)        
+        assert self.p.lifestage_index == 1
+        assert self.p.lifestage_progress == 0.5
+        self.p.grow(1.6)
+        assert self.p.lifestage_index == 3
+        
