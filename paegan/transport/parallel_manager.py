@@ -652,6 +652,10 @@ class ForceParticle(object):
                 
             u, v, w, temp, salt = self.data(i)
 
+            # Age the particle by the modelTimestep (seconds)
+            # 'Age' meaning the amount of time it has been forced.
+            particle.age(seconds=modelTimestep[loop_i])
+
             # loop over models - sort these in the order you want them to run
             for model in models:
                 movement = model.move(part, u, v, w, modelTimestep[loop_i], temperature=temp, salinity=salt)

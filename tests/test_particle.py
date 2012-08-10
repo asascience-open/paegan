@@ -3,46 +3,30 @@ from paegan.transport.particles.particle import Particle, LarvaParticle
 from paegan.transport.location4d import Location4D
 
 class ParticleTest(unittest.TestCase):
+
+    def setUp(self):
+        self.p = Particle()
+        self.p.location = Location4D(latitude=38, longitude=-76, depth=0)
+        self.p.location = Location4D(latitude=39, longitude=-75, depth=1)
+        self.p.location = Location4D(latitude=40, longitude=-74, depth=2)
+
     def test_particle_linestring(self):
-        p = Particle()
-        p.location = Location4D(latitude=38, longitude=-76, depth=0)
-        p.location = Location4D(latitude=39, longitude=-75, depth=1)
-        p.location = Location4D(latitude=40, longitude=-74, depth=2)
-       
-        result = list(p.linestring().coords)
+        result = list(self.p.linestring().coords)
         assert (-76, 38, 0) == result[0]
         assert (-75, 39, 1) == result[1]
         assert (-74, 40, 2) == result[2]
         
-    def test_particle_linestring_length(self):
-        p = Particle()
-        p.location = Location4D(latitude=38, longitude=-76, depth=0)
-        p.location = Location4D(latitude=39, longitude=-75, depth=1)
-        p.location = Location4D(latitude=40, longitude=-74, depth=2)
-       
-        assert(len(list(p.linestring().coords))) == 3
-
-        p.location= Location4D(latitude=39, longitude=-75, depth=1)
-
-        assert(len(list(p.linestring().coords))) == 4
+    def test_particle_linestring_length(self):      
+        assert(len(list(self.p.linestring().coords))) == 3
+        self.p.location= Location4D(latitude=39, longitude=-75, depth=1)
+        assert(len(list(self.p.linestring().coords))) == 4
 
     def test_particle_last_movement(self):
-        p = Particle()
-        p.location = Location4D(latitude=38, longitude=-76, depth=0)
-        p.location = Location4D(latitude=39, longitude=-75, depth=1)
-        p.location = Location4D(latitude=40, longitude=-74, depth=2)
-       
-        result = list(p.get_last_movement().coords)
+        result = list(self.p.get_last_movement().coords)
         assert (-75, 39, 1) == result[0]
         assert (-74, 40, 2) == result[1]
 
-class LarvaParticleTest(unittest.TestCase):
-
-    def setUp(self):
-        self.p = LarvaParticle()
-
-    def test_particle_age_and_growth(self):
-        # A particle with 2 day lifestages
+    def test_particle_age(self):
         assert self.p.get_age(units='seconds') == 0
         assert self.p.get_age() == 0
 
@@ -53,6 +37,11 @@ class LarvaParticleTest(unittest.TestCase):
         self.p.age(days=1)
         assert self.p.get_age(units='hours') == 48
         assert self.p.get_age() == 2
+
+class LarvaParticleTest(unittest.TestCase):
+
+    def setUp(self):
+        self.p = LarvaParticle()
 
     def test_growth(self):
         assert self.p.lifestage_index == 0

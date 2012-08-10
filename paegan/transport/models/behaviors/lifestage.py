@@ -32,25 +32,26 @@ class LifeStage(object):
 
         particle.temp = kwargs.get('temperature')
         particle.salt = kwargs.get('salinity')
-        particle.age(seconds=modelTimestep)
 
+        # Run the nested behaviors
         for d in self.diel:
             d.move(particle, u, v, z, modelTimestep, **kwargs)
 
         for t in self.taxis:
             t.move(particle, u, v, z, modelTimestep, **kwargs)
 
-        # Grow the particle
+        # Grow the particle.  Growth effects which lifestage the particle is in.
         do_duration_growth = True
+        modelTimestepDays = modelTimestep / 60 / 60 / 24
         if self.linear_a is not None and self.linear_b is not None:
             if particle.temp is not None:
-                # linear growth
+                # linear growth, compute q = t / (Ax+B)
+                # Where timestep t (days), at temperature x (deg C), proportion of stage completed (q)
+                q = modelTimestepDays / (linear_a * particle.temp + linear_b)
+                particle.grow(q)
                 do_duration_growth = False
-                particle.grow(0.2)
             else:
                 print "No temperature found for particle at this location and timestep, skipping linear temperature growth and using duration growth"
                 
         if self.do_duration_growth is True:
-            # convert the modelTimestep seconds to days
-            mtss = modelTimestep / 60 / 60 / 24
-            particle.grow(mtss / self.duration)
+            particle.grow(modelTimestepDays / self.duration)

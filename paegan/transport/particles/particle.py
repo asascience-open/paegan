@@ -6,6 +6,7 @@ class Particle(object):
     """
     def __init__(self):
         self._locations = []
+        self._age = 0. # Age in days
 
     def set_location(self, location):
         self._locations.append(location)
@@ -26,6 +27,58 @@ class Particle(object):
     def get_last_movement(self):
         return LineString(list(self.locations[-2].point.coords) + list(self.locations[-1].point.coords))
 
+    def get_age(self, **kwargs):
+        """
+        Returns the particlees age (how long it has been forced) in a variety of units.
+        Rounded to 8 decimal places.
+
+        Parameters:
+            units (optional) = 'days' (default), 'hours', 'minutes', or 'seconds'
+        """
+        try:
+            units = kwargs.get('units', None)
+            if units is None:
+                return self._age
+            units = units.lower()
+            if units == "days":
+                z = self._age
+            elif units == "hours":
+                z = self._age * 24
+            elif units == "minutes":
+                z = self._age * 24 * 60
+            elif units == "seconds":
+                z = self._age * 24 * 60 * 60
+            else:
+                raise
+            return round(z,8) 
+        except:
+            raise KeyError("Could not return age of particle")
+
+    def age(self, **kwargs):
+        """
+        Age this particle.
+
+        parameters (optional, only one allowed):
+            days (default)
+            hours
+            minutes
+            seconds
+        """
+        if kwargs.get('days', None) is not None:
+            self._age += kwargs.get('days')
+            return
+        if kwargs.get('hours', None) is not None:
+            self._age += kwargs.get('hours') / 24.
+            return
+        if kwargs.get('minutes', None) is not None:
+            self._age += kwargs.get('minutes') / 24. / 60.
+            return
+        if kwargs.get('seconds', None) is not None:
+            self._age += kwargs.get('seconds') / 24. / 60. / 60.
+            return
+
+        raise KeyError("Could not age particle, please specify 'days', 'hours', 'minutes', or 'seconds' parameter")
+
     def linestring(self):
         return LineString(map(lambda x: list(x.point.coords)[0], self.locations))
         
@@ -35,15 +88,12 @@ class LarvaParticle(Particle):
         for the behaviors component
     """
     def __init__(self):
-        self._locations = []
+        super(LarvaParticle,self).__init__()
         self.lifestage_index = 0
         self.lifestage_progress = 0.
         self._temp = []
         self._salt = []
 
-        # Age is in days
-        self._age = 0
-      
     def set_temp(self, temp):
         self._temp.append(temp)
     def get_temp(self):
@@ -64,56 +114,6 @@ class LarvaParticle(Particle):
         return self._salt
     salts = property(get_salts, None)
     
-    def get_age(self, **kwargs):
-        """
-        Returns the particles age.
-
-        Parameters:
-            units = days, hours, minutes, or seconds
-        """
-        try:
-            units = kwargs.get('units', None)
-            if units is None:
-                return self._age
-            units = units.lower()
-            if units == "days":
-                return self._age
-            elif units == "hours":
-                return self._age * 24
-            elif units == "minutes":
-                return self._age * 24 * 60
-            elif units == "seconds":
-                return self._age * 24 * 60 * 60
-            else:
-                raise    
-        except:
-            raise KeyError("Could not return age of particle")
-
-    def age(self, **kwargs):
-        """
-        Age this particle.
-
-        parameters (only one allowed):
-            days (default)
-            hours
-            minutes
-            seconds
-        """
-        if kwargs.get('days', None) is not None:
-            self._age += kwargs.get('days')
-            return
-        if kwargs.get('hours', None) is not None:
-            self._age += kwargs.get('hours') / 24
-            return
-        if kwargs.get('minutes', None) is not None:
-            self._age += kwargs.get('minutes') / 24 / 60
-            return
-        if kwargs.get('seconds', None) is not None:
-            self._age += kwargs.get('seconds') / 24 / 60 / 60
-            return
-
-        raise KeyError("Could not age particle, please specify 'days', 'hours', 'minutes', or 'seconds' parameter")
-
     def grow(self, amount):
         """
         Grow a particle by a percentage value (0 < x < 1)
