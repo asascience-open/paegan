@@ -2,8 +2,9 @@ import json
 from paegan.transport.models.behaviors.diel import Diel
 from paegan.transport.models.behaviors.taxis import Taxis
 from paegan.transport.models.behaviors.capability import Capability
+from paegan.transport.models.base_model import BaseModel
 
-class LifeStage(object):
+class LifeStage(BaseModel):
 
     def __init__(self, **kwargs):
 
@@ -34,9 +35,12 @@ class LifeStage(object):
         particle.salt = kwargs.get('salinity')
 
         # Run the nested behaviors
-        for d in self.diel:
-            d.move(particle, u, v, z, modelTimestep, **kwargs)
 
+        # Find the closests Diel that the current particle time is AFTER, and MOVE.
+        active_diel = self.diel[0]
+        active_diel.move(particle, u, v, z, modelTimestep, **kwargs)
+
+        # Analyze past conditions and see if any Taxis should be run
         for t in self.taxis:
             t.move(particle, u, v, z, modelTimestep, **kwargs)
 

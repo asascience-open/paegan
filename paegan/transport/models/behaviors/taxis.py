@@ -1,6 +1,7 @@
 import json
+from paegan.transport.models.base_model import BaseModel
 
-class Taxis(object):
+class Taxis(BaseModel):
 
     def __init__(self, **kwargs):
         
@@ -49,3 +50,6 @@ class Taxis(object):
     def set_units(self, units):
         self._units = unicode(units)
     units = property(get_units, set_units)
+
+    def move(self, particle, u, v, z, modelTimestep, **kwargs):
+        pass

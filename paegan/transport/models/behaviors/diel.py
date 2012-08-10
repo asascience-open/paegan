@@ -4,8 +4,9 @@ from paegan.utils.asamath import AsaMath
 from datetime import datetime, timedelta
 import pytz
 import json
+from paegan.transport.models.base_model import BaseModel
 
-class Diel(object):
+class Diel(BaseModel):
 
     PATTERN_CYCLE        = "cycles"
     PATTERN_SPECIFICTIME = "specifictime"
@@ -111,3 +112,6 @@ class Diel(object):
         elif self.pattern == self.PATTERN_SPECIFICTIME:
             return self._time
     time = property(get_time, set_time)
+
+    def move(self, particle, u, v, z, modelTimestep, **kwargs):
+        pass
