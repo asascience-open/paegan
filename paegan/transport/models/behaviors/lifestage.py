@@ -40,7 +40,7 @@ class LifeStage(object):
         for t in self.taxis:
             t.move(particle, u, v, z, modelTimestep, **kwargs)
 
-        # Grow the particle.  Growth effects which lifestage the particle is in.
+        # Grow the particle.  Growth affects which lifestage the particle is in.
         do_duration_growth = True
         modelTimestepDays = modelTimestep / 60 / 60 / 24
         if self.linear_a is not None and self.linear_b is not None:
