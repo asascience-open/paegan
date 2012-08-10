@@ -125,6 +125,7 @@ class LarvaParticle(Particle):
         if self.lifestage_progress >= 1:
             self.lifestage_index += 1
             self.lifestage_progress -= 1
+            # the lifestage_progress could still be over 1, so, keep trying.
             self.grow(0)
         
 class ChemistryParticle(Particle):
