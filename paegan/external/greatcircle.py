@@ -172,6 +172,10 @@ class GreatCircle(object):
         # Starting with the approximation
         sigma = (s / (b * A))
 
+        # Not moving anywhere. We can return the location that was passed in.
+        if sigma == 0:
+            return phi1, lembda1, alpha12
+
         last_sigma = 2.0 * sigma + 2.0  # something impossible
         
         # Iterate the following three equations 
