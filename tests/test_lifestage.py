@@ -67,7 +67,11 @@ class LifeStageTest(unittest.TestCase):
             assert p.linestring().coords[0][1] == self.loc.latitude
             assert p.linestring().coords[0][2] == self.loc.depth
 
-
+            # Lifestages currently influence the Z direction, so a particle should not
+            # move horizontally.
+            assert p.linestring().coords[-1][0] == self.loc.longitude
+            assert p.linestring().coords[-1][1] == self.loc.latitude
+            
     def test_from_json(self):
 
         assert self.lifestage.name == 'third'

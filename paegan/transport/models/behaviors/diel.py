@@ -114,12 +114,42 @@ class Diel(BaseModel):
     time = property(get_time, set_time)
 
     def move(self, particle, u, v, z, modelTimestep, **kwargs):
-        # Diel is currently only moving vertically
-        distance_horiz = 0
-        angle_horiz = 0
+        """
+            This only works if min is less than max.
+            No checks are done here, so it should be done before
+            calling this function.
+        """
 
-        distance_vert = 0
-        # only moving up or down, so 90 or 270 degrees.
-        angle_vert = 90
+        """ I'm below my desired max depth, so i need to go down
 
-        return { 'u': u, 'v': v, 'z': z }
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            -------------------------------------- min
+            -------------------------------------- max
+                                x                  me
+            ______________________________________
+        """
+        if particle.location.depth < self.max_depth:
+            return { 'u': u, 'v': v, 'z': z }
+
+        """ I'm above my desired max depth, so i need to go down
+
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                x                  me
+            -------------------------------------- min
+            -------------------------------------- max
+            ______________________________________
+        """
+        if particle.location.depth > self.min_depth:
+            return { 'u': u, 'v': v, 'z': -z }
+
+        """ I'm in my desired depth, so I'm just gonna chill here
+
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            -------------------------------------- min
+                                x                  me
+            -------------------------------------- max
+            ______________________________________
+        """
+        return { 'u': u, 'v': v, 'z': 0 }
+
+        

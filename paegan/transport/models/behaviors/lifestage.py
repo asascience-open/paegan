@@ -36,25 +36,24 @@ class LifeStage(BaseModel):
 
         particle.temp = kwargs.get('temperature')
         particle.salt = kwargs.get('salinity')
-
         particle_time = particle.location.time
-        # Run the nested behaviors
 
         # Find the closests Diel that the current particle time is AFTER, and MOVE.
         index, active_diel = min( enumerate(( (d.get_time(loc4d=particle.location) - particle_time).total_seconds() for d in self.diel if d.get_time(loc4d=particle.location) > particle_time )), key=operator.itemgetter(1) )
-        diel_results = self.diel[index].move(particle, u, v, self.capability.calculated_vss, modelTimestep, **kwargs)
 
-        # For behaviors, we track the changes in U, V, and Z, not the resulting locations.
-        u = diel_results['u']
-        v = diel_results['v']
-        z = diel_results['z']
+        # Run the active diel behavior and all of the taxis behaviors
+        # u, v, and z store the continuous resutls from all of the behavior models.
+        u = 0
+        v = 0
+        z = 0 
 
-        # Analyze past conditions and see if any Taxis should be run
-        for t in self.taxis:
-            taxis_results = t.move(particle, u, v, self.capability.calculated_vss, modelTimestep, **kwargs)
-            u += taxis_results['u']
-            v += taxis_results['v']
-            z += taxis_results['z']
+        behaviors_to_run = [self.diel[index]] + self.taxis
+        # Sort these in the order you want them to be run.
+        for behave in behaviors_to_run:
+            behave_results = behave.move(particle, 0, 0, self.capability.calculated_vss, modelTimestep, **kwargs)
+            u += behave_results['u']
+            v += behave_results['v']
+            z += behave_results['z']
 
         # Grow the particle.  Growth affects which lifestage the particle is in.
         do_duration_growth = True
@@ -72,6 +71,7 @@ class LifeStage(BaseModel):
         if do_duration_growth is True:
             particle.grow(modelTimestepDays / self.duration)
 
+        # Do the calculation to determine the new location after running the behaviors
         result = AsaTransport.distance_from_location_using_u_v_z(u=u, v=v, z=z, timestep=modelTimestep, location=particle.location)
         result['u'] = u
         result['v'] = v
