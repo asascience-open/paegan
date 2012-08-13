@@ -1,3 +1,4 @@
+import os
 import unittest
 import random
 import matplotlib
@@ -6,6 +7,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy
 from datetime import datetime, timedelta
 from paegan.transport.models.transport import Transport
+from paegan.transport.models.behavior import LarvaBehavior
 from paegan.transport.particles.particle import Particle
 from paegan.transport.location4d import Location4D
 from paegan.utils.asarandom import AsaRandom
@@ -29,3 +31,26 @@ class ModelControllerTest(unittest.TestCase):
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc")
         fig = model.generate_map(Point(start_lon, start_lat))
         fig.savefig('test_model_controller.png')
+
+    def test_run_behaviors(self):
+        # Set the start position and time for the models
+        start_lat = 60.75
+        start_lon = -147
+        start_depth = 0
+        num_particles = 1
+        time_step = 3600
+        num_steps = 2
+        temp_time = datetime.utcnow()
+
+        models = []
+        models.append(Transport(horizDisp=0.05, vertDisp=0.0003))
+
+        behavior_config = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/behavior_for_run_testing.json"))).read()
+        models.append(LarvaBehavior(json=behavior_config))
+
+        start_time = datetime(temp_time.year, temp_time.month, temp_time.day, temp_time.hour)
+        model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
+            time_chunk=1)
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc")
+        fig = model.generate_map(Point(start_lon, start_lat))
+        fig.savefig('test_model_controller_behaviors.png')
