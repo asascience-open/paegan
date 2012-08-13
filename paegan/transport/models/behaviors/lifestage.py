@@ -3,6 +3,9 @@ from paegan.transport.models.behaviors.diel import Diel
 from paegan.transport.models.behaviors.taxis import Taxis
 from paegan.transport.models.behaviors.capability import Capability
 from paegan.transport.models.base_model import BaseModel
+from paegan.transport.location4d import Location4D
+from paegan.utils.asatransport import AsaTransport
+import operator
 
 class LifeStage(BaseModel):
 
@@ -34,15 +37,24 @@ class LifeStage(BaseModel):
         particle.temp = kwargs.get('temperature')
         particle.salt = kwargs.get('salinity')
 
+        particle_time = particle.location.time
         # Run the nested behaviors
 
         # Find the closests Diel that the current particle time is AFTER, and MOVE.
-        active_diel = min( ( (d.get_time(loc=particle.location) - particle.location.time).total_seconds() for d in self.diel if d.get_time(loc=particle.location) > particle.location.time ) )
-        active_diel.move(particle, u, v, z, modelTimestep, **kwargs)
+        index, active_diel = min( enumerate(( (d.get_time(loc4d=particle.location) - particle_time).total_seconds() for d in self.diel if d.get_time(loc4d=particle.location) > particle_time )), key=operator.itemgetter(1) )
+        diel_results = self.diel[index].move(particle, u, v, self.capability.calculated_vss, modelTimestep, **kwargs)
+
+        # For behaviors, we track the changes in U, V, and Z, not the resulting locations.
+        u = diel_results['u']
+        v = diel_results['v']
+        z = diel_results['z']
 
         # Analyze past conditions and see if any Taxis should be run
         for t in self.taxis:
-            t.move(particle, u, v, z, modelTimestep, **kwargs)
+            taxis_results = t.move(particle, u, v, self.capability.calculated_vss, modelTimestep, **kwargs)
+            u += taxis_results['u']
+            v += taxis_results['v']
+            z += taxis_results['z']
 
         # Grow the particle.  Growth affects which lifestage the particle is in.
         do_duration_growth = True
@@ -57,5 +69,11 @@ class LifeStage(BaseModel):
             else:
                 print "No temperature found for particle at this location and timestep, skipping linear temperature growth and using duration growth"
                 
-        if self.do_duration_growth is True:
+        if do_duration_growth is True:
             particle.grow(modelTimestepDays / self.duration)
+
+        result = AsaTransport.distance_from_location_using_u_v_z(u=u, v=v, z=z, timestep=modelTimestep, location=particle.location)
+        result['u'] = u
+        result['v'] = v
+        result['z'] = z
+        return result

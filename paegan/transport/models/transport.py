@@ -1,7 +1,7 @@
 import math
 from paegan.utils.asamath import AsaMath
 from paegan.utils.asarandom import AsaRandom
-from paegan.utils.asagreatcircle import AsaGreatCircle
+from paegan.utils.asatransport import AsaTransport
 from paegan.transport.models.base_model import BaseModel
 
 class Transport(BaseModel):
@@ -57,31 +57,11 @@ class Transport(BaseModel):
         v += AsaRandom.random() * ((2 * self._horizDisp / modelTimestep) ** 0.5) # v transformation calcualtions
         z += AsaRandom.random() * ((2 * self._vertDisp / modelTimestep) ** 0.5) # z transformation calculations
 
-        # Move horizontally
-        s_and_d = AsaMath.speed_direction_from_u_v(u=u,v=v) # calculates velocity in m/s from transformed u and v
-        distance_horiz = s_and_d['speed'] * modelTimestep # calculate the horizontal distance in meters using the velocity and model timestep
-
-        # Move vertically
-        distance_vert = z * modelTimestep # calculate the vertical distance in meters using z and model timestep
-
-        # We need to represent depths as positive up when transporting.
-        depth = particle.location.depth
-        depth += distance_vert
-
-        if distance_horiz != 0:
-            # vertical angle
-            vertical_angle = math.degrees(math.atan(distance_vert / distance_horiz))
-                
-            # Great circle calculation
-            # Calculation takes in azimuth (heading from North, so convert our mathematical angle to azimuth)
-            azimuth = AsaMath.math_angle_to_azimuth(angle=s_and_d['direction'])
-            result = AsaGreatCircle.great_circle(distance=distance_horiz, azimuth=azimuth, start_point=particle.location)
-        else:
-            result = particle.location
-            vertical_angle = 0.
-            azimuth = AsaMath.math_angle_to_azimuth(angle=s_and_d['direction'])
-        
-        return {'latitude':result['latitude'], 'azimuth': azimuth, 'reverse_azimuth': result['reverse_azimuth'], 'longitude':result['longitude'], 'depth':depth, 'u': u, 'v':v, 'z':z, 'distance':distance_horiz, 'angle': s_and_d['direction'], 'vertical_distance':distance_vert, 'vertical_angle':vertical_angle}
+        result = AsaTransport.distance_from_location_using_u_v_z(u=u, v=v, z=z, timestep=modelTimestep, location=particle.location)
+        result['u'] = u
+        result['v'] = v
+        result['z'] = z
+        return result
 
     def __str__(self):
         return  " *** Transport *** " + \
