@@ -114,4 +114,12 @@ class Diel(BaseModel):
     time = property(get_time, set_time)
 
     def move(self, particle, u, v, z, modelTimestep, **kwargs):
-        pass
+        # Diel is currently only moving vertically
+        distance_horiz = 0
+        angle_horiz = 0
+
+        distance_vert = 0
+        # only moving up or down, so 90 or 270 degrees.
+        angle_vert = 90
+
+        return { 'u': u, 'v': v, 'z': z }
