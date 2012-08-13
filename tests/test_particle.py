@@ -51,12 +51,13 @@ class LarvaParticleTest(unittest.TestCase):
         assert self.p.lifestage_index == 1
         self.p.grow(0.5)
         assert self.p.lifestage_index == 1
-        assert self.p.lifestage_progress == 0.5
+        assert self.p.lifestage_progress == 1.5
 
     def test_over_growth(self):
-        self.p.grow(1.5)        
+        self.p.grow(1.5)
         assert self.p.lifestage_index == 1
-        assert self.p.lifestage_progress == 0.5
+        assert self.p.lifestage_progress == 1.5
         self.p.grow(1.6)
+        assert self.p.lifestage_progress == 3.1
         assert self.p.lifestage_index == 3
         

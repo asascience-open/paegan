@@ -89,7 +89,6 @@ class LarvaParticle(Particle):
     """
     def __init__(self):
         super(LarvaParticle,self).__init__()
-        self.lifestage_index = 0
         self.lifestage_progress = 0.
         self._temp = []
         self._salt = []
@@ -114,19 +113,20 @@ class LarvaParticle(Particle):
         return self._salt
     salts = property(get_salts, None)
     
+    def get_lifestage_index(self):
+        return int(self.lifestage_progress)
+    lifestage_index = property(get_lifestage_index, None)
+
     def grow(self, amount):
         """
         Grow a particle by a percentage value (0 < x < 1)
 
         When a particle grows past 1, its current lifestage is 
         complete and it moves onto the next.
+
+        The calculation to get the current lifestage index is in get_lifestage_index()
         """
         self.lifestage_progress += amount
-        if self.lifestage_progress >= 1:
-            self.lifestage_index += 1
-            self.lifestage_progress -= 1
-            # the lifestage_progress could still be over 1, so, keep trying.
-            self.grow(0)
         
 class ChemistryParticle(Particle):
     """
