@@ -20,5 +20,5 @@ class LarvaBehavior(BaseModel):
             self.lifestages = [LifeStage(data=ls) for ls in data.get('lifestages')]
 
     def move(self, particle, u, v, z, modelTimestep, **kwargs):
-        # Only run that lifestage model that corresponds to the particles age
+        # Only run that lifestage model that corresponds to the particles growth progress
         self.lifestages[particle.lifestage_index].move(particle, u, v, z, modelTimestep, **kwargs)
