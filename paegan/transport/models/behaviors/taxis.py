@@ -52,12 +52,5 @@ class Taxis(BaseModel):
     units = property(get_units, set_units)
 
     def move(self, particle, u, v, z, modelTimestep, **kwargs):
-        # Taxis is currently only moving vertically
-        distance_horiz = 0
-        angle_horiz = 0
-
-        distance_vert = 0
-        # only moving up or down, so 90 or 270 degrees.
-        angle_vert = 90
-
+        z = 0
         return { 'u': u, 'v': v, 'z': z }
