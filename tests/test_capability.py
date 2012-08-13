@@ -13,7 +13,8 @@ class CapabilityTest(unittest.TestCase):
         assert d.variance == 0.0
         assert d.non_swim_turning == "random"
         assert d.swim_turning == "random"
-        assert d.calc_vss() == 5.0
+        assert d.calculated_vss == 5.0
+        assert d.calculate_vss() == 5.0
 
     def test_from_dict(self):
         data = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/capability_behavior.json"))).read()
@@ -23,7 +24,8 @@ class CapabilityTest(unittest.TestCase):
         assert d.variance == 0.0
         assert d.non_swim_turning == "random"
         assert d.swim_turning == "random"
-        assert d.calc_vss() == 5.0
+        assert d.calculated_vss == 5.0
+        assert d.calculate_vss() == 5.0
 
     def test_gaussian_variance(self):
         d = Capability()
@@ -32,7 +34,7 @@ class CapabilityTest(unittest.TestCase):
 
         max_deviation = d.variance * 6
 
-        real_vss = d.calc_vss(method='gaussian')
+        real_vss = d.calculate_vss(method='gaussian')
         assert real_vss >= d.vss - max_deviation
         assert real_vss <= d.vss + max_deviation
 
@@ -41,7 +43,7 @@ class CapabilityTest(unittest.TestCase):
         d.vss = 4.0
         d.variance = 0.5
 
-        real_vss = d.calc_vss(method='random')
+        real_vss = d.calculate_vss(method='random')
         assert real_vss >= d.vss - d.variance
         assert real_vss <= d.vss + d.variance
 
@@ -52,7 +54,7 @@ class CapabilityTest(unittest.TestCase):
 
         # Should result in a ValueError
         try:
-            d.calc_vss(method='nada')
+            d.calculate_vss(method='nada')
         except ValueError:
             assert True
         else:

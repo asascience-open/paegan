@@ -19,8 +19,12 @@ class Capability(object):
             self.swim_turning = data.get('swim_turning', None)
             self.non_swim_turning = data.get('nonswim_turning', None)
             self.variance = data.get('variance', None)
+            # We initialize the calculated VSS here.  This is not 
+            # Recaculated on access.  It needs to be manually recaculated
+            # for each Capability.
+            self.calculated_vss = self.calculate_vss(method=kwargs.get('method', None))
 
-    def calc_vss(self, method=None):
+    def calculate_vss(self, method=None):
         """
         Calculate the vertical swimming speed of this behavior.
         Takes into account the vertical swimming speed and the
@@ -41,6 +45,11 @@ class Capability(object):
                 return uniform(self.vss - self.variance, self.vss + self.variance)
             else:
                 raise ValueError("Method of vss calculation not recognized, please use 'gaussian' or 'random'")
+    def get_calculated_vss(self):
+        return self._calculated_vss
+    def set_calculated_vss(self, cvss):
+        self._calculated_vss = float(cvss)
+    calculated_vss = property(get_calculated_vss, set_calculated_vss)
 
     def get_vss(self):
         return self._vss
