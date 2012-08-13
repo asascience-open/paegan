@@ -37,7 +37,7 @@ class LifeStage(BaseModel):
         # Run the nested behaviors
 
         # Find the closests Diel that the current particle time is AFTER, and MOVE.
-        active_diel = self.diel[0]
+        active_diel = min( ( (d.get_time(loc=particle.location) - particle.location.time).total_seconds() for d in self.diel if d.get_time(loc=particle.location) > particle.location.time ) )
         active_diel.move(particle, u, v, z, modelTimestep, **kwargs)
 
         # Analyze past conditions and see if any Taxis should be run
