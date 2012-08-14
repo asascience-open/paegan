@@ -14,6 +14,7 @@ import multiprocessing
 from paegan.cdm.dataset import CommonDataset
 import os
 import random
+from paegan.logger import queue_logger
     
 class Consumer(multiprocessing.Process):
     def __init__(self, task_queue, result_queue, n_run):
@@ -644,6 +645,8 @@ class ForceParticle(object):
         #print len(array_indexs), len(time_indexs), len(modelTimestep)
         # loop over timesteps   
         for loop_i, i in enumerate(time_indexs):
+
+            queue_logger.logger().info("Particle %i at %s" % (part.id, newtimes[loop_i].isoformat()))
             
             newloc = None
             
