@@ -46,6 +46,8 @@ class DataController(object):
                  start_time, point_get, start,
                  **kwargs
                  ):
+        assert "cache" in kwargs
+        self.cache_path = kwargs["cache"]
         self.url = url
         #self.local = Dataset(".cache/localcache.nc", 'w')
         self.n_run = n_run
@@ -192,7 +194,7 @@ class DataController(object):
         self.proc = proc
         self.get_variablenames_for_model()
         self.remote = self.dataset.nc
-        cachepath = os.path.join("/home/acrosby/local.nc")#os.path.dirname(__file__),"_cache","localcache.nc")
+        cachepath = self.cache_path
         times = self.times
         start_time = self.start_time
         
@@ -474,9 +476,11 @@ class ForceParticle(object):
     def __init__(self, part, remotehydro, times, start_time, models, 
                  point, usebathy, useshore, usesurface,
                  get_data, n_run, updating, particle_get,
-                 point_get, request_lock):
+                 point_get, request_lock, cache=None):
+        assert cache != None
+        self.cache_path = cache
         self.remotehydropath = remotehydro
-        self.localpath =  os.path.join("/home/acrosby/local.nc")#os.path.dirname(__file__),"_cache","localcache.nc")
+        self.localpath =  self.cache_path
         self.point = point
         self.part = part
         self.times = times
@@ -491,6 +495,7 @@ class ForceParticle(object):
         self.particle_get = particle_get
         self.point_get = point_get
         self.request_lock = request_lock
+        
         
     def get_variablenames_for_model(self, dataset):
         getname = dataset.get_varname_from_stdname

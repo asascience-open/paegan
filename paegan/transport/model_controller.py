@@ -8,7 +8,7 @@ import numpy as np
 import netCDF4
 from datetime import datetime, timedelta
 from paegan.transport.models.transport import Transport
-from paegan.transport.particles.particle import LarvaParticle, Particle
+from paegan.transport.particles.particle import LarvaParticle
 from paegan.transport.location4d import Location4D
 from paegan.utils.asarandom import AsaRandom
 from paegan.transport.shoreline import Shoreline
@@ -20,6 +20,15 @@ from multiprocessing import Value
 import multiprocessing
 import paegan.transport.parallel_manager as parallel
 import os
+
+import uuid
+
+def unique_filename(prefix=None, suffix=None):
+    fn = []
+    if prefix: fn.extend([prefix, '-'])
+    fn.append(str(uuid.uuid4()))
+    if suffix: fn.extend(['.', suffix.lstrip('.')])
+    return ''.join(fn)
 
 class ModelController(object):
     """
@@ -249,7 +258,7 @@ class ModelController(object):
         midpoint = point#tracks.centroid
 
         #bbox = tracks.bounds
-        visual_bbox = (point.x-4, point.y-4, point.x+4, point.y+4)#tracks.buffer(1).bounds
+        visual_bbox = (point.x-1.5, point.y-1.5, point.x+1.5, point.y+1.5)#tracks.buffer(1).bounds
 
         #max_distance = max(abs(bbox[0] - bbox[2]), abs(bbox[1] - bbox[3])) + 0.25
 
@@ -308,6 +317,8 @@ class ModelController(object):
         horiz_chunk = self._horiz_chunk
         hydrodataset = hydrodataset
         low_memory = kwargs.get("low_memory", False)
+        self.cache_path = kwargs.get("cache",
+                                os.path.join(os.path.dirname(__file__), "_cache"))
         
         if start_time == None:
             raise TypeError("must provide a start time to run the models")
@@ -348,15 +359,19 @@ class ModelController(object):
         # Start workers
         for w in procs:
             w.start()
-
+        
+        # Generate temp filename for dataset cache
+        temp_name = unique_filename(prefix=str(datetime.now().microsecond), suffix=".nc")
+        self.cache_path = os.path.join(self.cache_path, temp_name)
+        
         # Add data controller to the queue first so that it 
         # can get the initial data and is not blocked
         tasks.put(parallel.DataController(
                   hydrodataset, n_run, get_data, updating,
                   time_chunk, horiz_chunk, particle_get, times,
                   start_time, point_get, startloc,
-                  low_memory=low_memory
-                  ))
+                  low_memory=low_memory,
+                  cache=self.cache_path))
                
 	    # loop over particles
         for part in self.particles:
@@ -374,8 +389,8 @@ class ModelController(object):
                                             updating,
                                             particle_get,
                                             point_get,
-                                            request_lock
-                                            ))
+                                            request_lock,
+                                            cache=self.cache_path))
         [tasks.put(None) for i in xrange(nproc)]
         
         # Wait for all tasks to finish
@@ -388,5 +403,7 @@ class ModelController(object):
             while tempres == None:
                 tempres = results.get()
                 self.particles[i] = tempres
+                
+        os.remove(self.cache_path)
 
         
