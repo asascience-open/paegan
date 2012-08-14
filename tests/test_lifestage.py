@@ -36,6 +36,43 @@ class LifeStageTest(unittest.TestCase):
             self.temps.append(random.randint(20,40))
             self.salts.append(random.randint(10,30))
 
+    def test_no_diel(self):
+        data = json.loads(open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/lifestage_single.json"))).read())
+        data['diel'] = []
+        self.lifestage = LifeStage(data=data)
+
+        for p in self.particles:
+            for i in xrange(0, len(self.times)):
+                try:
+                    modelTimestep = self.times[i+1] - self.times[i]
+                    calculatedTime = self.times[i+1]
+                except:
+                    modelTimestep = self.times[i] - self.times[i-1]
+                    calculatedTime = self.times[i] + modelTimestep
+
+                newtime = self.start_time + timedelta(seconds=calculatedTime)
+
+                p.age(seconds=modelTimestep)
+                movement = self.lifestage.move(p, 0, 0, 0, modelTimestep, temperature=self.temps[i], salinity=self.salts[i])
+                newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtime)
+                p.location = newloc
+            
+        for p in self.particles:
+            # Particle should move every timestep
+            assert len(p.locations) == len(self.times) + 1
+            # A particle should always move in this test
+            assert len(set(p.locations)) == len(self.times) + 1
+            # A particle should always age
+            assert p.get_age(units='days') == (self.times[-1] + 3600) / 60. / 60. / 24.
+            # First point of each particle should be the starting location
+            assert p.linestring().coords[0][0] == self.loc.longitude
+            assert p.linestring().coords[0][1] == self.loc.latitude
+            assert p.linestring().coords[0][2] == self.loc.depth
+
+            # Lifestages currently influence the Z direction, so a particle should not
+            # move horizontally.
+            assert p.linestring().coords[-1][0] == self.loc.longitude
+            assert p.linestring().coords[-1][1] == self.loc.latitude
 
     def test_moving_particle_with_lifestage(self):
 

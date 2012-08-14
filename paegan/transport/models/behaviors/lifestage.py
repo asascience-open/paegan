@@ -39,7 +39,13 @@ class LifeStage(BaseModel):
         particle_time = particle.location.time
 
         # Find the closests Diel that the current particle time is AFTER, and MOVE.
-        index, active_diel = min( enumerate(( (d.get_time(loc4d=particle.location) - particle_time).total_seconds() for d in self.diel if d.get_time(loc4d=particle.location) > particle_time )), key=operator.itemgetter(1) )
+        active_diel = None
+        index = -1
+
+        if len(self.diel) > 0:
+            diel_times = [(d.get_time(loc4d=particle.location) - particle_time).total_seconds() for d in self.diel if d.get_time(loc4d=particle.location) > particle_time]
+            if len(diel_times) > 0:
+                active_diel = self.diel[diel_times.index(min(diel_times))]
 
         # Run the active diel behavior and all of the taxis behaviors
         # u, v, and z store the continuous resutls from all of the behavior models.
@@ -47,7 +53,7 @@ class LifeStage(BaseModel):
         v = 0
         z = 0 
 
-        behaviors_to_run = [self.diel[index]] + self.taxis
+        behaviors_to_run = filter(None, [active_diel] + self.taxis)
         # Sort these in the order you want them to be run.
         for behave in behaviors_to_run:
             behave_results = behave.move(particle, 0, 0, self.capability.calculated_vss, modelTimestep, **kwargs)
