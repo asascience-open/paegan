@@ -403,5 +403,7 @@ class ModelController(object):
             while tempres == None:
                 tempres = results.get()
                 self.particles[i] = tempres
+                
+        os.remove(self.cache_path)
 
         
