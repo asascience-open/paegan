@@ -47,11 +47,16 @@ class ModelControllerTest(unittest.TestCase):
         models.append(Transport(horizDisp=0.05, vertDisp=0.0003))
 
         behavior_config = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/behavior_for_run_testing.json"))).read()
-        models.append(LarvaBehavior(json=behavior_config))
+        lb = LarvaBehavior(json=behavior_config)
+        
+        assert len(lb.lifestages) == 2
+        assert len(lb.lifestages[0].diel) == 2
+
+        models.append(lb)
 
         start_time = datetime(temp_time.year, temp_time.month, temp_time.day, temp_time.hour)
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=1)
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc")
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache"))
         fig = model.generate_map(Point(start_lon, start_lat))
         fig.savefig('test_model_controller_behaviors.png')
