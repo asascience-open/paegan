@@ -152,4 +152,15 @@ class Diel(BaseModel):
         """
         return { 'u': u, 'v': v, 'z': 0 }
 
-        
+    def __str__(self):
+        return \
+        """
+        Diel:
+            Pattern: %s
+            Cycle: %s
+            Time: %s
+            Plus or Minus: %s
+            Min Depth: %s
+            Max Depth: %s
+            Time Delta: %s
+        """ % (self.pattern, self.cycle, self._time, self.plus_or_minus, self.min_depth, self.max_depth, self.time_delta)
