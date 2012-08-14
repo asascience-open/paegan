@@ -2,25 +2,27 @@ Processing and Analysis of Geophysics And Numbers
 
 Try it out:
 
-# Install GDAL with python, spatiallite, and netcdf support
-$ yum install libspatialite-devel
+  1. Install Python 2.7.x
 
-# Install
-$ wget http://download.osgeo.org/gdal/gdal-1.9.0.tar.gz
-$ tar zxvf gdal-1.9.0.tar.gz
-$ cd gdal-1.9.0
-$ ./configure; make
-$ make install
+  2. Install GDAL with python support
+    $ wget http://download.osgeo.org/gdal/gdal-1.9.1.tar.gz
+    $ tar zxvf gdal-1.9.1.tar.gz
+    $ cd gdal-1.9.1
+    $ ./configure; make
+    $ make install
 
-# Install spatialindex 1.7.0+
-$ wget http://download.osgeo.org/libspatialindex/spatialindex-src-1.7.1.tar.gz
-$ tar zxvf spatialindex-src-1.7.1.tar.gz
-$ cd spatialindex-src-1.7.1
-$ ./configure; make
-$ make install
+  3. Install the HDF5 and NetCDF4 Libraries
 
-# Install paegan library dependencies
-$ pip install -r requirements.txt
+  4. Set the HDF5_DIR and NETCDF4_DIR environmental variables
 
-# Run the paegan tests
-$ ./run_tests.py
+  5. Install virtualenv-burrito: https://github.com/brainsik/virtualenv-burrito
+
+  6. Create and use virtualenv for paegan
+    $ mkvirtualenv paegan
+    $ workon paegan
+
+  7. Install paegan library dependencies
+    $ pip install -r requirements.txt
+
+  8. Run the paegan tests
+    $ python runtests.py
