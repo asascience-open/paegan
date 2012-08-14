@@ -327,7 +327,7 @@ class ModelController(object):
 
         # Initialize the particles
         for x in xrange(0, self._npart):
-            p = LarvaParticle()
+            p = LarvaParticle(id=x)
             p.location = startloc
             self.particles.append(p)
 

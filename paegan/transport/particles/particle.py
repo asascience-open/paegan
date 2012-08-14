@@ -4,9 +4,14 @@ class Particle(object):
     """
         A particle
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self._locations = []
         self._age = 0. # Age in days
+        self._id = kwargs.get("id", -1)
+
+    def get_id(self):
+        return self._id
+    id = property(get_id)
 
     def set_location(self, location):
         self._locations.append(location)
@@ -87,8 +92,8 @@ class LarvaParticle(Particle):
         A particle for larvamap, keeps track of information
         for the behaviors component
     """
-    def __init__(self):
-        super(LarvaParticle,self).__init__()
+    def __init__(self, **kwargs):
+        super(LarvaParticle,self).__init__(**kwargs)
         self.lifestage_progress = 0.
         self._temp = []
         self._salt = []
