@@ -15,13 +15,12 @@ from paegan.transport.shoreline import Shoreline
 from paegan.transport.bathymetry import Bathymetry
 from shapely.geometry import Point
 from shapely.geometry import MultiLineString
-
 from multiprocessing import Value
 import multiprocessing
 import paegan.transport.parallel_manager as parallel
 import os
-
 import uuid
+from paegan.external import shapefile as shp
 
 def unique_filename(prefix=None, suffix=None):
     fn = []
@@ -406,6 +405,83 @@ class ModelController(object):
                 self.particles[i] = tempres
                 
         os.remove(self.cache_path)
+    
+    
+    def export(self, filepath):
+        """
+            General purpose export method, gets file type 
+            from filepath extension
+        """
+        if filepath[-3:] == "shp":
+            self._export_shp(filepath)
+        elif filepath[-2:] == "nc":
+            self._export_nc(filepath)
+            
+    def _export_shp(self, filepath):
+        """
+            Export particle data to point type shapefile
+        """
+        w = shp.Writer(shp.POINT)
+        w.field('Particle')
+        w.field('Temp')
+        w.field('Salt')
+        w.field('Date')
+        w.field('Lat')
+        w.field('Lon')
+        w.field('Depth')
+        for particle in self.particles:
+            for loc, temp, salt in zip(particle.locations, particle.temps, particle.salts):
+                w.point(loc.longitude, loc.latitude)
+                w.record(particle.uid, temp, salt, loc.time.isoformat(), loc.latitude, loc.longitude, loc.depth)
+        w.save(filepath)
+        
+    def _export_nc(self, filepath):
+        """
+            Export particle data to CF trajectory convention
+            netcdf file
+        """
+        time_units = 'days since 1990-01-01 00:00:00'
+        nc = netCDF4.Dataset(filepath, 'w')
+        nc.createDimension('time', None)
+        nc.createDimension('particle', None)
+        time = nc.createVariable('time', 'f', ('time',))
+        part = nc.createVariable('particle', 'i', ('particle',))
+        depth = nc.createVariable('depth', 'f', ('time','particle'))
+        lat = nc.createVariable('lat', 'f', ('time','particle'))
+        lon = nc.createVariable('lon', 'f', ('time','particle'))
+        salt = nc.createVariable('salt', 'f', ('time','particle'))
+        temp = nc.createVariable('temp', 'f', ('time','particle'))
+        for j, particle in enumerate(self.particles):
+            part[j] = particle.uid
+            i = 0
+            for loc, _temp, _salt in zip(particle.locations, particle.temps, particle.salts):
+                if j == 0:
+                    time[i] = netCDF4.date2num(loc.time, time_units)
+                depth[i, j] = loc.depth
+                lat[i, j] = loc.latitude
+                lon[i, j] = loc.longitude
+                salt[i, j] = _salt
+                temp[i, j] = _temp
+                i += 1
+        depth.coordinates = "time particle lat lon"
+        depth.standard_name = "depth_below_sea_surface"
+        depth.units = "m"
+        depth.POSITIVE = "up"
+        salt.coordinates = "time particle lat lon"
+        salt.standard_name = "sea_water_salinity"
+        salt.units = "psu"
+        temp.coordinates = "time particle lat lon"
+        temp.standard_name = "sea_water_temperature"
+        temp.units = "degrees_C"
+        time.units = time_units
+        time.standard_name = "time"
+        lat.units = "degrees_north"
+        lon.units = "degrees_east"
+                
+            
+        
+        
+        
         
 
         

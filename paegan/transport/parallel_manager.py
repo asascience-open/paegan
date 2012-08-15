@@ -672,7 +672,8 @@ class ForceParticle(object):
                 pass
                 
             u, v, w, temp, salt = self.data(i)
-
+            part.temp = temp
+            part.salt = salt
             # Age the particle by the modelTimestep (seconds)
             # 'Age' meaning the amount of time it has been forced.
             part.age(seconds=modelTimestep[loop_i])

@@ -11,7 +11,7 @@ class Particle(object):
 
     def get_id(self):
         return self._id
-    id = property(get_id)
+    uid = property(get_id)
 
     def set_location(self, location):
         self._locations.append(location)
