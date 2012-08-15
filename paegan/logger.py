@@ -204,4 +204,4 @@ class QueueLogger(object):
         self._listener.stop()
 
 queue_logger = QueueLogger()
-queue_logger.start()
+

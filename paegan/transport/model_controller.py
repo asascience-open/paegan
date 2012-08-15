@@ -340,6 +340,7 @@ class ModelController(object):
         mgr = multiprocessing.Manager()
         nproc = multiprocessing.cpu_count()
         request_lock = mgr.Lock()
+        nproc_lock = mgr.Lock()
         
         # Create the task and result queues
         tasks = multiprocessing.JoinableQueue()
@@ -353,7 +354,7 @@ class ModelController(object):
         point_get = mgr.Value('list', [0, 0, 0])
         
         # Create workers
-        procs = [ parallel.Consumer(tasks, results, n_run)
+        procs = [ parallel.Consumer(tasks, results, n_run, nproc_lock)
                   for i in xrange(nproc) ]
         
         # Start workers
@@ -392,7 +393,7 @@ class ModelController(object):
                                             request_lock,
                                             cache=self.cache_path))
         [tasks.put(None) for i in xrange(nproc)]
-        
+
         # Wait for all tasks to finish
         tasks.join()
         
@@ -405,5 +406,6 @@ class ModelController(object):
                 self.particles[i] = tempres
                 
         os.remove(self.cache_path)
+        
 
         

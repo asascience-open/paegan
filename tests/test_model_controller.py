@@ -14,6 +14,8 @@ from paegan.utils.asarandom import AsaRandom
 from paegan.transport.model_controller import ModelController
 from shapely.geometry import Point
 import os
+from paegan.logger import queue_logger
+
 
 class ModelControllerTest(unittest.TestCase):
     def test_run_individual_particles(self):
@@ -27,12 +29,13 @@ class ModelControllerTest(unittest.TestCase):
         temp_time = datetime.utcnow()
         models = [Transport(horizDisp=0.05, vertDisp=0.0003)]
         start_time = datetime(temp_time.year, temp_time.month, temp_time.day, temp_time.hour)
+        queue_logger.start()
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
-            time_chunk=1)
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache"))
-        fig = model.generate_map(Point(start_lon, start_lat))
-        fig.savefig('test_model_controller.png')
-
+            time_chunk=2, horiz_chunk=2)
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache="/home/acrosby")#cache=os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache"))
+        #fig = model.generate_map(Point(start_lon, start_lat))
+        #fig.savefig('test_model_controller.png')
+        queue_logger.stop()
     def test_run_behaviors(self):
         # Set the start position and time for the models
         start_lat = 60.75
@@ -56,7 +59,7 @@ class ModelControllerTest(unittest.TestCase):
 
         start_time = datetime(temp_time.year, temp_time.month, temp_time.day, temp_time.hour)
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
-            time_chunk=1)
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache"))
-        fig = model.generate_map(Point(start_lon, start_lat))
-        fig.savefig('test_model_controller_behaviors.png')
+            time_chunk=2, horiz_chunk=2)
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache="/home/acrosby")#cache=os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache"))
+        #fig = model.generate_map(Point(start_lon, start_lat))
+        #fig.savefig('test_model_controller_behaviors.png')

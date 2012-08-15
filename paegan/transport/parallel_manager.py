@@ -14,25 +14,35 @@ import multiprocessing
 from paegan.cdm.dataset import CommonDataset
 import os
 import random
-from paegan.logger import queue_logger
-    
+#from paegan.logger import queue_logger
+
 class Consumer(multiprocessing.Process):
-    def __init__(self, task_queue, result_queue, n_run):
+    def __init__(self, task_queue, result_queue, n_run, lock):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.result_queue = result_queue
         self.n_run = n_run
+        self.lock = lock
+        lock.acquire()
         self.n_run.value = self.n_run.value + 1
+        lock.release()
+        
     def run(self):
         proc_name = self.name
         while True:
             next_task = self.task_queue.get()
+            #queue_logger.start()
             if next_task is None:
                 # Poison pill means shutdown
                 #print '%s: Exiting' % proc_name
+                #queue_logger.logger().info("Particle " + proc_name + " at exit")
+                #queue_logger.logger().info(str(self.n_run.value) + " remaining processes bfore")
+                self.lock.acquire()
                 self.n_run.value = self.n_run.value - 1
+                #queue_logger.logger().info(str(self.n_run.value) + " remaining processes after")
+                self.lock.release()
                 self.task_queue.task_done()
-
+                #queue_logger.stop()
                 
                 break
             #print '%s: %s' % (proc_name, next_task)
@@ -216,9 +226,11 @@ class DataController(object):
         time_indexs = timevar.nearest_index(newtimes)
         
         self.inds = np.unique(time_indexs)
-                
+        
+        
+         
         while self.n_run.value > 1:
-            #print self.n_run.value
+            
             if self.get_data.value == True:
                 if c == 0:
                     indices = self.dataset.get_indices(self.uname, timeinds=[np.asarray([0])], point=self.start)
@@ -646,7 +658,8 @@ class ForceParticle(object):
         # loop over timesteps   
         for loop_i, i in enumerate(time_indexs):
 
-            queue_logger.logger().info("Particle %i at %s" % (part.id, newtimes[loop_i].isoformat()))
+            
+            #logger.logger().info("Particle %i at %s" % (part.id, newtimes[loop_i].isoformat()))
             
             newloc = None
             
