@@ -23,6 +23,14 @@ class Particle(object):
         return self._locations
     locations = property(get_locations, None)
 
+    def fill_location_gap(self):
+        """
+        To keep certain parameters the same length as 'locations',
+        this is used if the particle moves twice within a timestep.
+        This can happen if they hit a shoreline, etc.
+        """
+        pass
+
     def set_active(self, active):
         self._active = active
     def get_active(self):
@@ -121,6 +129,10 @@ class LarvaParticle(Particle):
     def get_lifestage_index(self):
         return int(self.lifestage_progress)
     lifestage_index = property(get_lifestage_index, None)
+
+    def fill_location_gap(self):
+        self._temp.append(self.temp)
+        self._salt.append(self.salt)
 
     def grow(self, amount):
         """
