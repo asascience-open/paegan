@@ -477,6 +477,8 @@ class ModelController(object):
         time.standard_name = "time"
         lat.units = "degrees_north"
         lon.units = "degrees_east"
+        nc.sync()
+        nc.close()
                 
             
         
