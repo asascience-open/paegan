@@ -657,10 +657,9 @@ class ForceParticle(object):
         #print len(array_indexs), len(time_indexs), len(modelTimestep)
         # loop over timesteps   
         for loop_i, i in enumerate(time_indexs):
+     
+            #queue_logger.logger().info("Particle %i at %s" % (part.id, newtimes[loop_i].isoformat()))
 
-            
-            #logger.logger().info("Particle %i at %s" % (part.id, newtimes[loop_i].isoformat()))
-            
             newloc = None
             
             
