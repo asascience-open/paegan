@@ -702,7 +702,7 @@ class ForceParticle(object):
             intersection_point = shore.intersect(start_point=starting.point, end_point=ending.point)
             if intersection_point:
                 # Set the intersection point
-                hitpoint = Location4D(point=intersection_point['point'], time=starting + (ending - starting))
+                hitpoint = Location4D(point=intersection_point['point'], time=starting.time + (ending.time - starting.time))
                 particle.location = hitpoint
                 particle.fill_location_gap()
                 resulting_point = shore.react(start_point=starting,
@@ -716,7 +716,6 @@ class ForceParticle(object):
                 ending.latitude = resulting_point.latitude
                 ending.longitude = resulting_point.longitude
                 ending.depth = resulting_point.depth
-                ending.time = ending.time
 
         # bathymetry
         if usebathy:
