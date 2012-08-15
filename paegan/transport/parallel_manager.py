@@ -672,8 +672,7 @@ class ForceParticle(object):
                 pass
                 
             u, v, w, temp, salt = self.data(i)
-            part.temp = temp
-            part.salt = salt
+
             # Age the particle by the modelTimestep (seconds)
             # 'Age' meaning the amount of time it has been forced.
             part.age(seconds=modelTimestep[loop_i])
@@ -717,6 +716,7 @@ class ForceParticle(object):
                 ending.latitude = resulting_point.latitude
                 ending.longitude = resulting_point.longitude
                 ending.depth = resulting_point.depth
+
                 
         # bathymetry
         if usebathy:
