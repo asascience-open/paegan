@@ -463,10 +463,12 @@ class ModelController(object):
                 salt[i, j] = _salt
                 temp[i, j] = _temp
                 i += 1
+        # Variable attributes
         depth.coordinates = "time particle lat lon"
         depth.standard_name = "depth_below_sea_surface"
         depth.units = "m"
         depth.POSITIVE = "up"
+        depth.positive = "up"
         salt.coordinates = "time particle lat lon"
         salt.standard_name = "sea_water_salinity"
         salt.units = "psu"
@@ -477,6 +479,11 @@ class ModelController(object):
         time.standard_name = "time"
         lat.units = "degrees_north"
         lon.units = "degrees_east"
+        part.cf_role = "trajectory_id"
+        
+        # Global attributes
+        nc.featureType = "trajectory"
+        #nc.cdm_dataset_type = "trajectory"
         nc.sync()
         nc.close()
                 
