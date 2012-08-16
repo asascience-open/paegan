@@ -180,52 +180,6 @@ class ModelController(object):
                 "\nuse_bathymetry: " + str(self.use_bathymetry) +\
                 "\nuse_shoreline: " + str(self.use_shoreline)
 
-    def boundary_interaction(self, **kwargs):
-        """
-            Returns a list of Location4D objects
-        """
-
-        particle = kwargs.pop('particle')
-        starting = kwargs.pop('starting')
-        ending = kwargs.pop('ending')
-
-        # bathymetry
-        if self.use_bathymetry:
-            pt = self._bathymetry.intersect(start_point=starting.point,
-                                            end_point=ending.point,
-                                            distance=kwargs.get('vertical_distance'),
-                                            angle=kwargs.get('vertical_angle'))
-            if pt:
-                ending.latitude = pt.latitude
-                ending.longitude = pt.longitude
-                ending.depth = pt.depth
-
-        # shoreline
-        if self.use_shoreline:
-            intersection_point = self._shoreline.intersect(start_point=starting.point, end_point=ending.point)
-            if intersection_point:
-                # Set the intersection point
-                hitpoint = Location4D(point=intersection_point['point'])
-                particle.location = hitpoint
-                resulting_point = self._shoreline.react(start_point=starting,
-                                                        end_point=ending,
-                                                        hit_point=hitpoint,
-                                                        feature=intersection_point['feature'],
-                                                        distance=kwargs.get('distance'),
-                                                        angle=kwargs.get('angle'),
-                                                        azimuth=kwargs.get('azimuth'),
-                                                        reverse_azimuth=kwargs.get('reverse_azimuth'))
-                ending.latitude = resulting_point.latitude
-                ending.longitude = resulting_point.longitude
-                ending.depth = resulting_point.depth
-
-        # sea-surface
-        if self.use_seasurface:
-            if ending.depth > 0:
-                ending.depth = 0
-
-        particle.location = ending
-
     def generate_map(self, point):
         fig = matplotlib.pyplot.figure(figsize=(20,16)) # call a blank figure
         ax = fig.gca(projection='3d') # line with points
