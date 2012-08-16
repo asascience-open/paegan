@@ -478,7 +478,7 @@ class ForceParticle(object):
         return self.part.__str__()
 
     def __init__(self, part, remotehydro, times, start_time, models, 
-                 point, usebathy, useshore, usesurface,
+                 release_location_centroid, usebathy, useshore, usesurface,
                  get_data, n_run, updating, particle_get,
                  point_get, request_lock, cache=None):
         """
@@ -491,7 +491,7 @@ class ForceParticle(object):
         self.cache_path = cache
         self.remotehydropath = remotehydro
         self.localpath =  self.cache_path
-        self.point = point
+        self.release_location_centroid = release_location_centroid
         self.part = part
         self.times = times
         self.start_time = start_time
@@ -640,11 +640,11 @@ class ForceParticle(object):
         
     def __call__(self, proc):
         if self.usebathy == True:
-            self._bathymetry = Bathymetry(point=self.point)
+            self._bathymetry = Bathymetry(point=self.release_location_centroid)
         else:
             self._bathymetry = None
         if self.useshore == True:
-            self._shoreline = Shoreline(point=self.point)
+            self._shoreline = Shoreline(point=self.release_location_centroid)
         else:
             self._shoreline = None
         self.proc = proc

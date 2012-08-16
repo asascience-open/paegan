@@ -12,7 +12,7 @@ from paegan.transport.particles.particle import Particle
 from paegan.transport.location4d import Location4D
 from paegan.utils.asarandom import AsaRandom
 from paegan.transport.model_controller import ModelController
-from shapely.geometry import Point
+from shapely.geometry import Point, Polygon
 import os
 from paegan.logger import queue_logger
 
@@ -26,26 +26,61 @@ class ModelControllerTest(unittest.TestCase):
         num_particles = 10
         time_step = 3600
         num_steps = 2
-        temp_time = datetime.utcnow()
         models = [Transport(horizDisp=0.05, vertDisp=0.0003)]
-        start_time = datetime(temp_time.year, temp_time.month, temp_time.day, temp_time.hour)
-        queue_logger.start()
+        start_time = datetime(2012, 8, 1, 00)
+
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=2, horiz_chunk=2)
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache"))
         #fig = model.generate_map(Point(start_lon, start_lat))
         #fig.savefig('test_model_controller.png')
-        queue_logger.stop()
+
+    def test_run_from_point(self):
+        # Set the start position and time for the models
+        start_lat = 60.75
+        start_lon = -147
+        start_depth = 0
+        num_particles = 2
+        time_step = 3600
+        num_steps = 2
+        models = [Transport(horizDisp=0.05, vertDisp=0.0003)]
+        start_time = datetime(2012, 8, 1, 00)
+
+        p = Point(start_lon, start_lat, start_depth)
+
+        model = ModelController(geometry=p, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
+            time_chunk=2, horiz_chunk=2)
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache"))
+        #fig = model.generate_map(Point(start_lon, start_lat))
+        #fig.savefig('test_model_controller.png')
+
+    def test_run_from_polygon(self):
+        # Set the start position and time for the models
+        start_lat = 60.75
+        start_lon = -147
+        start_depth = 10
+        num_particles = 2
+        time_step = 3600
+        num_steps = 2
+        models = [Transport(horizDisp=0.05, vertDisp=0.0003)]
+        start_time = datetime(2012, 8, 1, 00)
+
+        poly = Point(start_lon, start_lat, start_depth).buffer(0.001)
+
+        model = ModelController(geometry=poly, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
+            time_chunk=2, horiz_chunk=2)
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache"))
+        #fig = model.generate_map(Point(start_lon, start_lat))
+        #fig.savefig('test_model_controller.png')
 
     def test_run_behaviors(self):
         # Set the start position and time for the models
         start_lat = 60.75
         start_lon = -147
         start_depth = 0
-        num_particles = 1
+        num_particles = 2
         time_step = 3600
         num_steps = 2
-        temp_time = datetime.utcnow()
 
         models = []
         models.append(Transport(horizDisp=0.05, vertDisp=0.0003))
@@ -53,12 +88,12 @@ class ModelControllerTest(unittest.TestCase):
         behavior_config = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/behavior_for_run_testing.json"))).read()
         lb = LarvaBehavior(json=behavior_config)
         
-        assert len(lb.lifestages) == 2
-        assert len(lb.lifestages[0].diel) == 2
+        #assert len(lb.lifestages) == 2
+        #assert len(lb.lifestages[0].diel) == 2
 
         models.append(lb)
 
-        start_time = datetime(temp_time.year, temp_time.month, temp_time.day, temp_time.hour)
+        start_time = datetime(2012, 8, 1, 00)
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=2, horiz_chunk=2)
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache"))

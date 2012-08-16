@@ -11,9 +11,10 @@ from paegan.transport.models.transport import Transport
 from paegan.transport.particles.particle import LarvaParticle
 from paegan.transport.location4d import Location4D
 from paegan.utils.asarandom import AsaRandom
+from paegan.utils.asatransport import AsaTransport
 from paegan.transport.shoreline import Shoreline
 from paegan.transport.bathymetry import Bathymetry
-from shapely.geometry import Point
+from shapely.geometry import Point, Polygon
 from shapely.geometry import MultiLineString
 from multiprocessing import Value
 import multiprocessing
@@ -37,14 +38,14 @@ class ModelController(object):
 
         """ 
             Mandatory named arguments:
-            * point (Shapely Point Object) no default
+            * geometry (Shapely Geometry Object) no default
             * depth (meters) default 0
             * start (DateTime Object) none
             * step (seconds) default 3600
             * npart (number of particles) default 1
             * nstep (number of steps) no default
             * models (list object) no default, so far there is a transport model and a behavior model
-            point is interchangeable with:
+            geometry is interchangeable (if it is a point release) with:
             * latitude (DD) no default
             * longitude (DD) no default
             * depth (meters) default 0
@@ -68,23 +69,24 @@ class ModelController(object):
         self._horiz_chunk = kwargs.get('horiz_chunk', 4)
         
         # Inerchangeables
-        if "point" in kwargs:
-            self.point = kwargs.pop('point')
+        if "geometry" in kwargs:
+            self.geometry = kwargs.pop('geometry')
+            if not isinstance(self.geometry, Point) and not isinstance(self.geometry, Polygon):
+                raise TypeError("The geometry attribute must be a shapely Point or Polygon")
         elif "latitude" and "longitude" in kwargs:
-            self.latitude = kwargs.pop('latitude')
-            self.longitude = kwargs.pop('longitude') 
+            self.geometry = Point(kwargs.pop('longitude'), kwargs.pop('latitude'))
         else:
-            raise TypeError("must provide a point geometry object or latitude and longitude")
+            raise TypeError("must provide a shapely geometry object (point or polygon) or a latitude and a longitude")
 
         # Create shoreline
         if self._use_shoreline == True:
-            self._shoreline = Shoreline(point=self.point)
+            self._shoreline = Shoreline(point=self.reference_location.point)
         else:
             self._shoreline = None
 
         # Create Bathymetry
         if self.use_bathymetry == True:
-            self._bathymetry = Bathymetry(point=self.point)
+            self._bathymetry = Bathymetry(point=self.reference_location.point)
         else:
             self._bathymetry = None
 
@@ -94,32 +96,19 @@ class ModelController(object):
         else:
             raise TypeError("must provide the number of timesteps")
 
-    def set_point(self, point):
-        self._point = point
-        self._dirty = False
-    def get_point(self):
-        if self._dirty:
-            self.point = Point(self._longitude, self._latitude, self._depth)
-        return self._point
-    point = property(get_point, set_point)
+    def set_geometry(self, geo):
+        self._geometry = geo
+    def get_geometry(self):
+        return self._geometry
+    geometry = property(get_geometry, set_geometry)
 
-    def set_latitude(self, lat):
-        self._latitude = lat
-        self._dirty = True
-    def get_latitude(self):
-        return self._latitude
-    latitude = property(get_latitude, set_latitude)
-
-    def set_longitude(self, lon):
-        self._longitude = lon
-        self._dirty = True
-    def get_longitude(self):
-        return self._longitude
-    longitude = property(get_longitude, set_longitude)
+    def get_reference_location(self):
+        pt = self.geometry.centroid
+        return Location4D(latitude=pt.y, longitude=pt.x, depth=self.depth, time=self.start)
+    reference_location = property(get_reference_location, None)
 
     def set_depth(self, dep):
         self._depth = dep
-        self._dirty = True
     def get_depth(self):
         return self._depth
     depth = property(get_depth, set_depth)
@@ -308,10 +297,6 @@ class ModelController(object):
     def run(self, hydrodataset, **kwargs):
 
         times = range(0,(self._step*self._nstep)+1,self._step)
-        start_lat = self._latitude
-        start_lon = self._longitude
-        start_depth = self._depth
-        start_time = self._start
         time_chunk = self._time_chunk
         horiz_chunk = self._horiz_chunk
         hydrodataset = hydrodataset
@@ -319,15 +304,19 @@ class ModelController(object):
         self.cache_path = kwargs.get("cache",
                                 os.path.join(os.path.dirname(__file__), "_cache"))
         
-        if start_time == None:
+        if self.start == None:
             raise TypeError("must provide a start time to run the models")
 
-        startloc = Location4D(latitude=start_lat, longitude=start_lon, depth=start_depth, time=start_time)
+        point_locations = []
+        if isinstance(self.geometry, Point):
+            point_locations = [self.reference_location] * self._npart
+        elif isinstance(self.geometry, Polygon):
+            point_locations = [Location4D(latitude=loc.y, longitude=loc.x, depth=self.depth, time=self.start) for loc in AsaTransport.fill_polygon_with_points(goal=self._npart, polygon=self.geometry)]
 
         # Initialize the particles
         for x in xrange(0, self._npart):
             p = LarvaParticle(id=x)
-            p.location = startloc
+            p.location = point_locations[x]
             self.particles.append(p)
 
         # This is where it makes sense to implement the multiprocessing
@@ -369,7 +358,7 @@ class ModelController(object):
         tasks.put(parallel.DataController(
                   hydrodataset, n_run, get_data, updating,
                   time_chunk, horiz_chunk, particle_get, times,
-                  start_time, point_get, startloc,
+                  self.start, point_get, self.reference_location,
                   low_memory=low_memory,
                   cache=self.cache_path))
                
@@ -378,9 +367,9 @@ class ModelController(object):
             tasks.put(parallel.ForceParticle(part, 
                                             hydrodataset,
                                             times, 
-                                            start_time,
+                                            self.start,
                                             self._models,
-                                            self.point,
+                                            self.reference_location.point,
                                             self._use_bathymetry,
                                             self._use_shoreline,
                                             self._use_seasurface,
