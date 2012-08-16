@@ -25,9 +25,12 @@ Try it out
     $ workon paegan
 
 7. Install paegan library dependencies
-    $ pip install -r requirements.txt
+    $ pip install paegan
 
 8. Run the paegan tests
+    $ git clone git@github.com:asascience-open/paegan.git
+    $ cd paegan
+    $ pip install pytest
     $ python runtests.py
 
 
