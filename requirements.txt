@@ -1,6 +1,6 @@
 numpy==1.6.2
 unittest2==0.5.1
-netCDF4==1.0
+netCDF4==0.9.8
 Shapely==1.2.15
 GDAL==1.9.1
 pytz==2012d
