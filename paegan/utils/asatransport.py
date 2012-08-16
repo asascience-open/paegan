@@ -37,7 +37,10 @@ class AsaTransport(object):
             elif distance_vert > 1:
                 vertical_angle = 90.
 
-        gc_result = AsaGreatCircle.great_circle(distance=distance_horiz, azimuth=azimuth, start_point=location)
+        if distance_horiz <= 0:
+            gc_result = { 'latitude': location.latitude, 'longitude': location.longitude, 'reverse_azimuth': 0 }
+        else:
+            gc_result = AsaGreatCircle.great_circle(distance=distance_horiz, azimuth=azimuth, start_point=location)
         gc_result['azimuth'] = azimuth
         gc_result['depth'] = depth
         gc_result['distance'] = distance_horiz
