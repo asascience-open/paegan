@@ -421,7 +421,9 @@ class ModelController(object):
         """
             Export particle data to point type shapefile
         """
+        # Create the shapefile writer
         w = shp.Writer(shp.POINT)
+        # Create the attribute fields/columns
         w.field('Particle')
         w.field('Temp')
         w.field('Salt')
@@ -429,10 +431,16 @@ class ModelController(object):
         w.field('Lat')
         w.field('Lon')
         w.field('Depth')
+        
+        # Loop through locations in particles,
+        # add as points to the shapefile
         for particle in self.particles:
             for loc, temp, salt in zip(particle.locations, particle.temps, particle.salts):
+                # Add point geometry
                 w.point(loc.longitude, loc.latitude)
+                # Add attribute records
                 w.record(particle.uid, temp, salt, loc.time.isoformat(), loc.latitude, loc.longitude, loc.depth)
+        # Write out shapefle to disk
         w.save(filepath)
         
     def _export_nc(self, filepath, **kwargs):
@@ -441,9 +449,13 @@ class ModelController(object):
             netcdf file
         """
         time_units = 'days since 1990-01-01 00:00:00'
+        
+        # Create netcdf file, overwrite existing
         nc = netCDF4.Dataset(filepath, 'w')
+        # Create netcdf dimensions
         nc.createDimension('time', None)
         nc.createDimension('particle', None)
+        # Create netcdf variables
         time = nc.createVariable('time', 'f', ('time',))
         part = nc.createVariable('particle', 'i', ('particle',))
         depth = nc.createVariable('depth', 'f', ('time','particle'))
@@ -451,6 +463,9 @@ class ModelController(object):
         lon = nc.createVariable('lon', 'f', ('time','particle'))
         salt = nc.createVariable('salt', 'f', ('time','particle'))
         temp = nc.createVariable('temp', 'f', ('time','particle'))
+        
+        # Loop through locations in each particle,
+        # add to netcdf file
         for j, particle in enumerate(self.particles):
             part[j] = particle.uid
             i = 0
