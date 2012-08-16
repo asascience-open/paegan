@@ -120,8 +120,12 @@ class DataController(object):
         self.tname = None ## temporary
     
     def get_remote_data(self, localvars, remotevars, inds, shape):
-        #print "updating local data"
-        #print self.point_get.value
+        """
+            Method that does the updating of local netcdf cache
+            with remote data
+        """
+        # If user specifies 'all' then entire xy domain is
+        # grabbed, default is 4, specified in the model_controller
         if self.horiz_size == 'all':
             y, y_1 = 0, shape[-2]
             x, x_1 = 0, shape[-1]
@@ -139,17 +143,10 @@ class DataController(object):
                 y_1 = shape[-2]
             if x_1 > shape[-1]:
                 x_1 = shape[-1]
-                
-        domain = self.local.variables['domain']
         
-        #for i, time in enumerate(inds[:]):
-            #if time+1 > shape[0] - 1:
-            #    time_1 = shape[0]
-            #else:
-            #    time_1 = time+1
-            #print time, time_1
+        # Update domain variable for where we will add data
+        domain = self.local.variables['domain']
         if self.low_memory:
-         
             for z in range(shape[1]):
                 if z + 1 > shape[1] - 1:
                     z_1 = shape[1]
@@ -160,47 +157,28 @@ class DataController(object):
                 elif len(shape) == 3:
                     if z == self.inds[0]:
                         domain[time:time_1, y:y_1, x:x_1] = np.ones((time_1-time, y_1-y, x_1-x))
-        
         else:
             if len(shape) == 4:
                 domain[inds[0]:inds[-1]+1, 0:shape[1], y:y_1, x:x_1] = np.ones((inds[-1]+1-inds[0], shape[1], y_1-y, x_1-x))
             elif len(shape) == 3:
                 domain[inds[0]:inds[-1]+1, y:y_1, x:x_1] = np.ones((inds[-1]+1-inds[0], y_1-y, x_1-x))
-                        
+        
+        # Update the local variables with remove data              
         for local, remote in zip(localvars, remotevars):
-        #    for i, time in enumerate(inds[:]):
-        #        if time+1 > shape[0] - 1:
-        #            time_1 = shape[0]
-        #        else:
-        #            time_1 = time+1
-                #print time, time_1
             if self.low_memory:
-             
                 for z in range(shape[1]):
                     if z + 1 > shape[1] - 1:
                         z_1 = shape[1]
                     else:
                         z_1 = z + 1
-                #for y in range(0,shape[2],8):
-                #    if y + 8 > shape[2] - 1:
-                #        y_1 = shape[2]
-                #    else:
-                #        y_1 = y + 8
                     if len(shape) == 4:
-                        #    for x in range(shape[3]):
-                        #        if x + 1 > shape[3] - 1:
-                        #            x_1 = shape[3]
-                        #        else:
-                        #            x_1 = x + 1
                         local[time:time_1, z:z_1, y:y_1, x:x_1] = remote[time:time_1,  z:z_1, y:y_1, x:x_1]
                     else:
                         if z == 0:
                             local[time:time_1, y:y_1, x:x_1] = remote[time:time_1, y:y_1, x:x_1]
            
             else:
-                print "time", inds, "rem", shape[1], y, y_1, x, x_1
-                #print "y", y, y_1
-                #print "x", x, x_1
+                #print "time", inds, "rem", shape[1], y, y_1, x, x_1
                 if len(shape) == 4:
                     local[inds[0]:inds[-1]+1, 0:shape[1], y:y_1, x:x_1] = remote[inds[0]:inds[-1]+1,  0:shape[1], y:y_1, x:x_1]
                 else:
@@ -216,6 +194,9 @@ class DataController(object):
         times = self.times
         start_time = self.start_time
         
+        # Calculate the datetimes of the model timesteps like
+        # the particle objects do, so we can figure out unique
+        # time indices
         modelTimestep = []
         calculatedTime = []
         newtimes = []
@@ -234,18 +215,25 @@ class DataController(object):
         
         self.inds = np.unique(time_indexs)
         
-        
-         
+        # While there is at least 1 particle still running, 
+        # stay alive, if not break
         while self.n_run.value > 1:
-            
+            # If particle asks for data, do the following
             if self.get_data.value == True:
                 if c == 0:
                     indices = self.dataset.get_indices(self.uname, timeinds=[np.asarray([0])], point=self.start)
                     self.point_get.value = [self.inds[0], indices[-2], indices[-1]]
-                
+                    
+                    # Set shared state so particles know the 
+                    # cache is being updated
                     self.updating.value = True
+                    
+                    # Wait for particles to get out
                     while self.particle_get == True:
                         pass
+                    
+                    # Open local cache for writing, overwrites
+                    # existing file with same name
                     self.local = netCDF4.Dataset(cachepath, 'w')
                     
                     # Create dimensions for u and v variables
@@ -269,35 +257,18 @@ class DataController(object):
                     except:
                         fill = None
                     
+                    # Create domain variable that specifies
+                    # where there is data geographically/by time
+                    # and where there is not data,
+                    #   Used for testing if particle needs to 
+                    #   ask cache to update
                     domain = self.local.createVariable('domain',
                             'i', dimensions, zlib=False, fill_value=0,
                             )
                     domain.coordinates = coordinates
-                    #for i, time in enumerate(self.inds):
-                    #    if time+1 > shape[0] - 1:
-                    #        time_1 = shape[0]
-                    #    else:
-                    #        time_1 = time+1
-                    #    if self.low_memory:
-                    #        for z in range(shape[1]):
-                    #            if z + 1 > shape[1] - 1:
-                    #                z_1 = shape[1]
-                    #            else:
-                    #                z_1 = z + 1
-                    #                
-                    #            if len(shape) == 4:
-                    #                domain[time:time_1, z:z_1, :, :] = np.zeros((time_1-time, z_1-z, shape[-2], shape[-1]))
-                    #            elif len(shape) == 3:
-                    #                if z == self.inds[0]:
-                    #                    domain[time:time_1, :, :] = np.zeros((time_1-time, shape[-2], shape[-1]))
-                    #    
-                    #    else:
-                    #        if len(shape) == 4:
-                    #            domain[time:time_1, :, :, :] = np.zeros((time_1-time, shape[1], shape[-2], shape[-1]))
-                    #        elif len(shape) == 3:
-                    #            domain[time:time_1, :, :] = np.zeros((time_1-time, shape[-2], shape[-1]))
                             
                     if fill == None:
+                        # Create local u and v variables
                         u = self.local.createVariable('u', 
                             'f', dimensions, zlib=False,
                             )
@@ -308,12 +279,14 @@ class DataController(object):
                         v.coordinates = coordinates
                         u.coordinates = coordinates
                         
+                        # Create local w variable
                         if self.wname != None:
                             w = self.local.createVariable('w', 
                                 'f', dimensions, zlib=False,
                                 )
                             w.coordinates = coordinates
-                        if self.temp_name != None and self.salt_name != None:        
+                        if self.temp_name != None and self.salt_name != None:      
+                            # Create local temp and salt vars  
                             temp = self.local.createVariable('temp', 
                                 'f', dimensions, zlib=False,
                                 )
@@ -323,6 +296,7 @@ class DataController(object):
                             temp.coordinates = coordinates
                             salt.coordinates = coordinates
                     else:    
+                        # Create local u and v variables
                         u = self.local.createVariable('u', 
                             'f', dimensions, zlib=False,
                             fill_value=fill)
@@ -333,12 +307,14 @@ class DataController(object):
                         v.coordinates = coordinates
                         u.coordinates = coordinates
                         
+                        # Create local w variable
                         if self.wname != None:
                             w = self.local.createVariable('w', 
                                 'f', dimensions, zlib=False,
                                 fill_value=fill)
                             w.coordinates = coordinates
-                        if self.temp_name != None and self.salt_name != None:        
+                        if self.temp_name != None and self.salt_name != None: 
+                            # Create local temp and salt vars       
                             temp = self.local.createVariable('temp', 
                                 'f', dimensions, zlib=False,
                                 fill_value=fill)
@@ -348,6 +324,7 @@ class DataController(object):
                             temp.coordinates = coordinates
                             salt.coordinates = coordinates
                     
+                    # Create local lat/lon coordinate variables
                     if self.remote.variables[self.xname].ndim == 2:
                         lon = self.local.createVariable('lon',
                                 'f', ("y", "x"), zlib=False,
@@ -383,6 +360,7 @@ class DataController(object):
                         localvars.append(w)
                         remotevars.append(self.remote.variables[self.wname])
                         
+                    # Create local z variable
                     if self.zname != None:            
                         if self.remote.variables[self.zname].ndim == 4:
                             z = self.local.createVariable('z',
@@ -401,43 +379,51 @@ class DataController(object):
                                 'f', ("level",), zlib=False,
                                 )
                             z[:] = self.remote.variables[self.zname][:]
-                    
+                            
+                    # Create local time variable
                     time = self.local.createVariable('time',
                                 'f8', ("time",), zlib=False,
                                 )
                     if self.tname != None:
                         time[:] = self.remote.variables[self.tname][self.inds]
                     
-                    #try:
-                    #    current_inds = self.inds[0:(c+1) * self.init_size]
-                    #except:
-                    #    current_inds = self.inds[0:]
                     if self.point_get.value[0]+self.time_size > np.max(self.inds):
                         current_inds = np.arange(self.point_get.value[0], np.max(self.inds)+1)
                     else:
                         current_inds = np.arange(self.point_get.value[0],self.point_get.value[0] + self.time_size)
-                           
+                    
+                    # Get data from remote dataset and add
+                    # to local cache  
                     self.get_remote_data(localvars, remotevars, current_inds, shape) 
                     
                     self.local.sync()
                     self.local.close()
                     c += 1
-                    #self.inds = self.inds + self.init_size
+
                     self.updating.value = False
                     self.get_data.value = False
 
                 else:
-                    print "updating appending"
+                    #print "updating appending"
                     self.updating.value = True
+                    # Wait for particles to get out (this is
+                    # poorly implemented)
                     while self.particle_get == True:
                         pass
-                    self.local = netCDF4.Dataset(cachepath, 'a')  
+                        
+                    # Open local cache dataset for appending
+                    self.local = netCDF4.Dataset(cachepath, 'a')
+                    
+                    # Create local and remote variable objects
+                    # for the variables of interest  
                     u = self.local.variables['u']
                     v = self.local.variables['v']
                     time = self.local.variables['time']
                     remoteu = self.remote.variables[self.uname]
                     remotev = self.remote.variables[self.vname]
                     
+                    # Create lists of variable objects for
+                    # the data updater
                     localvars = [u, v, ]
                     remotevars = [remoteu, remotev, ]
                     if self.salt_name != None and self.temp_name != None:
@@ -464,21 +450,19 @@ class DataController(object):
                         remotetime = self.remote.variables[self.tname]
                         time[self.inds] = self.remote.variables[self.inds]
                     
-                    #try:
-                    #    current_inds = self.inds[c*self.init_size:(c+1) * self.init_size]
-                    #except:
-                    #    current_inds = self.inds[c*self.init_size:]
                     if self.point_get.value[0]+self.time_size > np.max(self.inds):
                         current_inds = np.arange(self.point_get.value[0], np.max(self.inds)+1)
                     else:
                         current_inds = np.arange(self.point_get.value[0],self.point_get.value[0] + self.time_size)
-                           
+                    
+                    # Get data from remote dataset and add
+                    # to local cache
                     self.get_remote_data(localvars, remotevars, current_inds, shape)
                     
                     self.local.sync()
                     self.local.close()
                     c += 1
-                    #self.inds = self.inds + self.init_size
+
                     self.updating.value = False
                     self.get_data.value = False
             else:
@@ -524,6 +508,8 @@ class ForceParticle(object):
         
         
     def get_variablenames_for_model(self, dataset):
+        # Use standard names to get variable names for required
+        # model parameters
         getname = dataset.get_varname_from_stdname
         self.uname = getname('eastward_sea_water_velocity') 
         self.vname = getname('northward_sea_water_velocity') 
@@ -540,12 +526,14 @@ class ForceParticle(object):
             self.wname = self.wname[0]
         else:
             self.wname = None
-
+        
+        # Get coordinate names based on u variable
         coords = dataset.get_coord_names(self.uname) 
         self.xname = coords['xname'] 
         self.yname = coords['yname']
         self.zname = coords['zname']
         self.tname = coords['tname']
+        # Get salt and temp names from std names
         self.temp_name = getname('sea_water_temperature') 
         self.salt_name = getname('sea_water_salinity')
         
@@ -560,50 +548,76 @@ class ForceParticle(object):
         self.tname = None ## temporary
         
     def need_data(self, i):
+        """
+            Method to test if cache contains the data that
+            the particle needs
+        """
         self.particle_get.value = True
         self.dataset.opennc()
+        # Test if the cache has the data we need
         try:
+            # If the point we request contains fill values, 
+            # we need data
             if type(np.mean(np.mean(self.dataset.get_values('domain', timeinds=[np.asarray([i])], point=self.part.location )))) == np.ma.core.MaskedArray:
                 need = True
             else:
                 need = False
         except:
+            # If the time index doesnt even exist, we need
             need = True
         self.dataset.closenc()
         self.particle_get.value = False
-        print self.proc, need
+        #print self.proc, need
         return need # return true if need data or false if dont
       
     def data(self, i):
+        """
+            Method to streamline request for data from cache
+        """
         while self.get_data.value == True:
             pass
-        print self.proc, "done waiting"
+        #print self.proc, "done waiting"
         if self.need_data(i):
-            print self.proc, "yes i do need data"
+            #print self.proc, "yes i do need data"
+            # Acquire lock for asking for data
             self.request_lock.acquire()
             if self.need_data(i):
+                # Open netcdf file on disk from commondataset
                 self.dataset.opennc()
+                # Get the indices for the current particle location
                 indices = self.dataset.get_indices('u', timeinds=[np.asarray([i-1])], point=self.part.location )
                 self.dataset.closenc()
+                # Override the time
                 self.point_get.value = [indices[0]+1, indices[-2], indices[-1]]
+                # Request that the data controller update the cache
                 self.get_data.value = True
+                # Wait until the data controller is done
                 while self.get_data.value == True:
                     pass 
             self.request_lock.release()
                
+        # Announce that someone is getting data from the local
         self.particle_get.value = True
-        self.dataset.opennc() 
+        # Open netcdf file on disk from commondataset
+        self.dataset.opennc()
+        # Grab data at time index closest to particle location
         u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )))
         v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )))
+        # if there is vertical velocity inthe dataset, get it
         if 'w' in self.dataset.nc.variables:
             w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
         else:
             w = 0.0
+        # If there is salt and temp in the dataset, get it
         if self.temp_name != None and self.salt_name != None:
             temp = np.mean(np.mean(self.dataset.get_values('temp', timeinds=[np.asarray([i])], point=self.part.location )))
             salt = np.mean(np.mean(self.dataset.get_values('salt', timeinds=[np.asarray([i])], point=self.part.location )))
         
+        # Check for nans that occur in the ocean (happens because
+        # of model and coastline resolution mismatches)
         if np.isnan(u) or np.isnan(v) or np.isnan(w):
+            # Take the mean of the closest 4 points
+            # If this includes nan which it will, result is nan
             u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=4)))
             v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=4)))
             if 'w' in self.dataset.nc.variables:
@@ -613,6 +627,8 @@ class ForceParticle(object):
             if self.temp_name != None and self.salt_name != None:
                 temp = np.mean(np.mean(self.dataset.get_values('temp', timeinds=[np.asarray([i])], point=self.part.location, num=4)))
                 salt = np.mean(np.mean(self.dataset.get_values('salt', timeinds=[np.asarray([i])], point=self.part.location, num=4)))
+        # If the final data results are nan, set velocities to zero
+        # TODO: need to validate this implementation
         if np.isnan(u) or np.isnan(v) or np.isnan(w):
             u, v, w = 0.0, 0.0, 0.0
         self.dataset.closenc()
@@ -639,9 +655,12 @@ class ForceParticle(object):
         
         while self.get_data.value == True:
             pass
+        # Initialize commondataset of local cache, then
+        # close the related netcdf file
         self.dataset = CommonDataset(self.localpath)
         self.dataset.closenc()
         
+        # Calculate datetime at every timestep
         modelTimestep = []
         calculatedTime = []
         newtimes = []
@@ -655,19 +674,15 @@ class ForceParticle(object):
                
             newtimes.append(start_time + timedelta(seconds=calculatedTime[i]))
         
-        
+        # Get variable names for parameters required by model
         remote = CommonDataset(self.remotehydropath)
         self.get_variablenames_for_model(remote)
-        #remote_coord_names = remote.get_coord_names('u')
-        #remote_nctime = remote.nc.variables[remote_coord_names['tname']]
-        #time_indexs = netCDF4.date2index(newtimes, remote_nctime,
-        #                                 select='nearest')
+
+        # Figure out indices corresponding to timesteps
         timevar = remote.gettimevar(self.uname)
         time_indexs = timevar.nearest_index(newtimes)
         array_indexs = time_indexs - time_indexs[0]
-        #print np.min(time_indexs), np.max(time_indexs)
-        #print np.min(array_indexs), np.max(array_indexs)
-        #print len(array_indexs), len(time_indexs), len(modelTimestep)
+
         # loop over timesteps   
         for loop_i, i in enumerate(time_indexs):
      
@@ -683,6 +698,7 @@ class ForceParticle(object):
             while self.get_data.value == True:
                 pass
                 
+            # Get the variable data required by the models
             u, v, w, temp, salt = self.data(i)
 
             # Age the particle by the modelTimestep (seconds)
