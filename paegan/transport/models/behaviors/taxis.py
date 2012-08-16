@@ -53,4 +53,6 @@ class Taxis(BaseModel):
 
     def move(self, particle, u, v, z, modelTimestep, **kwargs):
         z = 0
+        u = 0
+        v = 0
         return { 'u': u, 'v': v, 'z': z }
