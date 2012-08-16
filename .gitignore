@@ -8,3 +8,8 @@ tests/resources/files/*.nc
 tests/resources/files/ncom_glb_sfc8_hind_2012033100.nc
 tests/resources/files/ocean_avg_aynoptic_seg22.nc
 paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd
+
+# For distutils
+paegan.egg-info/*
+dist/*
+build/*
