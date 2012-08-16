@@ -407,7 +407,7 @@ class ModelController(object):
         os.remove(self.cache_path)
     
     
-    def export(self, filepath):
+    def export(self, filepath, **kwargs):
         """
             General purpose export method, gets file type 
             from filepath extension
@@ -435,7 +435,7 @@ class ModelController(object):
                 w.record(particle.uid, temp, salt, loc.time.isoformat(), loc.latitude, loc.longitude, loc.depth)
         w.save(filepath)
         
-    def _export_nc(self, filepath):
+    def _export_nc(self, filepath, **kwargs):
         """
             Export particle data to CF trajectory convention
             netcdf file
@@ -463,10 +463,12 @@ class ModelController(object):
                 salt[i, j] = _salt
                 temp[i, j] = _temp
                 i += 1
+        # Variable attributes
         depth.coordinates = "time particle lat lon"
         depth.standard_name = "depth_below_sea_surface"
         depth.units = "m"
         depth.POSITIVE = "up"
+        depth.positive = "up"
         salt.coordinates = "time particle lat lon"
         salt.standard_name = "sea_water_salinity"
         salt.units = "psu"
@@ -477,6 +479,14 @@ class ModelController(object):
         time.standard_name = "time"
         lat.units = "degrees_north"
         lon.units = "degrees_east"
+        part.cf_role = "trajectory_id"
+        
+        # Global attributes
+        nc.featureType = "trajectory"
+        nc.summary = str(self)
+        for key in kwargs:
+            nc.__setattr__(key, kwargs.get(key))
+        #nc.cdm_dataset_type = "trajectory"
         nc.sync()
         nc.close()
                 

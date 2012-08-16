@@ -18,6 +18,9 @@ import random
 
 class Consumer(multiprocessing.Process):
     def __init__(self, task_queue, result_queue, n_run, lock):
+        """
+            This is the process class that does all the handling of queued tasks
+        """
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.result_queue = result_queue
@@ -57,6 +60,10 @@ class DataController(object):
                  start_time, point_get, start,
                  **kwargs
                  ):
+        """
+            The data controller controls the updating of the
+            local netcdf data cache
+        """
         assert "cache" in kwargs
         self.cache_path = kwargs["cache"]
         self.url = url
@@ -490,6 +497,12 @@ class ForceParticle(object):
                  point, usebathy, useshore, usesurface,
                  get_data, n_run, updating, particle_get,
                  point_get, request_lock, cache=None):
+        """
+            This is the task/class/object/job that forces an
+            individual particle and communicates with the 
+            other particles and data controller for local
+            cache updates
+        """
         assert cache != None
         self.cache_path = cache
         self.remotehydropath = remotehydro
