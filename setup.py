@@ -35,4 +35,5 @@ setup(name              = "paegan",
             'Programming Language :: Python',
             'Topic :: Scientific/Engineering',
         ],
+    include_package_data = True,
 ) 
