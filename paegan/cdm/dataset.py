@@ -72,9 +72,9 @@ def CommonDataset(ncfile, xname='lon', yname='lat',
     if ncfile is str:
         ncfile = unicode(ncfile)
 
-    if type(ncfile) is unicode
+    if type(ncfile) is unicode:
         nc = netCDF4.Dataset(ncfile)
-        
+
     self.nc = nc
     self._filename = ncfile
     self._datasettype = kwargs.get('dataset_type', None)
