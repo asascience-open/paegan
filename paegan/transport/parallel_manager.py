@@ -14,6 +14,7 @@ import multiprocessing
 from paegan.cdm.dataset import CommonDataset
 import os
 import random
+import math
 #from paegan.logger import queue_logger
 
 class Consumer(multiprocessing.Process):
@@ -631,6 +632,9 @@ class ForceParticle(object):
         # TODO: need to validate this implementation
         if np.isnan(u) or np.isnan(v) or np.isnan(w):
             u, v, w = 0.0, 0.0, 0.0
+        elif math.isnan(u) or math.isnan(v) or math.isnan(w):
+            u, v, w = 0.0, 0.0, 0.0
+
         self.dataset.closenc()
         self.particle_get.value = False
         if self.temp_name != None and self.salt_name != None:
