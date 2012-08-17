@@ -69,7 +69,7 @@ class LifeStage(BaseModel):
             if particle.temp is not None:
                 # linear growth, compute q = t / (Ax+B)
                 # Where timestep t (days), at temperature x (deg C), proportion of stage completed (q)
-                q = modelTimestepDays / (linear_a * particle.temp + linear_b)
+                q = modelTimestepDays / (self.linear_a * particle.temp + self.linear_b)
                 particle.grow(q)
                 do_duration_growth = False
             else:

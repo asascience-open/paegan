@@ -113,8 +113,8 @@ class LifeStageTest(unittest.TestCase):
 
         assert self.lifestage.name == 'third'
         assert self.lifestage.duration == 3
-        assert self.lifestage.linear_a == None
-        assert self.lifestage.linear_b == None
+        assert self.lifestage.linear_a == 0.03
+        assert self.lifestage.linear_b == 0.2
         assert len(self.lifestage.taxis) == 2
         assert self.lifestage.taxis[0].min_value == 30.0
         assert self.lifestage.taxis[0].max_value == 40.0        
@@ -136,8 +136,8 @@ class LifeStageTest(unittest.TestCase):
 
         assert l.name == 'third'
         assert l.duration == 3
-        assert l.linear_a == None
-        assert l.linear_b == None
+        assert l.linear_a == 0.03
+        assert l.linear_b == 0.2
         assert len(l.taxis) == 2
         assert l.taxis[1].min_value == 30.0
         assert l.taxis[1].max_value == 50.0        
