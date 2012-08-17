@@ -69,10 +69,10 @@ def CommonDataset(ncfile, xname='lon', yname='lat',
     class self:
         pass
         
-    if ncfile is str:
+    if isinstance(ncfile, str):
         ncfile = unicode(ncfile)
 
-    if type(ncfile) is unicode:
+    if isinstance(ncfile, unicode):
         nc = netCDF4.Dataset(ncfile)
 
     self.nc = nc
