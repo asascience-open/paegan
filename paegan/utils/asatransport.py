@@ -1,8 +1,9 @@
 import math
 from paegan.utils.asamath import AsaMath
 from paegan.utils.asagreatcircle import AsaGreatCircle
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, Polygon, MultiPolygon
 import random
+import time
 
 class AsaTransport(object):
 
@@ -14,7 +15,7 @@ class AsaTransport(object):
         if goal is None:
             raise ValueError("Must specify the number of points (goal) to fill the polygon with")
 
-        if polygon is None or not isinstance(polygon, Polygon):
+        if polygon is None or (not isinstance(polygon, Polygon) and not isinstance(polygon, MultiPolygon)):
             raise ValueError("Must specify a polygon to fill points with")
 
         minx = polygon.bounds[0] 
@@ -23,6 +24,7 @@ class AsaTransport(object):
         maxy = polygon.bounds[3] 
 
         points = []
+        now = time.time()
         while len(points) < goal:
             random_x = random.uniform(minx, maxx)
             random_y = random.uniform(miny, maxy)
@@ -30,6 +32,7 @@ class AsaTransport(object):
             if p.within(polygon):
                 points.append(p)
 
+        print "Filling polygon with points took %f seconds" % (time.time() - now)
         return points
 
     @classmethod

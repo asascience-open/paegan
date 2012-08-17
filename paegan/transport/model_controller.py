@@ -14,7 +14,7 @@ from paegan.utils.asarandom import AsaRandom
 from paegan.utils.asatransport import AsaTransport
 from paegan.transport.shoreline import Shoreline
 from paegan.transport.bathymetry import Bathymetry
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, Polygon, MultiPolygon
 from shapely.geometry import MultiLineString
 from multiprocessing import Value
 import multiprocessing
@@ -22,6 +22,7 @@ import paegan.transport.parallel_manager as parallel
 import os
 import uuid
 from paegan.external import shapefile as shp
+from shapely.ops import cascaded_union
 
 def unique_filename(prefix=None, suffix=None):
     fn = []
@@ -71,24 +72,12 @@ class ModelController(object):
         # Inerchangeables
         if "geometry" in kwargs:
             self.geometry = kwargs.pop('geometry')
-            if not isinstance(self.geometry, Point) and not isinstance(self.geometry, Polygon):
+            if not isinstance(self.geometry, Point) and not isinstance(self.geometry, Polygon) and not isinstance(self.geometry, MultiPolygon):
                 raise TypeError("The geometry attribute must be a shapely Point or Polygon")
         elif "latitude" and "longitude" in kwargs:
             self.geometry = Point(kwargs.pop('longitude'), kwargs.pop('latitude'))
         else:
             raise TypeError("must provide a shapely geometry object (point or polygon) or a latitude and a longitude")
-
-        # Create shoreline
-        if self._use_shoreline == True:
-            self._shoreline = Shoreline(point=self.reference_location.point)
-        else:
-            self._shoreline = None
-
-        # Create Bathymetry
-        if self.use_bathymetry == True:
-            self._bathymetry = Bathymetry(point=self.reference_location.point)
-        else:
-            self._bathymetry = None
 
         # Errors
         if "nstep" in kwargs:
@@ -97,6 +86,17 @@ class ModelController(object):
             raise TypeError("must provide the number of timesteps")
 
     def set_geometry(self, geo):
+        # If polygon is passed in, we need to trim it by the coastline
+        # so we don't start particles on land
+        if isinstance(geo, Polygon) and self._use_shoreline:
+            c = geo.centroid
+            b = geo.bounds
+            spatialbuffer = max(b[2] - b[0], b[3] - b[1])
+            shore_geoms = Shoreline(point=c, spatialbuffer=spatialbuffer).geoms
+            if len(shore_geoms) > 0:
+                all_shore = cascaded_union(shore_geoms)
+                geo = geo.difference(all_shore)
+
         self._geometry = geo
     def get_geometry(self):
         return self._geometry
@@ -264,7 +264,7 @@ class ModelController(object):
         point_locations = []
         if isinstance(self.geometry, Point):
             point_locations = [self.reference_location] * self._npart
-        elif isinstance(self.geometry, Polygon):
+        elif isinstance(self.geometry, Polygon) or isinstance(self.geometry, MultiPolygon):
             point_locations = [Location4D(latitude=loc.y, longitude=loc.x, depth=self.depth, time=self.start) for loc in AsaTransport.fill_polygon_with_points(goal=self._npart, polygon=self.geometry)]
 
         # Initialize the particles
