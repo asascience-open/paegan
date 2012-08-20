@@ -35,8 +35,16 @@ class LifeStage(BaseModel):
 
     def move(self, particle, u, v, z, modelTimestep, **kwargs):
 
-        particle.temp = kwargs.get('temperature')
-        particle.salt = kwargs.get('salinity')
+        temp = kwargs.get('temperature', None)
+        if temp is not None and math.isnan(temp):
+            temp = None
+        particle.temp = temp
+
+        salt = kwargs.get('salinity', None)
+        if salt is not None and math.isnan(salt):
+            salt = None
+        particle.salt = salt
+
         particle_time = particle.location.time
 
         # Find the closests Diel that the current particle time is AFTER, and MOVE.
