@@ -50,7 +50,10 @@ class Consumer(multiprocessing.Process):
                 
                 break
             #print '%s: %s' % (proc_name, next_task)
-            answer = next_task(proc_name)
+            try:
+                answer = next_task(proc_name)
+            except:
+                answer = None
             self.task_queue.task_done()
             self.result_queue.put(answer)
         return
