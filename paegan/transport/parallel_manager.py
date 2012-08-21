@@ -10,12 +10,11 @@ from paegan.utils.asarandom import AsaRandom
 from paegan.transport.shoreline import Shoreline
 from paegan.transport.bathymetry import Bathymetry
 from multiprocessing import Value
-import multiprocessing
+import multiprocessing, logging
 from paegan.cdm.dataset import CommonDataset
 import os
 import random
 import math
-#from paegan.logger import queue_logger
 
 class Consumer(multiprocessing.Process):
     def __init__(self, task_queue, result_queue, n_run, lock):
@@ -35,21 +34,14 @@ class Consumer(multiprocessing.Process):
         proc_name = self.name
         while True:
             next_task = self.task_queue.get()
-            #queue_logger.start()
             if next_task is None:
                 # Poison pill means shutdown
                 #print '%s: Exiting' % proc_name
-                #queue_logger.logger().info("Particle " + proc_name + " at exit")
-                #queue_logger.logger().info(str(self.n_run.value) + " remaining processes bfore")
                 self.lock.acquire()
                 self.n_run.value = self.n_run.value - 1
-                #queue_logger.logger().info(str(self.n_run.value) + " remaining processes after")
                 self.lock.release()
                 self.task_queue.task_done()
-                #queue_logger.stop()
-                
                 break
-            #print '%s: %s' % (proc_name, next_task)
             try:
                 answer = next_task(proc_name)
             except:
@@ -83,7 +75,6 @@ class DataController(object):
         self.low_memory = kwargs.get("low_memory", False)
         self.start_time = start_time
         self.times = times
-        
         self.start = start
 
     
@@ -197,6 +188,9 @@ class DataController(object):
         cachepath = self.cache_path
         times = self.times
         start_time = self.start_time
+        
+        logger = multiprocessing.get_logger()
+        logger.addHandler(logging.NullHandler())
         
         # Calculate the datetimes of the model timesteps like
         # the particle objects do, so we can figure out unique
@@ -693,13 +687,13 @@ class ForceParticle(object):
         time_indexs = timevar.nearest_index(newtimes)
         array_indexs = time_indexs - time_indexs[0]
 
+        logger = multiprocessing.get_logger()
+        logger.addHandler(logging.NullHandler())
+
         # loop over timesteps   
         for loop_i, i in enumerate(time_indexs):
-     
-            #queue_logger.logger().info("Particle %i at %s" % (part.id, newtimes[loop_i].isoformat()))
 
             newloc = None
-            
             
             # Get data from local netcdf here
             # dataset = CommonDataset(".cache/localcache.nc")
@@ -714,12 +708,15 @@ class ForceParticle(object):
             # Age the particle by the modelTimestep (seconds)
             # 'Age' meaning the amount of time it has been forced.
             part.age(seconds=modelTimestep[loop_i])
+            logger.debug("Aged particle by %d seconds" % modelTimestep[loop_i])
 
             # loop over models - sort these in the order you want them to run
             for model in models:
                 movement = model.move(part, u, v, w, modelTimestep[loop_i], temperature=temp, salinity=salt)
                 newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtimes[loop_i])
-                if newloc: # changed p.location to part.location
+                logger.info("Particle %d moved %d meters (horizontally) by %s at %s" % (part.uid,movement['distance'], model.__class__.__name__), newtimes[loop_i].isoformat())
+                logger.info("Particle %d moved %d meters (vertically) by %s at %s" % (part.uid,movement['vertical_distance'], model.__class__.__name__), newtimes[loop_i].isoformat())
+                if newloc:
                     self.boundary_interaction(self._bathymetry, self._shoreline, self.usebathy,self.useshore,self.usesurface,
                         particle=part, starting=part.location, ending=newloc,
                         distance=movement['distance'], angle=movement['angle'], 

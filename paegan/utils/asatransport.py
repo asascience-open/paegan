@@ -4,6 +4,10 @@ from paegan.utils.asagreatcircle import AsaGreatCircle
 from shapely.geometry import Point, Polygon, MultiPolygon
 import random
 import time
+import multiprocessing, logging
+
+logger = multiprocessing.get_logger()
+logger.addHandler(logging.NullHandler())
 
 class AsaTransport(object):
 
@@ -32,7 +36,8 @@ class AsaTransport(object):
             if p.within(polygon):
                 points.append(p)
 
-        print "Filling polygon with points took %f seconds" % (time.time() - now)
+        logger.info("Filling polygon with points took %f seconds" % (time.time() - now))
+
         return points
 
     @classmethod

@@ -14,11 +14,13 @@ from paegan.utils.asarandom import AsaRandom
 from paegan.transport.model_controller import ModelController
 from shapely.geometry import Point, Polygon
 import os
-from paegan.logger import queue_logger
+import multiprocessing, logging
+from paegan.logging.multi_process_logging import MultiProcessingLogHandler
 
 
 class ModelControllerTest(unittest.TestCase):
     def test_run_individual_particles(self):
+        print "lat / lon"
         # Set the start position and time for the models
         start_lat = 60.75
         start_lon = -147
@@ -36,6 +38,7 @@ class ModelControllerTest(unittest.TestCase):
         #fig.savefig('test_model_controller.png')
 
     def test_run_from_point(self):
+        print "point"
         # Set the start position and time for the models
         start_lat = 60.75
         start_lon = -147
@@ -56,6 +59,7 @@ class ModelControllerTest(unittest.TestCase):
 
     def test_run_from_polygon(self):
         # Set the start position and time for the models
+        print "polygon"
         start_lat = 60.75
         start_lon = -147
         start_depth = 10
@@ -75,6 +79,7 @@ class ModelControllerTest(unittest.TestCase):
 
     def test_run_behaviors(self):
         # Set the start position and time for the models
+        print "behavior"
         start_lat = 60.75
         start_lon = -147
         start_depth = 0
@@ -94,8 +99,20 @@ class ModelControllerTest(unittest.TestCase):
         models.append(lb)
 
         start_time = datetime(2012, 8, 1, 00)
+
+        logger = multiprocessing.get_logger()
+        logger.setLevel(logging.INFO)
+        handler = MultiProcessingLogHandler('testlog.txt')
+        handler.setLevel(logging.INFO)
+        formatter = logging.Formatter('[%(asctime)s] - %(levelname)s - %(name)s - %(processName)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.info('From Test')
+
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=2, horiz_chunk=2)
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache"))
         #fig = model.generate_map(Point(start_lon, start_lat))
         #fig.savefig('test_model_controller_behaviors.png')
+
+        handler.close()

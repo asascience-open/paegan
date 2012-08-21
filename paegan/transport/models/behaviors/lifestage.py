@@ -1,4 +1,5 @@
 import json
+import math
 from paegan.transport.models.behaviors.diel import Diel
 from paegan.transport.models.behaviors.taxis import Taxis
 from paegan.transport.models.behaviors.capability import Capability
@@ -6,7 +7,6 @@ from paegan.transport.models.base_model import BaseModel
 from paegan.transport.location4d import Location4D
 from paegan.utils.asatransport import AsaTransport
 import operator
-from paegan.logger import queue_logger
 
 class LifeStage(BaseModel):
 
@@ -81,7 +81,8 @@ class LifeStage(BaseModel):
                 particle.grow(q)
                 do_duration_growth = False
             else:
-                queue_logger.logger().debug("No temperature found for particle at this location and timestep, skipping linear temperature growth and using duration growth")
+                #queue_logger.logger().debug("No temperature found for particle at this location and timestep, skipping linear temperature growth and using duration growth")
+                pass
                 
         if do_duration_growth is True:
             particle.grow(modelTimestepDays / self.duration)

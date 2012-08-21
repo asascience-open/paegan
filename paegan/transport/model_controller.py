@@ -17,7 +17,7 @@ from paegan.transport.bathymetry import Bathymetry
 from shapely.geometry import Point, Polygon, MultiPolygon
 from shapely.geometry import MultiLineString
 from multiprocessing import Value
-import multiprocessing
+import multiprocessing, logging
 import paegan.transport.parallel_manager as parallel
 import os
 import uuid
@@ -260,6 +260,10 @@ class ModelController(object):
         if self.start == None:
             raise TypeError("must provide a start time to run the models")
 
+        logger = multiprocessing.get_logger()
+        logger.addHandler(logging.NullHandler())
+
+        logger.debug('Setting up particle start locations')
         point_locations = []
         if isinstance(self.geometry, Point):
             point_locations = [self.reference_location] * self._npart
@@ -267,6 +271,7 @@ class ModelController(object):
             point_locations = [Location4D(latitude=loc.y, longitude=loc.x, depth=self.depth, time=self.start) for loc in AsaTransport.fill_polygon_with_points(goal=self._npart, polygon=self.geometry)]
 
         # Initialize the particles
+        logger.debug('Initializing particles')
         for x in xrange(0, self._npart):
             p = LarvaParticle(id=x)
             p.location = point_locations[x]
@@ -299,6 +304,7 @@ class ModelController(object):
                   for i in xrange(nproc) ]
         
         # Start workers
+        logger.debug('Starting workers')
         for w in procs:
             w.start()
         
@@ -345,11 +351,15 @@ class ModelController(object):
             while tempres == None:
                 tempres = results.get()
                 self.particles[i] = tempres
-                
+
+        logger.debug('Workers complete')        
+
+        # Remove the cache file
         os.remove(self.cache_path)
-        
+
         # If output_formats and path specified,
         # output particle run data to disk when completed
+
         if "output_formats" in kwargs:
             # Make sure output_path is also included
             if kwargs.get("output_path", None) != None:
@@ -357,19 +367,15 @@ class ModelController(object):
                 output_path = kwargs.get("output_path")
                 if isinstance(formats, list):
                     for form in formats:
-                        filename = os.path.join(output_path,
-                                                'model_run_output')
+                        filename = os.path.join(output_path,'model_run_output')
                         filename = filename + '.' + form.replace('.','')
                         self.export(filename)
                 else:
-                    # TODO: # Throw warning
-                    pass
+                    logger.warn('The output_formats parameter should be a list, not saving any output!')  
             else:
-                # TODO: # Throw warning
-                pass
-                
-            
-    
+                logger.warn('No output path defined, not saving any output!')  
+        else:
+            logger.warn('No output format defined, not saving any output!')
     
     def export(self, filepath, **kwargs):
         """
