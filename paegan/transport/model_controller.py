@@ -169,8 +169,7 @@ class ModelController(object):
 
     def __str__(self):
         return  " *** ModelController *** " + \
-                "\nlatitude: " + str(self.latitude) + \
-                "\nlongitude: " + str(self.longitude) + \
+                "\nstart_geometry: " + str(self.geometry) + \
                 "\ndepth: " + str(self.depth) + \
                 "\nstart: " + str(self.start) +\
                 "\nstep: " + str(self.step) +\
@@ -348,12 +347,36 @@ class ModelController(object):
                 self.particles[i] = tempres
                 
         os.remove(self.cache_path)
+        
+        # If output_formats and path specified,
+        # output particle run data to disk when completed
+        if "output_formats" in kwargs:
+            # Make sure output_path is also included
+            if kwargs.get("output_path", None) != None:
+                formats = kwargs.get("output_formats")
+                output_path = kwargs.get("output_path")
+                if isinstance(formats, list):
+                    for form in formats:
+                        filename = os.path.join(output_path,
+                                                'model_run_output')
+                        filename = filename + '.' + form.replace('.','')
+                        self.export(filename)
+                else:
+                    # TODO: # Throw warning
+                    pass
+            else:
+                # TODO: # Throw warning
+                pass
+                
+            
     
     
     def export(self, filepath, **kwargs):
         """
             General purpose export method, gets file type 
             from filepath extension
+            
+            Valid output formats currently are: * shp and nc *
         """
         if filepath[-3:] == "shp":
             self._export_shp(filepath)
@@ -368,8 +391,6 @@ class ModelController(object):
         w = shp.Writer(shp.POINT)
         # Create the attribute fields/columns
         w.field('Particle')
-        w.field('Temp')
-        w.field('Salt')
         w.field('Date')
         w.field('Lat')
         w.field('Lon')
@@ -378,11 +399,20 @@ class ModelController(object):
         # Loop through locations in particles,
         # add as points to the shapefile
         for particle in self.particles:
-            for loc, temp, salt in zip(particle.locations, particle.temps, particle.salts):
-                # Add point geometry
-                w.point(loc.longitude, loc.latitude)
-                # Add attribute records
-                w.record(particle.uid, temp, salt, loc.time.isoformat(), loc.latitude, loc.longitude, loc.depth)
+            if len(particle.salts) > 0:
+                w.field('Temp')
+                w.field('Salt')
+                for loc, temp, salt in zip(particle.locations, particle.temps, particle.salts):
+                    # Add point geometry
+                    w.point(loc.longitude, loc.latitude)
+                    # Add attribute records
+                    w.record(particle.uid, loc.time.isoformat(), loc.latitude, loc.longitude, loc.depth, temp, salt)
+            else:
+                for loc in particle.locations:
+                    # Add point geometry
+                    w.point(loc.longitude, loc.latitude)
+                    # Add attribute records
+                    w.record(particle.uid, loc.time.isoformat(), loc.latitude, loc.longitude, loc.depth)
         # Write out shapefle to disk
         w.save(filepath)
         

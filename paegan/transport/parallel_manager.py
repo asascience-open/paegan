@@ -50,7 +50,10 @@ class Consumer(multiprocessing.Process):
                 
                 break
             #print '%s: %s' % (proc_name, next_task)
-            answer = next_task(proc_name)
+            try:
+                answer = next_task(proc_name)
+            except:
+                answer = None
             self.task_queue.task_done()
             self.result_queue.put(answer)
         return
@@ -619,10 +622,13 @@ class ForceParticle(object):
         if np.isnan(u) or np.isnan(v) or np.isnan(w):
             # Take the mean of the closest 4 points
             # If this includes nan which it will, result is nan
-            u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=4)))
-            v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=4)))
+            uarray = self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=4)
+            varray = self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=4)
+            u = np.mean(np.mean(uarray[math.isnan(uarray) is not True]))
+            v = np.mean(np.mean(varray[math.isnan(varray) is not True]))
             if 'w' in self.dataset.nc.variables:
-                w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location, num=4)))
+                warray = self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location, num=4)
+                w = np.mean(np.mean(warray[math.isnan(warray) is not True]))
             else:
                 w = 0.0
             if self.temp_name != None and self.salt_name != None:
