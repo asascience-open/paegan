@@ -394,6 +394,10 @@ class ModelController(object):
         """
             Export particle data to point type shapefile
         """
+
+        logger = multiprocessing.get_logger()
+        logger.addHandler(NullHandler())
+
         # Create the shapefile writer
         w = shp.Writer(shp.POINT)
         # Create the attribute fields/columns
@@ -402,24 +406,33 @@ class ModelController(object):
         w.field('Lat')
         w.field('Lon')
         w.field('Depth')
+        w.field('Temp')
+        w.field('Salt')
         
         # Loop through locations in particles,
         # add as points to the shapefile
         for particle in self.particles:
-            if len(particle.salts) > 0:
-                w.field('Temp')
-                w.field('Salt')
-                for loc, temp, salt in zip(particle.locations, particle.temps, particle.salts):
-                    # Add point geometry
-                    w.point(loc.longitude, loc.latitude)
-                    # Add attribute records
-                    w.record(particle.uid, loc.time.isoformat(), loc.latitude, loc.longitude, loc.depth, temp, salt)
-            else:
-                for loc in particle.locations:
-                    # Add point geometry
-                    w.point(loc.longitude, loc.latitude)
-                    # Add attribute records
-                    w.record(particle.uid, loc.time.isoformat(), loc.latitude, loc.longitude, loc.depth)
+            # If there was temperature and salinity in the model, and
+            # we ran behaviors, the lengths should be the same
+
+            use_temps = particle.temps
+            if len(particle.locations) != len(particle.temps):
+                logger.debug("No temperature being added to shapefile.")
+                # Create list of 'None' equal to the length of locations
+                use_temps = [None] * len(particle.locations) 
+
+            use_salts = particle.salts
+            if len(particle.locations) != len(particle.salts):
+                logger.debug("No salinity being added to shapefile.")
+                # Create list of 'None' equal to the length of locations
+                use_salts = [None] * len(particle.locations) 
+
+            for loc, temp, salt in zip(particle.locations, use_temps, use_salts):
+                # Add point geometry
+                w.point(loc.longitude, loc.latitude)
+                # Add attribute records
+                w.record(particle.uid, loc.time.isoformat(), loc.latitude, loc.longitude, loc.depth, temp, salt)
+                
         # Write out shapefle to disk
         w.save(filepath)
         

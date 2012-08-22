@@ -33,9 +33,13 @@ class ModelControllerTest(unittest.TestCase):
 
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=2, horiz_chunk=2)
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache"))
-        #fig = model.generate_map(Point(start_lon, start_lat))
-        #fig.savefig('test_model_controller.png')
+
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache")
+        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/transport")
+        os.makedirs(output_path)
+        output_formats = ['.shp','.nc']
+
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
 
     def test_run_from_point(self):
         print "point"
@@ -53,9 +57,9 @@ class ModelControllerTest(unittest.TestCase):
 
         model = ModelController(geometry=p, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=2, horiz_chunk=2)
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache"))
-        #fig = model.generate_map(Point(start_lon, start_lat))
-        #fig.savefig('test_model_controller.png')
+
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache")
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
 
     def test_run_from_polygon(self):
         # Set the start position and time for the models
@@ -73,9 +77,9 @@ class ModelControllerTest(unittest.TestCase):
 
         model = ModelController(geometry=poly, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=2, horiz_chunk=2)
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache"))
-        #fig = model.generate_map(Point(start_lon, start_lat))
-        #fig.savefig('test_model_controller.png')
+
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache")
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
 
     def test_run_behaviors(self):
         # Set the start position and time for the models
@@ -111,8 +115,12 @@ class ModelControllerTest(unittest.TestCase):
 
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=2, horiz_chunk=2)
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache"))
-        #fig = model.generate_map(Point(start_lon, start_lat))
-        #fig.savefig('test_model_controller_behaviors.png')
+
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache")
+        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/behaviors")
+        os.makedirs(output_path)
+        output_formats = ['.shp','.nc']
+
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
 
         handler.close()
