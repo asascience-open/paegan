@@ -17,7 +17,8 @@ from paegan.transport.bathymetry import Bathymetry
 from shapely.geometry import Point, Polygon, MultiPolygon
 from shapely.geometry import MultiLineString
 from multiprocessing import Value
-import multiprocessing, logging
+import multiprocessing
+from paegan.logging.null_handler import NullHandler
 import paegan.transport.parallel_manager as parallel
 import os
 import uuid
@@ -261,7 +262,7 @@ class ModelController(object):
             raise TypeError("must provide a start time to run the models")
 
         logger = multiprocessing.get_logger()
-        logger.addHandler(logging.NullHandler())
+        logger.addHandler(NullHandler())
 
         logger.debug('Setting up particle start locations')
         point_locations = []

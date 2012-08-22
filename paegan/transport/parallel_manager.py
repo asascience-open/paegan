@@ -11,6 +11,7 @@ from paegan.transport.shoreline import Shoreline
 from paegan.transport.bathymetry import Bathymetry
 from multiprocessing import Value
 import multiprocessing, logging
+from paegan.logging.null_handler import NullHandler
 from paegan.cdm.dataset import CommonDataset
 import os
 import random
@@ -190,7 +191,7 @@ class DataController(object):
         start_time = self.start_time
         
         logger = multiprocessing.get_logger()
-        logger.addHandler(logging.NullHandler())
+        logger.addHandler(NullHandler())
         
         # Calculate the datetimes of the model timesteps like
         # the particle objects do, so we can figure out unique
@@ -688,7 +689,7 @@ class ForceParticle(object):
         array_indexs = time_indexs - time_indexs[0]
 
         logger = multiprocessing.get_logger()
-        logger.addHandler(logging.NullHandler())
+        logger.addHandler(NullHandler())
 
         # loop over timesteps   
         for loop_i, i in enumerate(time_indexs):
