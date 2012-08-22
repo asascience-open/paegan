@@ -295,7 +295,7 @@ class ModelController(object):
         
         # Create the shared state objects
         get_data = mgr.Value('bool', True)
-        n_run = mgr.Value('int', 0)
+        n_run = mgr.Value('int', nproc)
         updating = mgr.Value('bool', False)
         particle_get = mgr.Value('bool', False)
         point_get = mgr.Value('list', [0, 0, 0])
