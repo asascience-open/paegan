@@ -210,7 +210,7 @@ class DataController(object):
             newtimes.append(start_time + timedelta(seconds=calculatedTime[i]))
       
         timevar = self.dataset.gettimevar(self.uname)
-        time_indexs = timevar.nearest_index(newtimes, 'before')
+        time_indexs = timevar.nearest_index(newtimes)
         
         self.inds = np.unique(time_indexs)
         
@@ -685,7 +685,7 @@ class ForceParticle(object):
 
         # Figure out indices corresponding to timesteps
         timevar = remote.gettimevar(self.uname)
-        time_indexs = timevar.nearest_index(newtimes, 'before')
+        time_indexs = timevar.nearest_index(newtimes)
         array_indexs = time_indexs - time_indexs[0]
 
         logger = multiprocessing.get_logger()
