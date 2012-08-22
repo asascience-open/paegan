@@ -13,9 +13,10 @@ from multiprocessing import Value
 import multiprocessing, logging
 from paegan.logging.null_handler import NullHandler
 from paegan.cdm.dataset import CommonDataset
-import os
+import os, sys
 import random
 import math
+import traceback
 
 class Consumer(multiprocessing.Process):
     def __init__(self, task_queue, result_queue, n_run, lock):
@@ -32,6 +33,8 @@ class Consumer(multiprocessing.Process):
         lock.release()
         
     def run(self):
+        logger = multiprocessing.get_logger()
+        logger.addHandler(NullHandler())
         proc_name = self.name
         while True:
             next_task = self.task_queue.get()
@@ -45,8 +48,12 @@ class Consumer(multiprocessing.Process):
                 break
             try:
                 answer = next_task(proc_name)
-            except:
-                answer = None
+            except Exception as detail:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                logger.error("Disabling Error: " +\
+                             repr(traceback.format_exception(exc_type, exc_value,
+                                          exc_traceback)))
+                answer = -1
             self.task_queue.task_done()
             self.result_queue.put(answer)
         return
@@ -210,7 +217,7 @@ class DataController(object):
             newtimes.append(start_time + timedelta(seconds=calculatedTime[i]))
       
         timevar = self.dataset.gettimevar(self.uname)
-        time_indexs = timevar.nearest_index(newtimes)
+        time_indexs = timevar.nearest_index(newtimes, select='before')
         
         self.inds = np.unique(time_indexs)
         
@@ -685,7 +692,7 @@ class ForceParticle(object):
 
         # Figure out indices corresponding to timesteps
         timevar = remote.gettimevar(self.uname)
-        time_indexs = timevar.nearest_index(newtimes)
+        time_indexs = timevar.nearest_index(newtimes, select='before')
         array_indexs = time_indexs - time_indexs[0]
 
         logger = multiprocessing.get_logger()

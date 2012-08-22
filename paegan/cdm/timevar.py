@@ -72,7 +72,7 @@ class Timevar(np.ndarray):
         if select == 'nearest':
             return [np.where(abs(self.jd-t) == min(abs(self.jd-t)))[0][0] for t in to]
         elif select == 'before':
-            return [bisect.bisect(self.jd-t)-1 for t in to]
+            return np.asarray([bisect.bisect(self.jd, t)-1 for t in to])
     
     def nearest(self, dateo):
         """

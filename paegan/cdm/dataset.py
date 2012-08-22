@@ -762,7 +762,7 @@ class RGridDataset(Dataset):
         
     def _get_data(self, var, indarray, use_local=False):
         ndims = len(indarray)
-        print "this is what im trying to get", indarray
+        #print "this is what im trying to get", indarray
         
         if use_local == False:
             var = self.nc.variables[var]
