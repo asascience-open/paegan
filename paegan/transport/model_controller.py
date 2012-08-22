@@ -427,7 +427,7 @@ class ModelController(object):
             Export particle data to CF trajectory convention
             netcdf file
         """
-        time_units = 'days since 1990-01-01 00:00:00'
+        time_units = 'seconds since 1990-01-01 00:00:00'
         
         # Create netcdf file, overwrite existing
         nc = netCDF4.Dataset(filepath, 'w')

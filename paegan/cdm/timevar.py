@@ -8,6 +8,7 @@ import numpy as np
 import netCDF4, datetime
 from dateutil.parser import parse
 import pylab
+import bisect
 
 class Timevar(np.ndarray):
     
@@ -66,9 +67,12 @@ class Timevar(np.ndarray):
 
         return data.view(self)
     
-    def nearest_index(self, dateo):
+    def nearest_index(self, dateo, select='nearest'):
         to = pylab.date2num(dateo)
-        return [np.where(abs(self.jd-t) == min(abs(self.jd-t)))[0][0] for t in to]
+        if select == 'nearest':
+            return [np.where(abs(self.jd-t) == min(abs(self.jd-t)))[0][0] for t in to]
+        elif select == 'before':
+            return [bisect.bisect(self.jd-t)-1 for t in to]
     
     def nearest(self, dateo):
         """
