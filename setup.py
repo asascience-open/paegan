@@ -16,7 +16,7 @@ class PyTest(Command):
         raise SystemExit(errno)
 
 setup(name              = "paegan",
-    version             = "0.8.6",
+    version             = "0.8.7",
     description         = "Processing and Analysis for Numerical Data",
     long_description    = readme,
     license             = 'LICENSE.txt',

@@ -1,1 +1,15 @@
-CHANGES.txt
+0.8.7 - 2012-08-22
+===================
+Prepare for 0.8.7 release
+Fix typo in logging
+Implement logging
+Merge remote branch 'origin/larva_alex'
+added output folder and formats to be specified in run method on model controller, also updated model controller __str__
+catching failed tasks in the parallel consumer, failed things return None
+filter out nan in nearest 4 mean calculation
+Catch math.isnan potential in the behavior model
+Use math.isnan to avoid forcing with nans.
+Fix bug with linear growth, add test for lifestage with linear growth
+Alex's mistake again
+alex's mistake
+Don't require unicode
