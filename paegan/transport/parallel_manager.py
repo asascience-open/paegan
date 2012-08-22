@@ -714,8 +714,8 @@ class ForceParticle(object):
             for model in models:
                 movement = model.move(part, u, v, w, modelTimestep[loop_i], temperature=temp, salinity=salt)
                 newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtimes[loop_i])
-                logger.info("Particle %d moved %d meters (horizontally) by %s at %s" % (part.uid,movement['distance'], model.__class__.__name__), newtimes[loop_i].isoformat())
-                logger.info("Particle %d moved %d meters (vertically) by %s at %s" % (part.uid,movement['vertical_distance'], model.__class__.__name__), newtimes[loop_i].isoformat())
+                logger.info("Particle %d moved %d meters (horizontally) by %s at %s" % (part.uid,movement['distance'], model.__class__.__name__, newtimes[loop_i].isoformat()))
+                logger.info("Particle %d moved %d meters (vertically) by %s at %s" % (part.uid,movement['vertical_distance'], model.__class__.__name__, newtimes[loop_i].isoformat()))
                 if newloc:
                     self.boundary_interaction(self._bathymetry, self._shoreline, self.usebathy,self.useshore,self.usesurface,
                         particle=part, starting=part.location, ending=newloc,
