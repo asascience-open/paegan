@@ -491,7 +491,7 @@ class ForceParticle(object):
     def __init__(self, part, remotehydro, times, start_time, models, 
                  release_location_centroid, usebathy, useshore, usesurface,
                  get_data, n_run, updating, particle_get,
-                 point_get, request_lock, cache=None):
+                 point_get, request_lock, cache=None, method='interp'):
         """
             This is the task/class/object/job that forces an
             individual particle and communicates with the 
@@ -516,6 +516,7 @@ class ForceParticle(object):
         self.particle_get = particle_get
         self.point_get = point_get
         self.request_lock = request_lock
+        self.method = method
         
         
     def get_variablenames_for_model(self, dataset):
@@ -591,9 +592,11 @@ class ForceParticle(object):
             sety[1] = 0.
         return sety[0] + (x - setx[0]) * ( (sety[1]-sety[0]) / (setx[1]-setx[0]) )
       
-    def data(self, i, timevar, currenttime):
+    def data_interp(self, i, timevar, currenttime):
         """
-            Method to streamline request for data from cache
+            Method to streamline request for data from cache,
+            Uses linear interpolation bewtween timesteps to
+            get u,v,w,temp,salt
         """
         while self.get_data.value == True:
             pass
@@ -688,6 +691,85 @@ class ForceParticle(object):
             return u, v, w, temp, salt
         else:
             return u,v,w, None, None
+            
+    def data_nearest(self, i, timevar, currenttime):
+        """
+            Method to streamline request for data from cache,
+            Uses nearest time to get u,v,w,temp,salt
+        """
+        while self.get_data.value == True:
+            pass
+        #print self.proc, "done waiting"
+        if self.need_data(i):
+            #print self.proc, "yes i do need data"
+            # Acquire lock for asking for data
+            self.request_lock.acquire()
+            if self.need_data(i):
+                # Open netcdf file on disk from commondataset
+                self.dataset.opennc()
+                # Get the indices for the current particle location
+                indices = self.dataset.get_indices('u', timeinds=[np.asarray([i-1])], point=self.part.location )
+                self.dataset.closenc()
+                # Override the time
+                self.point_get.value = [indices[0]+1, indices[-2], indices[-1]]
+                # Request that the data controller update the cache
+                self.get_data.value = True
+                # Wait until the data controller is done
+                while self.get_data.value == True:
+                    pass 
+            self.request_lock.release()
+               
+        # Announce that someone is getting data from the local
+        self.particle_get.value = True
+        # Open netcdf file on disk from commondataset
+        self.dataset.opennc()
+        # Grab data at time index closest to particle location
+        u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )))
+        v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )))
+        # if there is vertical velocity inthe dataset, get it
+        if 'w' in self.dataset.nc.variables:
+            w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
+        else:
+            w = 0.0
+        # If there is salt and temp in the dataset, get it
+        if self.temp_name != None and self.salt_name != None:
+            temp = np.mean(np.mean(self.dataset.get_values('temp', timeinds=[np.asarray([i])], point=self.part.location )))
+            salt = np.mean(np.mean(self.dataset.get_values('salt', timeinds=[np.asarray([i])], point=self.part.location )))
+        
+        # Check for nans that occur in the ocean (happens because
+        # of model and coastline resolution mismatches)
+        if np.isnan(u).any() or np.isnan(v).any() or np.isnan(w).any():
+            # Take the mean of the closest 4 points
+            # If this includes nan which it will, result is nan
+            uarray1 = self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=2)
+            varray1 = self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=2)
+            if 'w' in self.dataset.nc.variables:
+                warray1 = self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location, num=2)
+                w = warray1.mean()
+            else:
+                w = 0.0
+                
+            if self.temp_name != None and self.salt_name != None:
+                temparray1 = self.dataset.get_values('temp', timeinds=[np.asarray([i])], point=self.part.location, num=2)
+                saltarray1 = self.dataset.get_values('salt', timeinds=[np.asarray([i])], point=self.part.location, num=2)
+                temp = temparray1.mean()
+                salt = saltarray1.mean()
+            u = uarray1.mean()
+            v = varray1.mean()             
+        
+        # If the final data results are nan, set velocities to zero
+        # TODO: need to validate this implementation
+        if np.isnan(u) or np.isnan(v) or np.isnan(w):
+            u, v, w = 0.0, 0.0, 0.0
+        elif math.isnan(u) or math.isnan(v) or math.isnan(w):
+            u, v, w = 0.0, 0.0, 0.0
+
+        self.dataset.closenc()
+        self.particle_get.value = False
+        if self.temp_name != None and self.salt_name != None:
+            return u, v, w, temp, salt
+        else:
+            return u,v,w, None, None
         
     def __call__(self, proc):
         if self.usebathy == True:
@@ -731,7 +813,12 @@ class ForceParticle(object):
 
         # Figure out indices corresponding to timesteps
         timevar = remote.gettimevar(self.uname)
-        time_indexs = timevar.nearest_index(newtimes, select='before')
+        if self.method == 'interp':
+            time_indexs = timevar.nearest_index(newtimes, select='before')
+        elif self.method == 'nearest':
+            time_indexs = timevar.nearest_index(newtimes)
+        else:
+            logger.warn("Method for computing u,v,w,temp,salt not supported!")
         array_indexs = time_indexs - time_indexs[0]
 
         logger = multiprocessing.get_logger()
@@ -750,8 +837,13 @@ class ForceParticle(object):
                 pass
                 
             # Get the variable data required by the models
-            u, v, w, temp, salt = self.data(i, timevar, newtimes[loop_i])
-
+            if self.method == 'nearest':
+                u, v, w, temp, salt = self.data_nearest(i)
+            elif self.method == 'interp': 
+                u, v, w, temp, salt = self.data_interp(i, timevar, newtimes[loop_i])
+            else:
+                logger.warn("Method for computing u,v,w,temp,salt not supported!")
+                
             # Age the particle by the modelTimestep (seconds)
             # 'Age' meaning the amount of time it has been forced.
             part.age(seconds=modelTimestep[loop_i])
