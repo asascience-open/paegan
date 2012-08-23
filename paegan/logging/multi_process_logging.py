@@ -69,6 +69,9 @@ class EasyLogger(object):
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
         
+    def close(self):
+        (hand.close() for hand in self.logger.handlers)
+
     def __str__(self):
         return "Logging with MultiProcessingLogHandler in " + self.logpath
         

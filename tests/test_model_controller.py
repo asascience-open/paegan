@@ -120,4 +120,4 @@ class ModelControllerTest(unittest.TestCase):
 
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
 
-        handler.close()
+        log.close()
