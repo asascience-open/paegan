@@ -10,6 +10,7 @@ from struct import pack, unpack, calcsize, error
 import os
 import time
 import array
+import zipfile
 #
 # Constants for shape types
 NULL = 0
@@ -738,6 +739,7 @@ class Writer:
         self.shp = self.__getFileObj(target)
         self.__shapefileHeader(self.shp, headerType='shp')
         self.__shpRecords()
+        return target
 
     def saveShx(self, target):
         """Save an shx file."""
@@ -748,6 +750,7 @@ class Writer:
         self.shx = self.__getFileObj(target)
         self.__shapefileHeader(self.shx, headerType='shx')
         self.__shxRecords()
+        return target
 
     def saveDbf(self, target):
         """Save a dbf file."""
@@ -756,18 +759,31 @@ class Writer:
         self.dbf = self.__getFileObj(target)
         self.__dbfHeader()
         self.__dbfRecords()
+        return target
 
-    def save(self, target=""):
+    def save(self, target="", zipup=False):
         """Save the shapefile data to three files or
         three file-like objects. SHP and DBF files can
         be written exclusively using saveShp, saveShx, and saveDbf respectively."""
         # TODO: Create a unique filename for target if None.
-        self.saveShp(target)
+        shp_path = self.saveShp(target)
         self.shp.close()
-        self.saveShx(target)
+        shx_path = self.saveShx(target)
         self.shx.close()
-        self.saveDbf(target)
+        dbf_path = self.saveDbf(target)
         self.dbf.close()
+
+        if zipup is True:
+            if not hasattr(target, "write"):
+                target = os.path.splitext(target)[0] + '.shp.zip'
+            shpzip = zipfile.ZipFile(target, mode='w')
+            shpzip.write(shp_path, os.path.basename(shp_path))
+            shpzip.write(shx_path, os.path.basename(shx_path))
+            shpzip.write(dbf_path, os.path.basename(dbf_path))
+            shpzip.close()
+            os.remove(shp_path)
+            os.remove(shx_path)
+            os.remove(dbf_path)
 
 class Editor(Writer):
     def __init__(self, shapefile=None, shapeType=POINT, autoBalance=1):

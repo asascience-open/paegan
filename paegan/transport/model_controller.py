@@ -432,9 +432,9 @@ class ModelController(object):
                 w.point(loc.longitude, loc.latitude)
                 # Add attribute records
                 w.record(particle.uid, loc.time.isoformat(), loc.latitude, loc.longitude, loc.depth, temp, salt)
-                
+
         # Write out shapefle to disk
-        w.save(filepath)
+        w.save(filepath, zipup=True)
         
     def _export_nc(self, filepath, **kwargs):
         """
