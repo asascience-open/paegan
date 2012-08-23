@@ -15,7 +15,7 @@ from paegan.transport.model_controller import ModelController
 from shapely.geometry import Point, Polygon
 import os
 import multiprocessing, logging
-from paegan.logging.multi_process_logging import MultiProcessingLogHandler
+from paegan.logging.multi_process_logging import MultiProcessingLogHandler, EasyLogger
 
 
 class ModelControllerTest(unittest.TestCase):
@@ -104,14 +104,8 @@ class ModelControllerTest(unittest.TestCase):
 
         start_time = datetime(2012, 8, 1, 00)
 
-        logger = multiprocessing.get_logger()
-        logger.setLevel(logging.INFO)
-        handler = MultiProcessingLogHandler('testlog.txt')
-        handler.setLevel(logging.INFO)
-        formatter = logging.Formatter('[%(asctime)s] - %(levelname)s - %(name)s - %(processName)s - %(message)s')
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        logger.info('From Test')
+        log = EasyLogger('testlog.txt')
+        log.logger.info('From Test')
 
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=2, horiz_chunk=2)

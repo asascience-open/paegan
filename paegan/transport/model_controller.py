@@ -295,7 +295,7 @@ class ModelController(object):
         
         # Create the shared state objects
         get_data = mgr.Value('bool', True)
-        n_run = mgr.Value('int', 0)
+        n_run = mgr.Value('int', nproc)
         updating = mgr.Value('bool', False)
         particle_get = mgr.Value('bool', False)
         point_get = mgr.Value('list', [0, 0, 0])
@@ -441,7 +441,7 @@ class ModelController(object):
             Export particle data to CF trajectory convention
             netcdf file
         """
-        time_units = 'days since 1990-01-01 00:00:00'
+        time_units = 'seconds since 1990-01-01 00:00:00'
         
         # Create netcdf file, overwrite existing
         nc = netCDF4.Dataset(filepath, 'w')
