@@ -345,22 +345,24 @@ class ModelController(object):
         # Wait for all tasks to finish
         tasks.join()
         
-        # Get results back from queue
+        # Get results back from queue, test for failed particles
         for i,v in enumerate(self.particles):
             tempres = results.get()
             self.particles[i] = tempres
-            while tempres == None:
+            # Don't save failed particles
+            while tempres == None or tempres == -1:
+                if tempres == -1:
+                    logger.warn('A particle failed!  Please check log file!')  
                 tempres = results.get()
                 self.particles[i] = tempres
 
-        logger.debug('Workers complete')        
+        logger.debug('Workers complete')
 
         # Remove the cache file
         os.remove(self.cache_path)
 
         # If output_formats and path specified,
         # output particle run data to disk when completed
-
         if "output_formats" in kwargs:
             # Make sure output_path is also included
             if kwargs.get("output_path", None) != None:
