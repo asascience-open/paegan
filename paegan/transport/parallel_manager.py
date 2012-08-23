@@ -220,6 +220,8 @@ class DataController(object):
         timevar = self.dataset.gettimevar(self.uname)
         time_indexs = timevar.nearest_index(newtimes, select='before')
         
+        # Have to make sure that we get the plus 1 for the
+        # linear interpolation of u,v,w,temp,salt
         self.inds = np.unique(time_indexs)
         self.inds = np.append(self.inds, self.inds.max()+1)
         
@@ -675,11 +677,9 @@ class ForceParticle(object):
         
         # If the final data results are nan, set velocities to zero
         # TODO: need to validate this implementation
-        print u, v, w, temp, salt
         if np.isnan(u) or np.isnan(v) or np.isnan(w):
             u, v, w = 0.0, 0.0, 0.0
         elif math.isnan(u) or math.isnan(v) or math.isnan(w):
-            print "----------------True"
             u, v, w = 0.0, 0.0, 0.0
 
         self.dataset.closenc()
