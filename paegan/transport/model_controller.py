@@ -473,6 +473,9 @@ class ModelController(object):
             Export particle data to CF trajectory convention
             netcdf file
         """
+        logger = multiprocessing.get_logger()
+        logger.addHandler(NullHandler())
+        
         time_units = 'seconds since 1990-01-01 00:00:00'
         
         # Create netcdf file, overwrite existing
@@ -488,13 +491,29 @@ class ModelController(object):
         lon = nc.createVariable('lon', 'f', ('time','particle'))
         salt = nc.createVariable('salt', 'f', ('time','particle'))
         temp = nc.createVariable('temp', 'f', ('time','particle'))
-        
+            
         # Loop through locations in each particle,
         # add to netcdf file
         for j, particle in enumerate(self.particles):
             part[j] = particle.uid
             i = 0
-            for loc, _temp, _salt in zip(particle.noramlized_locations(self.datetimes), particle.noramlized_temps(self.datetimes), particle.noramlized_salts(self.datetimes)):
+
+            normalized_locations = particle.noramlized_locations(self.datetimes)
+            noramlized_temps = particle.noramlized_temps(self.datetimes)
+            noramlized_salts = particle.noramlized_salts(self.datetimes)
+
+            if len(normalized_locations) != len(noramlized_temps):
+                logger.debug("No temperature being added to netcdf.")
+                # Create list of 'None' equal to the length of locations
+                noramlized_temps = [None] * len(normalized_locations)
+
+            if len(normalized_locations) != len(noramlized_salts):
+                logger.debug("No salinity being added to netcdf.")
+                # Create list of 'None' equal to the length of locations
+                noramlized_salts = [None] * len(normalized_locations)
+
+            for loc, _temp, _salt in zip(normalized_locations, noramlized_temps, noramlized_salts):
+
                 if j == 0:
                     time[i] = netCDF4.date2num(loc.time, time_units)
                 depth[i, j] = loc.depth
