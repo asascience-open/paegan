@@ -6,11 +6,32 @@ import random
 import time
 import multiprocessing
 from paegan.logging.null_handler import NullHandler
+from datetime import timedelta
 
 logger = multiprocessing.get_logger()
 logger.addHandler(NullHandler())
 
 class AsaTransport(object):
+
+    @classmethod
+    def get_time_objects_from_model_timesteps(cls, times, start):
+        """
+        Calculate the datetimes of the model timesteps
+
+        times should start at 0 and be in seconds
+
+        """
+        modelTimestep = []
+        newtimes = []
+
+        for i in xrange(0, len(times)-1):
+            try:
+                modelTimestep.append(times[i+1] - times[i])
+            except:
+                modelTimestep.append(times[i] - times[i-1])
+            newtimes.append(start + timedelta(seconds=times[i]))
+      
+        return (modelTimestep, newtimes)
 
     @classmethod
     def fill_polygon_with_points(cls, goal=None, polygon=None):

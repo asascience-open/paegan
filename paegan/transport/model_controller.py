@@ -69,6 +69,9 @@ class ModelController(object):
         self._particles = []
         self._time_chunk = kwargs.get('time_chunk', 10)
         self._horiz_chunk = kwargs.get('horiz_chunk', 4)
+
+        # The model timesteps in datetime objects
+        self.datetimes = []
         
         # Inerchangeables
         if "geometry" in kwargs:
@@ -250,7 +253,18 @@ class ModelController(object):
 
     def run(self, hydrodataset, **kwargs):
 
+        if self.start == None:
+            raise TypeError("must provide a start time to run the models")
+
+        # Calculate the model timesteps
         times = range(0,(self._step*self._nstep)+1,self._step)
+        # Calculate a datetime object for each model timestep
+        # This method is duplicated in DataContoller and ForceParticle
+        # using the 'times' variables above.  Will be useful in those other
+        # locations for particles released at different times
+        # i.e. released over a few days
+        modelTimestep, self.datetimes = AsaTransport.get_time_objects_from_model_timesteps(times, start=self.start)
+
         time_chunk = self._time_chunk
         horiz_chunk = self._horiz_chunk
         hydrodataset = hydrodataset
@@ -258,9 +272,6 @@ class ModelController(object):
         self.cache_path = kwargs.get("cache",
                                 os.path.join(os.path.dirname(__file__), "_cache"))
         
-        if self.start == None:
-            raise TypeError("must provide a start time to run the models")
-
         logger = multiprocessing.get_logger()
         logger.addHandler(NullHandler())
 

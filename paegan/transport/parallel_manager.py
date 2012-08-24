@@ -2,11 +2,11 @@ import unittest
 import time
 import numpy as np
 import netCDF4
-from datetime import datetime, timedelta
 from paegan.transport.models.transport import Transport
 from paegan.transport.particles.particle import Particle
 from paegan.transport.location4d import Location4D
 from paegan.utils.asarandom import AsaRandom
+from paegan.utils.asatransport import AsaTransport
 from paegan.transport.shoreline import Shoreline
 from paegan.transport.bathymetry import Bathymetry
 from multiprocessing import Value
@@ -195,8 +195,6 @@ class DataController(object):
         self.get_variablenames_for_model()
         self.remote = self.dataset.nc
         cachepath = self.cache_path
-        times = self.times
-        start_time = self.start_time
         
         logger = multiprocessing.get_logger()
         logger.addHandler(NullHandler())
@@ -204,19 +202,8 @@ class DataController(object):
         # Calculate the datetimes of the model timesteps like
         # the particle objects do, so we can figure out unique
         # time indices
-        modelTimestep = []
-        calculatedTime = []
-        newtimes = []
-        for i in xrange(0, len(times)-1):
-            try:
-                modelTimestep.append(times[i+1] - times[i])
-                calculatedTime.append(times[i+1])
-            except:
-                modelTimestep.append(times[i] - times[i-1])
-                calculatedTime.append(times[i] + modelTimestep[i])
-               
-            newtimes.append(start_time + timedelta(seconds=calculatedTime[i]))
-      
+        modelTimestep, newtimes = AsaTransport.get_time_objects_from_model_timesteps(self.times, start=self.start_time)
+
         timevar = self.dataset.gettimevar(self.uname)
         time_indexs = timevar.nearest_index(newtimes, select='before')
         
@@ -224,7 +211,6 @@ class DataController(object):
         # linear interpolation of u,v,w,temp,salt
         self.inds = np.unique(time_indexs)
         self.inds = np.append(self.inds, self.inds.max()+1)
-        
         
         # While there is at least 1 particle still running, 
         # stay alive, if not break
@@ -782,8 +768,6 @@ class ForceParticle(object):
             self._shoreline = None
         self.proc = proc
         part = self.part
-        times = self.times
-        start_time = self.start_time
         models = self.models
         
         while self.get_data.value == True:
@@ -794,19 +778,8 @@ class ForceParticle(object):
         self.dataset.closenc()
         
         # Calculate datetime at every timestep
-        modelTimestep = []
-        calculatedTime = []
-        newtimes = []
-        for i in xrange(0, len(times)-1):
-            try:
-                modelTimestep.append(times[i+1] - times[i])
-                calculatedTime.append(times[i+1])
-            except:
-                modelTimestep.append(times[i] - times[i-1])
-                calculatedTime.append(times[i] + modelTimestep[i])
-               
-            newtimes.append(start_time + timedelta(seconds=calculatedTime[i]))
-        
+        modelTimestep, newtimes = AsaTransport.get_time_objects_from_model_timesteps(self.times, start=self.start_time)
+
         # Get variable names for parameters required by model
         remote = CommonDataset(self.remotehydropath)
         self.get_variablenames_for_model(remote)
@@ -820,7 +793,7 @@ class ForceParticle(object):
         else:
             logger.warn("Method for computing u,v,w,temp,salt not supported!")
         array_indexs = time_indexs - time_indexs[0]
-
+ 
         logger = multiprocessing.get_logger()
         logger.addHandler(NullHandler())
 
