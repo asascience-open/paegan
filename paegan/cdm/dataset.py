@@ -206,7 +206,12 @@ class Dataset:
         assert var in self.nc.variables
         grid = self.getgridobj(var)
         return grid.bbox
-           
+        
+    def getboundingpolygon(self, var=None, **kwargs):
+        assert var in self.nc.variables
+        bbox = self.getbbox(var)
+        pass
+        
     def _checkcache(self, var):
         assert var in self.nc.variables
         test = var in self._coordcache
