@@ -153,11 +153,12 @@ class Shoreline(object):
             angle = decimal degrees from 0 (x-axis), couter-clockwise (math style)
         """
         if self._type == "bounce":
-            print "This shoreline type is NOT SUPPORTED and it broken"
+            print "This shoreline type is NOT SUPPORTED and is broken"
             return self.__bounce(**kwargs)
         elif self._type == "reverse":
             return self.__reverse(**kwargs)
         else:
+            return kwargs.get('hit_point')
             print "Not reacting to shoreline (sticky with inifinite concentration)"
 
     def __bounce(self, **kwargs):
