@@ -1,3 +1,35 @@
+0.8.8 - 2012-08-24
+===================
+Fix the timevar tests
+.
+more fixes to t bounds handling in get_values in commondataset
+fixing get_tind_from_bound implementation in get_values
+.
+added getvariableinfo on common dataset
+changes to cdm to add getbbox from the commondataset (still need variable reference
+same temp and salt fixes added to the netcdf output
+Stick particles if no shoreline type is given
+Implement a trackline output in GeoJson.  fixes #25
+Normalize the length of locations/temps/salts on export
+Factor the timestep calculation into a method
+Don't try to save the particles returned as -1
+Add the default output directory to .gitignore
+Add a close method to the EasyLogger
+Fix errors in model controller tests
+Zip up shapefiles
+Merge branch 'larva_alex'
+update test with easylogger
+working EasyLogger
+added EasyLogger to multi_process_logging
+added option to run particles with nearest OR linear interp
+adding some comments, removing prints
+added linear interp between timesteps for u, v, w, temp, salt
+Change shapefile creation, test the output formats
+added consumer messages to the logger for failed parallel tasks, also implemented a before index in cdm/timevar
+changed broken changes back temporarily
+Merge branch 'master' of github.com:asascience-open/paegan
+Support python 2.6 by adding a monkeypatched NullHandler()
+
 0.8.7 - 2012-08-22
 ===================
 Prepare for 0.8.7 release
