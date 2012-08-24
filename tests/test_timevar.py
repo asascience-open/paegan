@@ -51,7 +51,7 @@ class TimevarTest(unittest.TestCase):
         for x in data:
             jds.append(dt + timedelta(days=x))
 
-        assert jds == tvar.dates
+        assert (jds == tvar.dates).all()
 
     def test_timevar_hfradar_days_values(self):
 
@@ -74,8 +74,7 @@ class TimevarTest(unittest.TestCase):
         for x in data:
             jds.append(dt + timedelta(days=x))
 
-        assert jds == tvar.dates
-
+        assert (jds == tvar.dates).all()
 
     def test_timevar_ncom_hour_values_dap(self):
 
@@ -101,4 +100,4 @@ class TimevarTest(unittest.TestCase):
         for x in data:
             jds.append(dt + timedelta(days=x))
 
-        assert jds == tvar.dates
+        assert (jds == tvar.dates).all()
