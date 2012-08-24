@@ -106,7 +106,7 @@ class Timevar(np.ndarray):
         return (pylab.date2num(self.origin)+self.days)
 
     def get_dates(self):
-        return pylab.num2date(self.jd)
+        return np.asarray(pylab.num2date(self.jd))
         
     jd = property(get_jd, None, doc="Julian day, for plotting in pylab")
     seconds = property(get_seconds, None, doc="seconds")

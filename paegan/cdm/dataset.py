@@ -278,7 +278,7 @@ class Dataset:
         time = self.gettimevar(var, use_cache)
         if convert:
             bounds = netCDF4.date2num(bounds)
-        inds = np.where(np.logical_and(time >= bounds[0], time <= bounds[1]))
+        inds = np.where(np.logical_and(time.dates >= bounds[0].replace(tzinfo=time.dates[0].tzinfo), time.dates <= bounds[1].replace(tzinfo=time.dates[0].tzinfo)))
         return inds
     
     def get_zind_from_bounds(self, var, bounds, use_cache=True):
