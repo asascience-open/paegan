@@ -39,7 +39,7 @@ class ModelControllerTest(unittest.TestCase):
         output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/transport")
         shutil.rmtree(output_path, ignore_errors=True)
         os.makedirs(output_path)
-        output_formats = ['.shp','.nc']
+        output_formats = ['.shp','.nc','.trkl']
 
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
 
@@ -89,9 +89,9 @@ class ModelControllerTest(unittest.TestCase):
         start_lat = 60.75
         start_lon = -147
         start_depth = 0
-        num_particles = 2
+        num_particles = 4
         time_step = 3600
-        num_steps = 2
+        num_steps = 10
 
         models = []
         models.append(Transport(horizDisp=0.05, vertDisp=0.0003))
@@ -99,9 +99,6 @@ class ModelControllerTest(unittest.TestCase):
         behavior_config = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/behavior_for_run_testing.json"))).read()
         lb = LarvaBehavior(json=behavior_config)
         
-        #assert len(lb.lifestages) == 2
-        #assert len(lb.lifestages[0].diel) == 2
-
         models.append(lb)
 
         start_time = datetime(2012, 8, 1, 00)
@@ -110,13 +107,13 @@ class ModelControllerTest(unittest.TestCase):
         log.logger.info('From Test')
 
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
-            time_chunk=2, horiz_chunk=2)
+            time_chunk=10, horiz_chunk=2)
 
         cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache")
         output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/behaviors")
         shutil.rmtree(output_path, ignore_errors=True)
         os.makedirs(output_path)
-        output_formats = ['.shp','.nc']
+        output_formats = ['.shp','.nc','.trkl']
 
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
 

@@ -6,7 +6,7 @@ from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import netCDF4
-from datetime import datetime, timedelta
+from datetime import datetime
 from paegan.transport.models.transport import Transport
 from paegan.transport.particles.particle import LarvaParticle
 from paegan.transport.location4d import Location4D
@@ -14,7 +14,7 @@ from paegan.utils.asarandom import AsaRandom
 from paegan.utils.asatransport import AsaTransport
 from paegan.transport.shoreline import Shoreline
 from paegan.transport.bathymetry import Bathymetry
-from shapely.geometry import Point, Polygon, MultiPolygon
+from shapely.geometry import Point, Polygon, MultiPolygon, MultiPoint, LineString
 from shapely.geometry import MultiLineString
 from multiprocessing import Value
 import multiprocessing
@@ -24,6 +24,8 @@ import os
 import uuid
 from paegan.external import shapefile as shp
 from shapely.ops import cascaded_union
+from shapely.geometry import mapping
+import json
 
 def unique_filename(prefix=None, suffix=None):
     fn = []
@@ -402,7 +404,22 @@ class ModelController(object):
             self._export_shp(filepath)
         elif filepath[-2:] == "nc":
             self._export_nc(filepath)
+        elif filepath[-4:] == "trkl":
+            self._export_trackline(filepath)
             
+    def _export_trackline(self, filepath):
+
+        normalized_locations = [particle.noramlized_locations(self.datetimes) for particle in self.particles]
+
+        track_coords = []
+        for x in xrange(0, len(self.datetimes)):
+            points = MultiPoint([loc[x].point.coords[0] for loc in normalized_locations])
+            track_coords.append(points.centroid.coords[0])
+
+        print track_coords
+        ls = LineString(track_coords)
+        open(filepath, "wb").write(json.dumps(mapping(ls)))
+
     def _export_shp(self, filepath):
         """
             Export particle data to point type shapefile
