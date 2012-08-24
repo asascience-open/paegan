@@ -150,6 +150,14 @@ class Dataset:
             self._possiblez.append(zname)
         if tname not in self._possiblet:
             self._possiblet.append(tname)
+            
+    def getvariableinfo(self):
+        variables = {}
+        for var in self.nc.variables.keys():
+            variables[var] = {}
+            for attr in self.nc.variables[var].ncattrs():
+                variables[var][attr] = self.nc.variables[var].getncattr(attr)
+        return variables
                            
     def lon2ind(self, var=None, **kwargs):
         pass
