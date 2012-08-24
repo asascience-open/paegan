@@ -428,19 +428,21 @@ class ModelController(object):
             # If there was temperature and salinity in the model, and
             # we ran behaviors, the lengths should be the same
 
-            use_temps = particle.temps
-            if len(particle.locations) != len(particle.temps):
+            normalized_locations = particle.noramlized_locations(self.datetimes)
+            noramlized_temps = particle.noramlized_temps(self.datetimes)
+            noramlized_salts = particle.noramlized_salts(self.datetimes)
+
+            if len(normalized_locations) != len(noramlized_temps):
                 logger.debug("No temperature being added to shapefile.")
                 # Create list of 'None' equal to the length of locations
-                use_temps = [None] * len(particle.locations) 
+                noramlized_temps = [None] * len(normalized_locations) 
 
-            use_salts = particle.salts
-            if len(particle.locations) != len(particle.salts):
+            if len(normalized_locations) != len(noramlized_salts):
                 logger.debug("No salinity being added to shapefile.")
                 # Create list of 'None' equal to the length of locations
-                use_salts = [None] * len(particle.locations) 
+                noramlized_salts = [None] * len(normalized_locations)
 
-            for loc, temp, salt in zip(particle.locations, use_temps, use_salts):
+            for loc, temp, salt in zip(normalized_locations, noramlized_temps, noramlized_salts):
                 # Add point geometry
                 w.point(loc.longitude, loc.latitude)
                 # Add attribute records
@@ -475,7 +477,7 @@ class ModelController(object):
         for j, particle in enumerate(self.particles):
             part[j] = particle.uid
             i = 0
-            for loc, _temp, _salt in zip(particle.locations, particle.temps, particle.salts):
+            for loc, _temp, _salt in zip(particle.noramlized_locations(self.datetimes), particle.noramlized_temps(self.datetimes), particle.noramlized_salts(self.datetimes)):
                 if j == 0:
                     time[i] = netCDF4.date2num(loc.time, time_units)
                 depth[i, j] = loc.depth

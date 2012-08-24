@@ -94,6 +94,49 @@ class Particle(object):
 
     def linestring(self):
         return LineString(map(lambda x: list(x.point.coords)[0], self.locations))
+
+    def noramlized_locations(self, model_timesteps):
+        return [loc for i,loc in enumerate(self.locations) if i in self.normalized_indexes(model_timesteps)]
+
+    def normalized_indexes(self, model_timesteps):
+        """
+        This function will normalize the particles locations
+        to the timestep of the model that was run.  This is used
+        in output, as we should only be outputting the model timestep
+        that was chosen to be run.
+
+        In most cases, the length of the model_timesteps and the 
+        particle's locations will be the same (unless it hits shore).
+
+        If they are not the same length pull out of locations the timesteps
+        that are closest to the model_timesteps
+        """
+
+        # Clean up locations
+        # If duplicate time instances, remove the lower index 
+        clean_locs = []
+        for i,loc in enumerate(self.locations):
+            try:
+                if loc.time == self.locations[i+1].time:
+                    continue
+                else:
+                    clean_locs.append(loc)
+            except:
+                clean_locs.append(loc)
+                
+        if len(clean_locs) == len(model_timesteps):
+           return (ind for ind,loc in enumerate(clean_locs))
+        elif len(model_timesteps) < len(clean_locs):
+            # We have at least one internal timestep for this particle
+            # Pull out the matching location indexes
+            indexes = [ind for ind,loc in enumerate(clean_locs) if loc.time in model_timesteps]
+            if len(model_timesteps) == len(indexes):
+                return indexes
+            raise ValueError("Can't normalize")           
+        elif len(model_timesteps) > len(clean_locs):
+            # The particle stopped before forcing for all of the model timesteps
+            raise ValueError("Particle has less locations than model timesteps")
+
         
 class LarvaParticle(Particle):
     """
@@ -129,6 +172,12 @@ class LarvaParticle(Particle):
     def get_lifestage_index(self):
         return int(self.lifestage_progress)
     lifestage_index = property(get_lifestage_index, None)
+
+    def noramlized_temps(self, model_timesteps):
+        return [t for i,t in enumerate(self.temps) if i in self.normalized_indexes(model_timesteps)]
+
+    def noramlized_salts(self, model_timesteps):
+        return [s for i,s in enumerate(self.salts) if i in self.normalized_indexes(model_timesteps)]
 
     def fill_location_gap(self):
         self._temp.append(self.temp)
