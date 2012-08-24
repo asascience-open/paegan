@@ -64,7 +64,7 @@ def CommonDataset(ncfile, xname='lon', yname='lat',
 
     >> dataset = CommonDataset(ncfile)
     >> dataset = CommonDataset(url, "lon_rho", "lat_rho", "s_rho", "ocean_time")
-    >> dataset = CommonDataset(url, dataset_type="cgrid") 
+    >> dataset = CommonDataset(url, dataset_type="cgrid")
     """
     class self:
         pass
@@ -179,7 +179,8 @@ class Dataset:
             bounds = (netCDF4.num2date(np.min(time),units=u),
                       netCDF4.num2date(np.max(time),units=u))
         else:
-            bounds = (np.min(time), np.max(time))
+            bounds = (np.min(time.dates), np.max(time.dates))
+        return bounds
 
     def getdepthbounds(self, var=None, **kwargs):
         assert var in self.nc.variables
@@ -191,7 +192,13 @@ class Dataset:
                 bounds = ()
         else:
             bounds = (np.min(time), np.max(time))
-
+        return bounds
+    
+    def getbbox(self, var=None, **kwargs):
+        assert var in self.nc.variables
+        grid = self.getgridobj(var)
+        return grid.bbox
+           
     def _checkcache(self, var):
         assert var in self.nc.variables
         test = var in self._coordcache
