@@ -654,7 +654,7 @@ class Dataset:
                 elif name == "x":
                     for i,position in enumerate(positions[name]):
                         indices[position] = xinds[i]
-        #print indices
+        
         if np.all([i.size >0 for i in indices]):
             data = self._get_data(var, indices, use_local)
         else:
@@ -839,10 +839,10 @@ class NCellDataset(Dataset):
         inds = np.where(np.logical_and(xbool, ybool))
         return inds, inds #xinds, yinds
         
-    def get_xyind_from_point(self, var, point):
+    def get_xyind_from_point(self, var, point, **kwargs):
+        num = kwargs.get("num", 1)
         grid = self.getgridobj(var)
-        index = grid.near_xy(point=point)
-        # do some stuff
+        inds, inds = grid.near_xy(point=point, num=num, ncell=True)
         return inds, inds
 
     def _get_data(self, var, indarray, use_local=False):
@@ -851,12 +851,13 @@ class NCellDataset(Dataset):
             var =    self.nc.variables[var]
         else:
             pass
+        print ndims
         if ndims == 1:
             data = var[:]
             data = data[indarray]
         elif ndims == 2:
-            data = var[indarray[0], :]
-            data = data[:, indarray[1]]
+            data = var[:]
+            data = data[indarray[0], indarray[1]]
         elif ndims == 3:
             data = var[indarray[0], indarray[1], :]
             data = data[:, :, indarray[2]]

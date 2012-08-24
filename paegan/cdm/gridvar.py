@@ -95,27 +95,37 @@ class Gridobj:
         if point == None:
             lat = kwargs.get("lat", None)
             lon = kwargs.get("lon", None)
-            point = Location4D(latitude=lat, longitude=lon, depth=0, time=0)
+            point = Location4D(latitude=lat, longitude=lon)
         num = kwargs.get("num", 1)
-        
-        if self._ndim == 2:
-            distance = AsaGreatCircle.great_distance(
-                start_lats=self._yarray, start_lons=self._xarray,
-                end_lats=point.latitude, end_lons=point.longitude)["distance"]
-            yinds, xinds = np.where(distance == np.min(distance))
-        else:
-            #if self._xmesh == None and self._ymesh == None:
-            #    self._xmesh, self._ymesh = np.meshgrid(self._xarray, self._yarray)
+        ncell = kwargs.get("ncell", False)
+        if ncell:
             if num > 1:
-                minlat = np.abs(self._yarray - point.latitude)
-                minlon = np.abs(self._xarray - point.longitude)
-                lat_cutoff = np.sort(minlat)[num-1]
-                lon_cutoff = np.sort(minlon)[num-1]
-            elif num == 1:
-                lat_cutoff = np.min(np.abs(self._yarray - point.latitude))
-                lon_cutoff = np.min(np.abs(self._xarray - point.longitude))
-            yinds = np.where(np.abs(self._yarray - point.latitude) <= lat_cutoff)
-            xinds = np.where(np.abs(self._xarray - point.longitude) <= lon_cutoff)
+                pass
+            else:
+                distance = AsaGreatCircle.great_distance(
+                    start_lats=self._yarray, start_lons=self._xarray,
+                    end_lats=point.latitude, end_lons=point.longitude)["distance"]
+                inds = np.where(distance == np.min(distance))
+                xinds, yinds = inds, inds
+        else:
+            if self._ndim == 2:
+                distance = AsaGreatCircle.great_distance(
+                    start_lats=self._yarray, start_lons=self._xarray,
+                    end_lats=point.latitude, end_lons=point.longitude)["distance"]
+                yinds, xinds = np.where(distance == np.min(distance))
+            else:
+                #if self._xmesh == None and self._ymesh == None:
+                #    self._xmesh, self._ymesh = np.meshgrid(self._xarray, self._yarray)
+                if num > 1:
+                    minlat = np.abs(self._yarray - point.latitude)
+                    minlon = np.abs(self._xarray - point.longitude)
+                    lat_cutoff = np.sort(minlat)[num-1]
+                    lon_cutoff = np.sort(minlon)[num-1]
+                elif num == 1:
+                    lat_cutoff = np.min(np.abs(self._yarray - point.latitude))
+                    lon_cutoff = np.min(np.abs(self._xarray - point.longitude))
+                yinds = np.where(np.abs(self._yarray - point.latitude) <= lat_cutoff)
+                xinds = np.where(np.abs(self._xarray - point.longitude) <= lon_cutoff)
 
         return yinds, xinds 
 
