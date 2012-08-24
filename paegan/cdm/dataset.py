@@ -507,7 +507,7 @@ class Dataset:
 
         if positions["time"] != None:
             if timebounds != None:
-                tinds = self.get_tind_from_bounds(var, timebounds)
+                tinds = self.get_tind_from_bounds(var, timebounds, convert=True)
             else:
                 if timeinds == None:
                     if point != None:
