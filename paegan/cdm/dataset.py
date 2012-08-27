@@ -277,7 +277,7 @@ class Dataset:
         assert var in self.nc.variables
         time = self.gettimevar(var, use_cache)
         if convert:
-            bounds = netCDF4.date2num(bounds)
+            bounds = netCDF4.date2num(bounds, time._units + " since " + time.origin.isoformat())
         inds = np.where(np.logical_and(time.dates >= bounds[0].replace(tzinfo=time.dates[0].tzinfo), time.dates <= bounds[1].replace(tzinfo=time.dates[0].tzinfo)))
         return inds
     
@@ -507,7 +507,7 @@ class Dataset:
 
         if positions["time"] != None:
             if timebounds != None:
-                tinds = self.get_tind_from_bounds(var, timebounds, convert=True)
+                tinds = self.get_tind_from_bounds(var, timebounds)
             else:
                 if timeinds == None:
                     if point != None:
@@ -851,7 +851,6 @@ class NCellDataset(Dataset):
             var =    self.nc.variables[var]
         else:
             pass
-        print ndims
         if ndims == 1:
             data = var[:]
             data = data[indarray]
