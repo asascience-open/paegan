@@ -70,9 +70,15 @@ class Timevar(np.ndarray):
     def nearest_index(self, dateo, select='nearest'):
         to = pylab.date2num(dateo)
         if select == 'nearest':
-            return [np.where(abs(self.jd-t) == min(abs(self.jd-t)))[0][0] for t in to]
+            try:
+                return [np.where(abs(self.jd-t) == min(abs(self.jd-t)))[0][0] for t in to]
+            except TypeError:
+                return [np.where(abs(self.jd-to) == min(abs(self.jd-to)))[0][0]]
         elif select == 'before':
-            return np.asarray([bisect.bisect(self.jd, t)-1 for t in to])
+            try: 
+                return np.asarray([bisect.bisect(self.jd, t)-1 for t in to])
+            except TypeError:
+                return np.asarray([bisect.bisect(self.jd, to)-1])
     
     def nearest(self, dateo):
         """
