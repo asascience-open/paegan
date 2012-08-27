@@ -1,11 +1,5 @@
 import unittest
 import time
-import matplotlib
-import matplotlib.pyplot
-from matplotlib import cm
-from mpl_toolkits.mplot3d import Axes3D
-import numpy as np
-import netCDF4
 from datetime import datetime
 from paegan.transport.models.transport import Transport
 from paegan.transport.particles.particle import LarvaParticle
@@ -14,18 +8,15 @@ from paegan.utils.asarandom import AsaRandom
 from paegan.utils.asatransport import AsaTransport
 from paegan.transport.shoreline import Shoreline
 from paegan.transport.bathymetry import Bathymetry
-from shapely.geometry import Point, Polygon, MultiPolygon, MultiPoint, LineString
-from shapely.geometry import MultiLineString
+from shapely.geometry import Point, Polygon, MultiPolygon, LineString
+from shapely.ops import cascaded_union
 from multiprocessing import Value
 import multiprocessing
-from paegan.logging.null_handler import NullHandler
 import paegan.transport.parallel_manager as parallel
 import os
-import uuid
-from paegan.external import shapefile as shp
-from shapely.ops import cascaded_union
-from shapely.geometry import mapping
-import json
+import uuid 
+import paegan.transport.export as ex
+from paegan.logging.null_handler import NullHandler
 
 def unique_filename(prefix=None, suffix=None):
     fn = []
@@ -185,74 +176,6 @@ class ModelController(object):
                 "\nuse_bathymetry: " + str(self.use_bathymetry) +\
                 "\nuse_shoreline: " + str(self.use_shoreline)
 
-    def generate_map(self, point):
-        fig = matplotlib.pyplot.figure(figsize=(20,16)) # call a blank figure
-        ax = fig.gca(projection='3d') # line with points
-        
-        tracks = []
-
-        #for x in range(len(arr)):
-        for particle in self.particles:
-            tracks.append(particle.linestring())
-            p_proj_lats = map(lambda la: la.latitude, particle.locations)
-            p_proj_lons = map(lambda lo: lo.longitude, particle.locations)
-            p_proj_depths = map(lambda dp: dp.depth, particle.locations)
-
-            ax.plot(p_proj_lons, p_proj_lats, p_proj_depths, marker='o', c='red') # particles
-
-        #add shoreline
-        #tracks = MultiLineString(tracks)
-        midpoint = point#tracks.centroid
-
-        #bbox = tracks.bounds
-        visual_bbox = (point.x-1.5, point.y-1.5, point.x+1.5, point.y+1.5)#tracks.buffer(1).bounds
-
-        #max_distance = max(abs(bbox[0] - bbox[2]), abs(bbox[1] - bbox[3])) + 0.25
-
-        coast_line = Shoreline(point=midpoint, spatialbuffer=1.5).linestring
-
-        c_lons, c_lats = coast_line.xy
-        c_lons = np.array(c_lons)
-        c_lats = np.array(c_lats)
-        c_lons = np.where((c_lons >= visual_bbox[0]) & (c_lons <= visual_bbox[2]), c_lons, np.nan)
-        c_lats = np.where((c_lats >= visual_bbox[1]) & (c_lats <= visual_bbox[3]), c_lats, np.nan)
-
-        #add bathymetry
-        nc1 = netCDF4.Dataset(os.path.normpath(os.path.join(__file__,"../../resources/bathymetry/ETOPO1_Bed_g_gmt4.grd")))
-        x = nc1.variables['x']
-        y = nc1.variables['y']
-
-        x_indexes = np.where((x[:] >= visual_bbox[0]) & (x[:] <= visual_bbox[2]))[0]
-        y_indexes = np.where((y[:] >= visual_bbox[1]) & (y[:] <= visual_bbox[3]))[0]
-
-        x_min = x_indexes[0] 
-        x_max = x_indexes[-1]
-        y_min = y_indexes[0]
-        y_max = y_indexes[-1]
-
-        lons = x[x_min:x_max]
-        lats = y[y_min:y_max]
-        bath = nc1.variables['z'][y_min:y_max,x_min:x_max]
-
-        x_grid, y_grid = np.meshgrid(lons, lats)
-
-        mpl_extent = matplotlib.transforms.Bbox.from_extents(visual_bbox[0],visual_bbox[1],visual_bbox[2],visual_bbox[3])
-        
-        ax.plot_surface(x_grid,y_grid,bath, rstride=1, cstride=1,
-            cmap="gist_earth", shade=True, linewidth=0, antialiased=False,
-            edgecolors=None) # bathymetry
-
-        ax.plot(c_lons, c_lats, clip_box=mpl_extent, clip_on=True, color='c') # shoreline
-        ax.set_xlim3d(visual_bbox[0],visual_bbox[2])
-        ax.set_ylim3d(visual_bbox[1],visual_bbox[3])
-        ax.set_zmargin(0.1)
-        ax.view_init(85, -90)
-        ax.set_xlabel('Longitude')
-        ax.set_ylabel('Latitude')
-        ax.set_zlabel('Depth (m)')
-        matplotlib.pyplot.show()
-        return fig
-
     def run(self, hydrodataset, **kwargs):
 
         if self.start == None:
@@ -382,10 +305,8 @@ class ModelController(object):
                 formats = kwargs.get("output_formats")
                 output_path = kwargs.get("output_path")
                 if isinstance(formats, list):
-                    for form in formats:
-                        filename = os.path.join(output_path,'model_run_output')
-                        filename = filename + '.' + form.replace('.','')
-                        self.export(filename)
+                    for format in formats:
+                        self.export(output_path, format=format)
                 else:
                     logger.warn('The output_formats parameter should be a list, not saving any output!')  
             else:
@@ -393,166 +314,25 @@ class ModelController(object):
         else:
             logger.warn('No output format defined, not saving any output!')
     
-    def export(self, filepath, **kwargs):
+    def export(self, folder_path, format=None):
         """
             General purpose export method, gets file type 
             from filepath extension
             
-            Valid output formats currently are: * shp and nc *
-        """
-        if filepath[-3:] == "shp":
-            self._export_shp(filepath)
-        elif filepath[-2:] == "nc":
-            self._export_nc(filepath)
-        elif filepath[-4:] == "trkl":
-            self._export_trackline(filepath)
-            
-    def _export_trackline(self, filepath):
-
-        normalized_locations = [particle.noramlized_locations(self.datetimes) for particle in self.particles]
-
-        track_coords = []
-        for x in xrange(0, len(self.datetimes)):
-            points = MultiPoint([loc[x].point.coords[0] for loc in normalized_locations])
-            track_coords.append(points.centroid.coords[0])
-
-        print track_coords
-        ls = LineString(track_coords)
-        open(filepath, "wb").write(json.dumps(mapping(ls)))
-
-    def _export_shp(self, filepath):
-        """
-            Export particle data to point type shapefile
+            Valid output formats currently are:
+                Trackline: trackline or trkl or *.trkl                
+                Shapefile: shapefile or shape or shp or *.shp
+                NetCDF:    netcdf or nc or *.nc
         """
 
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
+        if format is None:
+            raise ValueError("Must export to a specific format, no format specified.")
 
-        # Create the shapefile writer
-        w = shp.Writer(shp.POINT)
-        # Create the attribute fields/columns
-        w.field('Particle')
-        w.field('Date')
-        w.field('Lat')
-        w.field('Lon')
-        w.field('Depth')
-        w.field('Temp')
-        w.field('Salt')
-        
-        # Loop through locations in particles,
-        # add as points to the shapefile
-        for particle in self.particles:
-            # If there was temperature and salinity in the model, and
-            # we ran behaviors, the lengths should be the same
+        format = format.lower()
 
-            normalized_locations = particle.noramlized_locations(self.datetimes)
-            noramlized_temps = particle.noramlized_temps(self.datetimes)
-            noramlized_salts = particle.noramlized_salts(self.datetimes)
-
-            if len(normalized_locations) != len(noramlized_temps):
-                logger.debug("No temperature being added to shapefile.")
-                # Create list of 'None' equal to the length of locations
-                noramlized_temps = [None] * len(normalized_locations) 
-
-            if len(normalized_locations) != len(noramlized_salts):
-                logger.debug("No salinity being added to shapefile.")
-                # Create list of 'None' equal to the length of locations
-                noramlized_salts = [None] * len(normalized_locations)
-
-            for loc, temp, salt in zip(normalized_locations, noramlized_temps, noramlized_salts):
-                # Add point geometry
-                w.point(loc.longitude, loc.latitude)
-                # Add attribute records
-                w.record(particle.uid, loc.time.isoformat(), loc.latitude, loc.longitude, loc.depth, temp, salt)
-
-        # Write out shapefle to disk
-        w.save(filepath, zipup=True)
-        
-    def _export_nc(self, filepath, **kwargs):
-        """
-            Export particle data to CF trajectory convention
-            netcdf file
-        """
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
-        
-        time_units = 'seconds since 1990-01-01 00:00:00'
-        
-        # Create netcdf file, overwrite existing
-        nc = netCDF4.Dataset(filepath, 'w')
-        # Create netcdf dimensions
-        nc.createDimension('time', None)
-        nc.createDimension('particle', None)
-        # Create netcdf variables
-        time = nc.createVariable('time', 'f', ('time',))
-        part = nc.createVariable('particle', 'i', ('particle',))
-        depth = nc.createVariable('depth', 'f', ('time','particle'))
-        lat = nc.createVariable('lat', 'f', ('time','particle'))
-        lon = nc.createVariable('lon', 'f', ('time','particle'))
-        salt = nc.createVariable('salt', 'f', ('time','particle'))
-        temp = nc.createVariable('temp', 'f', ('time','particle'))
-            
-        # Loop through locations in each particle,
-        # add to netcdf file
-        for j, particle in enumerate(self.particles):
-            part[j] = particle.uid
-            i = 0
-
-            normalized_locations = particle.noramlized_locations(self.datetimes)
-            noramlized_temps = particle.noramlized_temps(self.datetimes)
-            noramlized_salts = particle.noramlized_salts(self.datetimes)
-
-            if len(normalized_locations) != len(noramlized_temps):
-                logger.debug("No temperature being added to netcdf.")
-                # Create list of 'None' equal to the length of locations
-                noramlized_temps = [None] * len(normalized_locations)
-
-            if len(normalized_locations) != len(noramlized_salts):
-                logger.debug("No salinity being added to netcdf.")
-                # Create list of 'None' equal to the length of locations
-                noramlized_salts = [None] * len(normalized_locations)
-
-            for loc, _temp, _salt in zip(normalized_locations, noramlized_temps, noramlized_salts):
-
-                if j == 0:
-                    time[i] = netCDF4.date2num(loc.time, time_units)
-                depth[i, j] = loc.depth
-                lat[i, j] = loc.latitude
-                lon[i, j] = loc.longitude
-                salt[i, j] = _salt
-                temp[i, j] = _temp
-                i += 1
-        # Variable attributes
-        depth.coordinates = "time particle lat lon"
-        depth.standard_name = "depth_below_sea_surface"
-        depth.units = "m"
-        depth.POSITIVE = "up"
-        depth.positive = "up"
-        salt.coordinates = "time particle lat lon"
-        salt.standard_name = "sea_water_salinity"
-        salt.units = "psu"
-        temp.coordinates = "time particle lat lon"
-        temp.standard_name = "sea_water_temperature"
-        temp.units = "degrees_C"
-        time.units = time_units
-        time.standard_name = "time"
-        lat.units = "degrees_north"
-        lon.units = "degrees_east"
-        part.cf_role = "trajectory_id"
-        
-        # Global attributes
-        nc.featureType = "trajectory"
-        nc.summary = str(self)
-        for key in kwargs:
-            nc.__setattr__(key, kwargs.get(key))
-        #nc.cdm_dataset_type = "trajectory"
-        nc.sync()
-        nc.close()
-                
-            
-        
-        
-        
-        
-
-        
+        if format == "trackline" or format[-4:] == "trkl":
+            ex.Trackline.export(folder=folder_path, particles=self.particles, datetimes=self.datetimes)
+        elif format == "shape" or format == "shapefile" or format[-3:] == "shp":
+            ex.Shapefile.export(folder=folder_path, particles=self.particles, datetimes=self.datetimes)
+        elif format == "netcdf" or format[-2:] == "nc":
+            ex.NetCDF.export(folder=folder_path, particles=self.particles, datetimes=self.datetimes, summary=str(self))

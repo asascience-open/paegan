@@ -39,7 +39,7 @@ class ModelControllerTest(unittest.TestCase):
         output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/transport")
         shutil.rmtree(output_path, ignore_errors=True)
         os.makedirs(output_path)
-        output_formats = ['.shp','.nc','.trkl']
+        output_formats = ['Shapefile','NetCDF','Trackline']
 
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
 
@@ -113,7 +113,7 @@ class ModelControllerTest(unittest.TestCase):
         output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/behaviors")
         shutil.rmtree(output_path, ignore_errors=True)
         os.makedirs(output_path)
-        output_formats = ['.shp','.nc','.trkl']
+        output_formats = ['Shapefile','NetCDF','Trackline']
 
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
 
