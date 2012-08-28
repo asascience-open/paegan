@@ -204,6 +204,9 @@ class ModelController(object):
         logger = multiprocessing.get_logger()
         logger.addHandler(NullHandler())
 
+        # Add ModelController description to logfile
+        logger.info(self)
+
         logger.debug('Setting up particle start locations')
         point_locations = []
         if isinstance(self.geometry, Point):
