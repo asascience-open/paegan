@@ -813,9 +813,9 @@ class ForceParticle(object):
                 pass
                 
             # Get the variable data required by the models
-            if self.method == 'nearest':
-                u, v, w, temp, salt = self.data_nearest(i)
-            elif self.method == 'interp': 
+            if self.time_method == 'nearest':
+                u, v, w, temp, salt = self.data_nearest(i, timevar, newtimes[loop_i])
+            elif self.time_method == 'interp': 
                 u, v, w, temp, salt = self.data_interp(i, timevar, newtimes[loop_i])
             else:
                 logger.warn("Method for computing u,v,w,temp,salt not supported!")
