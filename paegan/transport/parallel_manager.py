@@ -205,6 +205,9 @@ class DataController(object):
         modelTimestep, newtimes = AsaTransport.get_time_objects_from_model_timesteps(self.times, start=self.start_time)
 
         timevar = self.dataset.gettimevar(self.uname)
+
+        # Don't need to grab the last datetime, as it is not needed for forcing, only
+        # for setting the time of the final particle forcing
         time_indexs = timevar.nearest_index(newtimes[0:-1], select='before')
         
         # Have to make sure that we get the plus 1 for the
@@ -793,15 +796,24 @@ class ForceParticle(object):
 
         # Figure out indices corresponding to timesteps
         timevar = remote.gettimevar(self.uname)
-        if self.method == 'interp':
-            time_indexs = timevar.nearest_index(newtimes[0:-1], select='before')
-        elif self.method == 'nearest':
-            time_indexs = timevar.nearest_index(newtimes[0:-1])
+        if self.time_method == 'interp':
+            time_indexs = timevar.nearest_index(newtimes, select='before')
+        elif self.time_method == 'nearest':
+            time_indexs = timevar.nearest_index(newtimes)
         else:
             logger.warn("Method for computing u,v,w,temp,salt not supported!")
 
+        # There should be one more datetime object, sicne we need
+        # to set the particles to that datetime AFTER querying for data
+        # and forcing the particle with that data.
+        try:
+            assert len(newtimes) == len(time_indexs)
+        except AssertionError:
+            logger.error("Time indexes are messed up. Need to have equal datetime and time indexes")
+            raise
+
         # loop over timesteps   
-        for loop_i, i in enumerate(time_indexs):
+        for loop_i, i in enumerate(time_indexs[0:-1]):
 
             newloc = None
             
