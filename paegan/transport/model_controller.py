@@ -62,6 +62,7 @@ class ModelController(object):
         self._particles = []
         self._time_chunk = kwargs.get('time_chunk', 10)
         self._horiz_chunk = kwargs.get('horiz_chunk', 4)
+        self.time_method = kwargs.get('time_method', 'interp')
 
         # The model timesteps in datetime objects
         self.datetimes = []
@@ -174,7 +175,8 @@ class ModelController(object):
                 "\nnpart: " + str(self.npart) +\
                 "\nmodels: " + str(self.models) +\
                 "\nuse_bathymetry: " + str(self.use_bathymetry) +\
-                "\nuse_shoreline: " + str(self.use_shoreline)
+                "\nuse_shoreline: " + str(self.use_shoreline) + \
+                "\ntime_method: " + str(self.time_method)
 
     def run(self, hydrodataset, **kwargs):
 
@@ -277,7 +279,8 @@ class ModelController(object):
                                             particle_get,
                                             point_get,
                                             request_lock,
-                                            cache=self.cache_path))
+                                            cache=self.cache_path,
+                                            time_method=self.time_method))
         [tasks.put(None) for i in xrange(nproc)]
 
         # Wait for all tasks to finish

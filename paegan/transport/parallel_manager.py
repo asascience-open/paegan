@@ -477,7 +477,7 @@ class ForceParticle(object):
     def __init__(self, part, remotehydro, times, start_time, models, 
                  release_location_centroid, usebathy, useshore, usesurface,
                  get_data, n_run, updating, particle_get,
-                 point_get, request_lock, cache=None, method='interp'):
+                 point_get, request_lock, cache=None, time_method=None):
         """
             This is the task/class/object/job that forces an
             individual particle and communicates with the 
@@ -502,7 +502,10 @@ class ForceParticle(object):
         self.particle_get = particle_get
         self.point_get = point_get
         self.request_lock = request_lock
-        self.method = method
+
+        if time_method is None:
+            time_method = 'interp'
+        self.time_method = time_method
         
         
     def get_variablenames_for_model(self, dataset):
