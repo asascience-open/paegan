@@ -604,12 +604,23 @@ class ForceParticle(object):
                 indices = self.dataset.get_indices('u', timeinds=[np.asarray([i-1])], point=self.part.location )
                 self.dataset.closenc()
                 # Override the time
-                self.point_get.value = [indices[0]+2, indices[-2], indices[-1]]
+
+                # get the current time index data
+                self.point_get.value = [indices[0] + 1, indices[-2], indices[-1]]
                 # Request that the data controller update the cache
                 self.get_data.value = True
                 # Wait until the data controller is done
                 while self.get_data.value == True:
                     pass 
+
+                # get the next time index data
+                self.point_get.value = [indices[0] + 2, indices[-2], indices[-1]]
+                # Request that the data controller update the cache
+                self.get_data.value = True
+                # Wait until the data controller is done
+                while self.get_data.value == True:
+                    pass
+
             self.request_lock.release()
                
         # Announce that someone is getting data from the local
@@ -803,16 +814,16 @@ class ForceParticle(object):
         else:
             logger.warn("Method for computing u,v,w,temp,salt not supported!")
 
-        # There should be one more datetime object, sicne we need
-        # to set the particles to that datetime AFTER querying for data
-        # and forcing the particle with that data.
         try:
             assert len(newtimes) == len(time_indexs)
         except AssertionError:
             logger.error("Time indexes are messed up. Need to have equal datetime and time indexes")
             raise
 
-        # loop over timesteps   
+        # loop over timesteps
+        # We don't loop over the last time_index because
+        # we need to query in the time_index and set the particle's
+        # location as the 'newtime' object.
         for loop_i, i in enumerate(time_indexs[0:-1]):
 
             newloc = None
