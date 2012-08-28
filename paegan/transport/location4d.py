@@ -77,3 +77,7 @@ class Location4D(object):
                 "\nlongitude: " + str(self.longitude) + \
                 "\ndepth: " + str(self.depth) + \
                 "\ntime: " + str(self.time)
+
+    def __eq__(self, other):
+        return (isinstance(other, self.__class__)
+            and self.__dict__ == other.__dict__)

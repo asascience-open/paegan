@@ -123,13 +123,13 @@ class Particle(object):
                     clean_locs.append(loc)
             except:
                 clean_locs.append(loc)
-                
+
         if len(clean_locs) == len(model_timesteps):
-           return (ind for ind,loc in enumerate(clean_locs))
+           return (ind for ind,loc in enumerate(self.locations) if loc in clean_locs)
         elif len(model_timesteps) < len(clean_locs):
             # We have at least one internal timestep for this particle
             # Pull out the matching location indexes
-            indexes = [ind for ind,loc in enumerate(clean_locs) if loc.time in model_timesteps]
+            indexes = [ind for ind,loc in enumerate(self.locations) if loc in clean_locs]
             if len(model_timesteps) == len(indexes):
                 return indexes
             raise ValueError("Can't normalize")           

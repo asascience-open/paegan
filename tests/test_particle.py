@@ -1,6 +1,8 @@
 import unittest
 from paegan.transport.particles.particle import Particle, LarvaParticle
 from paegan.transport.location4d import Location4D
+from datetime import datetime, timedelta
+import pytz
 
 class ParticleTest(unittest.TestCase):
 
@@ -37,6 +39,26 @@ class ParticleTest(unittest.TestCase):
         self.p.age(days=1)
         assert self.p.get_age(units='hours') == 48
         assert self.p.get_age() == 2
+
+    def test_normalization(self):
+        p = Particle()
+
+        dt = datetime(2012, 8, 15, 0, tzinfo=pytz.utc)
+        norms =[dt]
+
+        last_real_movement = Location4D(latitude=38, longitude=-76, depth=0, time=dt)
+
+        p.location = Location4D(latitude=100, longitude=-100, depth=0, time=dt)
+        p.location = Location4D(latitude=101, longitude=-101, depth=0, time=dt)
+        p.location = last_real_movement
+
+        for x in xrange(1,10):
+            norm = (dt + timedelta(hours=x)).replace(tzinfo=pytz.utc)
+            norms.append(norm)
+            p.location = Location4D(latitude=38 + x, longitude=-76 + x, depth=x, time=norm)
+            
+        locs = p.noramlized_locations(norms)
+        assert locs[0] == last_real_movement
 
 class LarvaParticleTest(unittest.TestCase):
 
