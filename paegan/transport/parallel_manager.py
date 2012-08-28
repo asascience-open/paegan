@@ -205,7 +205,7 @@ class DataController(object):
         modelTimestep, newtimes = AsaTransport.get_time_objects_from_model_timesteps(self.times, start=self.start_time)
 
         timevar = self.dataset.gettimevar(self.uname)
-        time_indexs = timevar.nearest_index(newtimes, select='before')
+        time_indexs = timevar.nearest_index(newtimes[0:-1], select='before')
         
         # Have to make sure that we get the plus 1 for the
         # linear interpolation of u,v,w,temp,salt
@@ -758,6 +758,10 @@ class ForceParticle(object):
             return u,v,w, None, None
         
     def __call__(self, proc):
+
+        logger = multiprocessing.get_logger()
+        logger.addHandler(NullHandler())
+
         if self.usebathy == True:
             self._bathymetry = Bathymetry(point=self.release_location_centroid)
         else:
@@ -776,7 +780,7 @@ class ForceParticle(object):
         # close the related netcdf file
         self.dataset = CommonDataset(self.localpath)
         self.dataset.closenc()
-        
+
         # Calculate datetime at every timestep
         modelTimestep, newtimes = AsaTransport.get_time_objects_from_model_timesteps(self.times, start=self.start_time)
 
@@ -787,15 +791,11 @@ class ForceParticle(object):
         # Figure out indices corresponding to timesteps
         timevar = remote.gettimevar(self.uname)
         if self.method == 'interp':
-            time_indexs = timevar.nearest_index(newtimes, select='before')
+            time_indexs = timevar.nearest_index(newtimes[0:-1], select='before')
         elif self.method == 'nearest':
-            time_indexs = timevar.nearest_index(newtimes)
+            time_indexs = timevar.nearest_index(newtimes[0:-1])
         else:
             logger.warn("Method for computing u,v,w,temp,salt not supported!")
-        array_indexs = time_indexs - time_indexs[0]
- 
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
 
         # loop over timesteps   
         for loop_i, i in enumerate(time_indexs):
@@ -825,9 +825,9 @@ class ForceParticle(object):
             # loop over models - sort these in the order you want them to run
             for model in models:
                 movement = model.move(part, u, v, w, modelTimestep[loop_i], temperature=temp, salinity=salt)
-                newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtimes[loop_i])
-                logger.info("Particle %d moved %d meters (horizontally) by %s at %s" % (part.uid,movement['distance'], model.__class__.__name__, newtimes[loop_i].isoformat()))
-                logger.info("Particle %d moved %d meters (vertically) by %s at %s" % (part.uid,movement['vertical_distance'], model.__class__.__name__, newtimes[loop_i].isoformat()))
+                newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtimes[loop_i+1])
+                logger.info("Particle %d moved %d meters (horizontally) by %s with data from %s and recorded at %s" % (part.uid,movement['distance'], model.__class__.__name__, newtimes[loop_i].isoformat(), newtimes[loop_i+1].isoformat()))
+                logger.info("Particle %d moved %d meters (vertically) by %s with data from %s and recorded at %s" % (part.uid,movement['vertical_distance'], model.__class__.__name__, newtimes[loop_i].isoformat(), newtimes[loop_i+1].isoformat()))
                 if newloc:
                     self.boundary_interaction(self._bathymetry, self._shoreline, self.usebathy,self.useshore,self.usesurface,
                         particle=part, starting=part.location, ending=newloc,

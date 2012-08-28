@@ -182,6 +182,8 @@ class ModelController(object):
             raise TypeError("must provide a start time to run the models")
 
         # Calculate the model timesteps
+        # We need times = len(self._nstep) + 1 since data is stored one timestep
+        # after a particle is forced with the final timestep's data.
         times = range(0,(self._step*self._nstep)+1,self._step)
         # Calculate a datetime object for each model timestep
         # This method is duplicated in DataContoller and ForceParticle
