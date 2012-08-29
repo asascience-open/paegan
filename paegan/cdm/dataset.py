@@ -179,7 +179,12 @@ class Dataset:
     def opennc(self):
         self.nc = netCDF4.Dataset(self._filename)
         self.metadata = self.nc.__dict__
-        
+    
+    def gettimestep(self, var=None):
+        assert var in self.nc.variables
+        time = self.gettimevar(var)
+        return time.timestep
+    
     def gettimebounds(self, var=None, **kwargs):
         assert var in self.nc.variables
         time = self.gettimevar(var)

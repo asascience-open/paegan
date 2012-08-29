@@ -67,6 +67,9 @@ class Timevar(np.ndarray):
 
         return data.view(self)
     
+    def gettimestep(self):
+        return self.seconds[1] - self.seconds[0]
+    
     def nearest_index(self, dateo, select='nearest'):
         to = pylab.date2num(dateo)
         if select == 'nearest':
@@ -120,3 +123,4 @@ class Timevar(np.ndarray):
     hours = property(get_hours, None, doc="hours")
     days = property(get_days, None, doc="days")
     dates = property(get_dates, None, doc="datetime objects")
+    timestep = property(gettimestep, None)
