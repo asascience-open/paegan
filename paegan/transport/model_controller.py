@@ -229,6 +229,9 @@ class ModelController(object):
         # many workers then pass particles into the queue for the workers
         mgr = multiprocessing.Manager()
         nproc = multiprocessing.cpu_count()
+        if nproc <= 1:
+            raise ValueError("Model does not run using less than two CPU cores")
+
         request_lock = mgr.Lock()
         nproc_lock = mgr.Lock()
         
