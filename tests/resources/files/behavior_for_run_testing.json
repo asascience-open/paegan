@@ -20,7 +20,8 @@
       "linear_b": null, 
       "notes": "", 
       "linear_a": null, 
-      "duration": 1, 
+      "duration": 1,
+      "settlement": null,
       "capability": {
         "nonswim_turning": "random", 
         "variance": 0.0, 
@@ -69,7 +70,8 @@
       "linear_b": null, 
       "notes": "", 
       "linear_a": null, 
-      "duration": 2, 
+      "duration": 2,
+      "settlement": null,
       "capability": {
         "nonswim_turning": "random", 
         "variance": 0.005, 
@@ -112,6 +114,17 @@
           "units": "PSU"
         }
       ]
+    },
+    {
+      "name": "third (settlement)", 
+      "linear_b": null, 
+      "notes": "", 
+      "linear_a": null, 
+      "duration": 2,
+      "settlement": null,
+      "capability": null,
+      "diel": [], 
+      "taxis": []
     }
   ]
 }
