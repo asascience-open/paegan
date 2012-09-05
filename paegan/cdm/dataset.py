@@ -209,8 +209,8 @@ class Dataset:
         
     def getboundingpolygon(self, var=None, **kwargs):
         assert var in self.nc.variables
-        bbox = self.getbbox(var)
-        pass
+        # TODO: This should return a bounding polygon of the dataset
+        return self.getbbox(var)
         
     def _checkcache(self, var):
         assert var in self.nc.variables
