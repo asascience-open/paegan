@@ -245,9 +245,10 @@ class ModelController(object):
         updating = mgr.Value('bool', False)
         particle_get = mgr.Value('bool', False)
         point_get = mgr.Value('list', [0, 0, 0])
+        active = mgr.Value('bool', True)
         
         # Create workers
-        procs = [ parallel.Consumer(tasks, results, n_run, nproc_lock)
+        procs = [ parallel.Consumer(tasks, results, n_run, nproc_lock, active)
                   for i in xrange(nproc) ]
         
         # Start workers

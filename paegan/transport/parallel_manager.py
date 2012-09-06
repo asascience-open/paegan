@@ -20,7 +20,7 @@ import traceback
 import pylab
 
 class Consumer(multiprocessing.Process):
-    def __init__(self, task_queue, result_queue, n_run, lock):
+    def __init__(self, task_queue, result_queue, n_run, lock, active):
         """
             This is the process class that does all the handling of queued tasks
         """
@@ -29,6 +29,7 @@ class Consumer(multiprocessing.Process):
         self.result_queue = result_queue
         self.n_run = n_run
         self.lock = lock
+        self.active = active
         #lock.acquire()
         #self.n_run.value = self.n_run.value + 1
         #lock.release()
@@ -37,7 +38,7 @@ class Consumer(multiprocessing.Process):
         logger = multiprocessing.get_logger()
         logger.addHandler(NullHandler())
         proc_name = self.name
-        while True:
+        while self.active.value:
             next_task = self.task_queue.get()
             if next_task is None:
                 # Poison pill means shutdown
@@ -48,13 +49,14 @@ class Consumer(multiprocessing.Process):
                 self.task_queue.task_done()
                 break
             try:
-                answer = next_task(proc_name)
+                answer = next_task(proc_name, self.active)
             except Exception as detail:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 logger.error("Disabling Error: " +\
                              repr(traceback.format_exception(exc_type, exc_value,
-                                          exc_traceback)))
+                                          exc_traceback)))                    
                 answer = -1
+                self.active.value = False
             self.task_queue.task_done()
             self.result_queue.put(answer)
         return
@@ -86,7 +88,6 @@ class DataController(object):
         self.times = times
         self.start = start
 
-    
     def get_variablenames_for_model(self):
         getname = self.dataset.get_varname_from_stdname
         self.uname = getname('eastward_sea_water_velocity') 
@@ -190,12 +191,13 @@ class DataController(object):
 
     def __call__(self, proc):
         c = 0
+        
         self.dataset = CommonDataset(self.url)
         self.proc = proc
         self.get_variablenames_for_model()
         self.remote = self.dataset.nc
         cachepath = self.cache_path
-        
+
         logger = multiprocessing.get_logger()
         logger.addHandler(NullHandler())
         
@@ -466,7 +468,7 @@ class DataController(object):
                     self.updating.value = False
                     self.get_data.value = False
             else:
-                pass
+                pass        
         return
             
         
@@ -480,7 +482,8 @@ class ForceParticle(object):
     def __init__(self, part, remotehydro, times, start_time, models, 
                  release_location_centroid, usebathy, useshore, usesurface,
                  get_data, n_run, updating, particle_get,
-                 point_get, request_lock, cache=None, time_method=None):
+                 point_get, request_lock, 
+                 cache=None, time_method=None):
         """
             This is the task/class/object/job that forces an
             individual particle and communicates with the 
@@ -590,8 +593,9 @@ class ForceParticle(object):
             Uses linear interpolation bewtween timesteps to
             get u,v,w,temp,salt
         """
-        while self.get_data.value == True:
-            pass
+        if active.value == True:
+            while self.get_data.value == True:
+                pass
         #print self.proc, "done waiting"
         if self.need_data(i+1):
             #print self.proc, "yes i do need data"
@@ -610,16 +614,18 @@ class ForceParticle(object):
                 # Request that the data controller update the cache
                 self.get_data.value = True
                 # Wait until the data controller is done
-                while self.get_data.value == True:
-                    pass 
+                if active.value == True:
+                    while self.get_data.value == True:
+                        pass 
 
                 # get the next time index data
                 self.point_get.value = [indices[0] + 2, indices[-2], indices[-1]]
                 # Request that the data controller update the cache
                 self.get_data.value = True
                 # Wait until the data controller is done
-                while self.get_data.value == True:
-                    pass
+                if active.value == True:
+                    while self.get_data.value == True:
+                        pass
 
             self.request_lock.release()
                
@@ -700,8 +706,9 @@ class ForceParticle(object):
             Method to streamline request for data from cache,
             Uses nearest time to get u,v,w,temp,salt
         """
-        while self.get_data.value == True:
-            pass
+        if active.value == True:
+            while self.get_data.value == True:
+                pass
         #print self.proc, "done waiting"
         if self.need_data(i):
             #print self.proc, "yes i do need data"
@@ -718,8 +725,9 @@ class ForceParticle(object):
                 # Request that the data controller update the cache
                 self.get_data.value = True
                 # Wait until the data controller is done
-                while self.get_data.value == True:
-                    pass 
+                if active.value == True:
+                    while self.get_data.value == True:
+                        pass 
             self.request_lock.release()
                
         # Announce that someone is getting data from the local
@@ -774,8 +782,7 @@ class ForceParticle(object):
         else:
             return u,v,w, None, None
         
-    def __call__(self, proc):
-
+    def __call__(self, proc, active):
         logger = multiprocessing.get_logger()
         logger.addHandler(NullHandler())
 
@@ -791,8 +798,9 @@ class ForceParticle(object):
         part = self.part
         models = self.models
         
-        while self.get_data.value == True:
-            pass
+        if active.value == True:
+            while self.get_data.value == True:
+                pass
         # Initialize commondataset of local cache, then
         # close the related netcdf file
         self.dataset = CommonDataset(self.localpath)
@@ -832,8 +840,9 @@ class ForceParticle(object):
             # dataset = CommonDataset(".cache/localcache.nc")
             
             # if need a time that is outside of what we have:e
-            while self.get_data.value == True:
-                pass
+            if active.value == True:
+                while self.get_data.value == True:
+                    pass
                 
             # Get the variable data required by the models
             if self.time_method == 'nearest':
@@ -862,6 +871,7 @@ class ForceParticle(object):
                         distance=movement['distance'], angle=movement['angle'], 
                         azimuth=movement['azimuth'], reverse_azimuth=movement['reverse_azimuth'], 
                         vertical_distance=movement['vertical_distance'], vertical_angle=movement['vertical_angle'])
+        
         return part
     
     def boundary_interaction(self, bathy, shore, usebathy, useshore, usesurface,
