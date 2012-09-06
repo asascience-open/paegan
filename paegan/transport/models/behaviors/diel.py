@@ -114,6 +114,11 @@ class Diel(BaseModel):
     time = property(get_time, set_time)
 
     def move(self, particle, u, v, z, modelTimestep, **kwargs):
+
+        # If the particle is settled, don't move it anywhere
+        if particle.settled:
+            return { 'u': 0, 'v': 0, 'z': 0 }
+
         """
             This only works if min is less than max.
             No checks are done here, so it should be done before

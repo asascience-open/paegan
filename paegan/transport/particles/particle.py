@@ -8,6 +8,7 @@ class Particle(object):
         self._locations = []
         self._age = 0. # Age in days
         self._id = kwargs.get("id", -1)
+        self._halted = False
 
     def get_id(self):
         return self._id
@@ -30,6 +31,20 @@ class Particle(object):
         This can happen if they hit a shoreline, etc.
         """
         pass
+
+    def proceed(self):
+        """
+        Unhalt the movement of this particle.
+        """
+        self._halted = False
+    def halt(self):
+        """
+        Halt the movement of this particle.
+        """
+        self._halted = True
+    def get_halted(self):
+        return self._halted
+    halted = property(get_halted, None)
 
     def set_active(self, active):
         self._active = active
@@ -148,6 +163,7 @@ class LarvaParticle(Particle):
         self.lifestage_progress = 0.
         self._temp = []
         self._salt = []
+        self._settled = False
 
     def set_temp(self, temp):
         self._temp.append(temp)
@@ -172,6 +188,16 @@ class LarvaParticle(Particle):
     def get_lifestage_index(self):
         return int(self.lifestage_progress)
     lifestage_index = property(get_lifestage_index, None)
+
+    def settle(self):
+        self._settled = True
+        self.halt()
+    def unsettle(self):
+        self._settled = False
+        self.proceed()
+    def get_settled(self):
+        return self._settled
+    settled = property(get_settled, None)
 
     def noramlized_temps(self, model_timesteps):
         return [t for i,t in enumerate(self.temps) if i in self.normalized_indexes(model_timesteps)]

@@ -1,4 +1,5 @@
 from shapely.geometry import Point
+from copy import deepcopy
 
 class Location4D(object):
     """
@@ -7,6 +8,8 @@ class Location4D(object):
 
     def __init__(self, **kwargs):
         """ Mandatory named arguments:
+            * location (Location4d Object)
+            OR
             * point (Shapely Point Object)
             OR 
             * latitude (DD)
@@ -16,18 +19,24 @@ class Location4D(object):
             * depth (meters)
             * time (DateTime Object)
         """
-
-        if "point" in kwargs:
+        if "location" in kwargs:
+            loc = kwargs.pop('location')
+            self.latitude = deepcopy(loc.latitude)
+            self.longitude = deepcopy(loc.longitude)
+            self.depth = deepcopy(loc.depth)
+            self.time = deepcopy(loc.time)
+        elif "point" in kwargs:
             self.point = kwargs.pop('point')
+            self.time = kwargs.pop('time', None) 
         elif "latitude" and "longitude" in kwargs:
             self.latitude = kwargs.pop('latitude')
             self.longitude = kwargs.pop('longitude')
             self.depth = kwargs.pop('depth', None)
+            self.time = kwargs.pop('time', None) 
         else:
-            raise TypeError( "must provide a point geometry object or latitude and longitude" )
+            raise TypeError( "must provide a location4d object, a point geometry object, or a latitude and longitude" )
 
         self._dirty = True
-        self.time = kwargs.pop('time', None) 
 
     def set_point(self, point):
         self._point = point

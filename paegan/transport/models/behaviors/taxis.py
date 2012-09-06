@@ -52,6 +52,11 @@ class Taxis(BaseModel):
     units = property(get_units, set_units)
 
     def move(self, particle, u, v, z, modelTimestep, **kwargs):
+
+        # If the particle is settled, don't move it anywhere
+        if particle.settled:
+            return { 'u': 0, 'v': 0, 'z': 0 }
+        
         z = 0
         u = 0
         v = 0

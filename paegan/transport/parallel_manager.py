@@ -779,14 +779,14 @@ class ForceParticle(object):
         logger = multiprocessing.get_logger()
         logger.addHandler(NullHandler())
 
+        self._bathymetry = None
         if self.usebathy == True:
             self._bathymetry = Bathymetry(point=self.release_location_centroid)
-        else:
-            self._bathymetry = None
+        
+        self._shoreline = None  
         if self.useshore == True:
             self._shoreline = Shoreline(point=self.release_location_centroid)
-        else:
-            self._shoreline = None
+            
         self.proc = proc
         part = self.part
         models = self.models
@@ -848,9 +848,12 @@ class ForceParticle(object):
             part.age(seconds=modelTimestep[loop_i])
             logger.debug("Aged particle by %d seconds" % modelTimestep[loop_i])
 
+            if part.halted:
+                logger.info("Particle %s is halted." % part.uid)
+
             # loop over models - sort these in the order you want them to run
             for model in models:
-                movement = model.move(part, u, v, w, modelTimestep[loop_i], temperature=temp, salinity=salt)
+                movement = model.move(part, u, v, w, modelTimestep[loop_i], temperature=temp, salinity=salt, bathymetry=self._bathymetry)
                 newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtimes[loop_i+1])
                 logger.info("Particle %d moved %d meters (horizontally) and %d meters (vertically) by %s with data from %s and recorded at %s" % (part.uid,movement['distance'], movement['vertical_distance'], model.__class__.__name__, newtimes[loop_i].isoformat(), newtimes[loop_i+1].isoformat()))
                 if newloc:

@@ -25,13 +25,16 @@ class Bathymetry():
             returns bool
         """
         end_point = kwargs.pop('end_point')
-        depth = np.mean(np.mean(self._nc.get_values(self._bathy_name, point=end_point)))
+        depth = self.get_depth(location=end_point)
         if depth > end_point.depth:
             inter = True
         else:
             inter = False
         return inter
         
+    def get_depth(self, location):
+        return np.mean(np.mean(self._nc.get_values(self._bathy_name, point=location)))
+
     def react(self, **kwargs):
     
         if self._type == 'hover':

@@ -1,6 +1,8 @@
 import json
 from paegan.transport.models.base_model import BaseModel
 from paegan.transport.models.behaviors.lifestage import LifeStage
+import multiprocessing
+from paegan.logging.null_handler import NullHandler
 
 class LarvaBehavior(BaseModel):
 
@@ -22,4 +24,8 @@ class LarvaBehavior(BaseModel):
 
     def move(self, particle, u, v, z, modelTimestep, **kwargs):
         # Only run that lifestage model that corresponds to the particles growth progress
+        logger = multiprocessing.get_logger()
+        logger.addHandler(NullHandler())
+        logger.info("Particle %s at lifestage %i" % (particle.uid, particle.lifestage_index))
+
         return self.lifestages[particle.lifestage_index].move(particle, u, v, z, modelTimestep, **kwargs)
