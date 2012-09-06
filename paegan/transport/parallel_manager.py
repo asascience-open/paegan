@@ -189,7 +189,7 @@ class DataController(object):
                 else:
                     local[inds[0]:inds[-1]+1, y:y_1, x:x_1] = remote[inds[0]:inds[-1]+1, y:y_1, x:x_1]
 
-    def __call__(self, proc):
+    def __call__(self, proc, active):
         c = 0
         
         self.dataset = CommonDataset(self.url)
@@ -593,7 +593,7 @@ class ForceParticle(object):
             Uses linear interpolation bewtween timesteps to
             get u,v,w,temp,salt
         """
-        if active.value == True:
+        if self.active.value == True:
             while self.get_data.value == True:
                 pass
         #print self.proc, "done waiting"
@@ -614,7 +614,7 @@ class ForceParticle(object):
                 # Request that the data controller update the cache
                 self.get_data.value = True
                 # Wait until the data controller is done
-                if active.value == True:
+                if self.active.value == True:
                     while self.get_data.value == True:
                         pass 
 
@@ -623,7 +623,7 @@ class ForceParticle(object):
                 # Request that the data controller update the cache
                 self.get_data.value = True
                 # Wait until the data controller is done
-                if active.value == True:
+                if self.active.value == True:
                     while self.get_data.value == True:
                         pass
 
@@ -706,7 +706,7 @@ class ForceParticle(object):
             Method to streamline request for data from cache,
             Uses nearest time to get u,v,w,temp,salt
         """
-        if active.value == True:
+        if self.active.value == True:
             while self.get_data.value == True:
                 pass
         #print self.proc, "done waiting"
@@ -725,7 +725,7 @@ class ForceParticle(object):
                 # Request that the data controller update the cache
                 self.get_data.value = True
                 # Wait until the data controller is done
-                if active.value == True:
+                if self.active.value == True:
                     while self.get_data.value == True:
                         pass 
             self.request_lock.release()
@@ -786,6 +786,8 @@ class ForceParticle(object):
         logger = multiprocessing.get_logger()
         logger.addHandler(NullHandler())
 
+        self.active = active
+
         self._bathymetry = None
         if self.usebathy == True:
             self._bathymetry = Bathymetry(point=self.release_location_centroid)
@@ -798,11 +800,12 @@ class ForceParticle(object):
         part = self.part
         models = self.models
         
-        if active.value == True:
+        if self.active.value == True:
             while self.get_data.value == True:
                 pass
         # Initialize commondataset of local cache, then
         # close the related netcdf file
+
         self.dataset = CommonDataset(self.localpath)
         self.dataset.closenc()
 
@@ -840,7 +843,7 @@ class ForceParticle(object):
             # dataset = CommonDataset(".cache/localcache.nc")
             
             # if need a time that is outside of what we have:e
-            if active.value == True:
+            if self.active.value == True:
                 while self.get_data.value == True:
                     pass
                 
