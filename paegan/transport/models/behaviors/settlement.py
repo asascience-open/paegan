@@ -57,10 +57,11 @@ class Settlement(object):
 
     def move(self, particle, u, v, z, modelTimestep, **kwargs):
 
-        if self._bathymetry is None:
+        bathy = kwargs.pop("bathymetry", None)
+        if bathy is None:
             return { 'u': 0, 'v': 0, 'z': 0 }
 
-        depth = self._bathymetry.get_depth(location=particle.location)
+        depth = bathy.get_depth(location=particle.location)
         u,v,z = self.attempt(particle, depth)
 
         return { 'u': u, 'v': v, 'z': z }
