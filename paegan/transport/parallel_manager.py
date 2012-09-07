@@ -805,9 +805,12 @@ class ForceParticle(object):
                 pass
         # Initialize commondataset of local cache, then
         # close the related netcdf file
-
-        self.dataset = CommonDataset(self.localpath)
-        self.dataset.closenc()
+        try:
+            self.dataset = CommonDataset(self.localpath)
+            self.dataset.closenc()
+        except:
+            logger.warn("%s not found!" % self.localpath)
+            raise ValueError("%s not found!" % self.localpath)
 
         # Calculate datetime at every timestep
         modelTimestep, newtimes = AsaTransport.get_time_objects_from_model_timesteps(self.times, start=self.start_time)
