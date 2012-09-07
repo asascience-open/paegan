@@ -1,3 +1,26 @@
+0.8.9 - 2012-09-07
+===================
+fixing alex's inability to run the tests.  comments #29
+Merge remote branch 'origin/larva_alex'
+Implement Settlement, fixes #27
+first stab at paegan issue #29
+Merge remote branch 'origin/larva_alex'
+Return something from getboundingpolygon
+Add settlement
+Add check for CPU count
+changes to cdm for issue #26
+Merge remote branch 'origin/larva_alex'
+Fix the interp caching so we don't add spaces to the cache file
+Don't subset the time_indexes until looping
+Simplify the log messages when forcing particles
+Fix bug when using 'nearest' time_method
+Make the time_method configuration on ModelController
+Get the time indexes right for forcing and saving particle locations.
+Fix normalization of indexes on particle class.
+changes to timevar so you can find the indices of nearest without a list or array
+Move export functions to their own file and to classmethods
+fixes to cdm
+
 0.8.8 - 2012-08-24
 ===================
 Fix the timevar tests
