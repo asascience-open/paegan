@@ -1,8 +1,10 @@
-import sys, os, bisect, netCDF4
+import sys, os, bisect, netCDF4, math
 import numpy as np
 try:
     from osgeo import gdal
+    from osgeo import osr
 except:
+    import osr
     import gdal
 
 def compute_probability(trajectory_files, bbox=None, 
@@ -24,30 +26,36 @@ def compute_probability(trajectory_files, bbox=None,
         prob = np.zeros((ny, nx))
         for runfile in trajectory_files:
             run = netCDF4.Dataset(runfile)
-            lat = run.variables['lat'][:]
-            lon = run.variables['lon'][:]
-            column_i = bisect.bisect(xarray, lon).flatten()
-            row_i = bisect.bisect(yarray, lat).flatten()
-            for i in row_i:
-                for j in column_i:
-                    prob[i, j] += 1
+            lat = run.variables['lat'][:].flatten()
+            lon = run.variables['lon'][:].flatten()
+            column_i, row_i = [], []
+            for clon, clat in zip(lon, lat):
+                column_i.append(bisect.bisect(xarray, clon))
+                row_i.append(bisect.bisect(yarray, clat))
+                try:
+                    prob[row_i[-1], column_i[-1]] += 1
+                except:
+                    pass
         shape = lat.shape
-        prob = prob / (shape[0] * shape[1] * len(trajectory_files)) # Assumes same # of particles
-                                                                    # for every run, may be bad
-                                                                    # assumtion
+        prob = prob / (shape[0] * len(trajectory_files)) # Assumes same # of particles
+                                                         # for every run, may be bad
+                                                         # assumtion
     elif method=='run':
         prob = []
         for i, runfile in enumerate(trajectory_files):
             prob.append(np.zeros((ny, nx)))
             run = netCDF4.Dataset(runfile)
-            lat = run.variables['lat'][:]
-            lon = run.variables['lon'][:]
-            column_i = bisect.bisect(xarray, lon).flatten()
-            row_i = bisect.bisect(yarray, lat).flatten()
-            for i in row_i:
-                for j in column_i:
-                    if prob[i][i, j] == 0:
-                        prob[i][i, j] += 1
+            lat = run.variables['lat'][:].flatten()
+            lon = run.variables['lon'][:].flatten()
+            column_i, row_i = [], []
+            for clon, clat in zip(lon, lat):
+                column_i.append(bisect.bisect(xarray, clon))
+                row_i.append(bisect.bisect(yarray, clat))
+                try:
+                    if prob[i][row_i[-1], column_i[-1]] == 0:
+                        prob[i][row_i[-1], column_i[-1]] = 1
+                except:
+                    pass
         prob2 = np.zeros((ny, nx))
         for run in prob:
             prob2 = run + prob2
@@ -65,13 +73,24 @@ def export_probability(outputname, **kwargs):
                            nx = 1000, ny = 1000,
                            method = 'overall')  
     """
-    prob = compute_probability(**kwargs)
+    bbox = kwargs.get('bbox', None)
+    nx, ny = kwargs.get('nx', None), kwargs.get('ny', None)
+    if bbox == None:
+        raise ValueError('Must supply bbox keyword argument.')
+    if nx == None or ny == None:
+        raise ValueError('Must supply nx and ny keyword arguments.')
     
+    prob = compute_probability(**kwargs)
+
+    xres = (float(bbox[2]) - float(bbox[0])) / float(nx)
+    yres = (float(bbox[3]) - float(bbox[1])) / float(ny)
     tiff = gdal.GetDriverByName('GTiff')
-    rasterout = tiff.Create(outputname + '.tif', kwargs.get('nx'), 
-                            kwargs.get('ny'), 1, gdal.GDAL_Float32)
-    raster_xfrm = []
-    rasterout.SetGepTransform(raster_xfrm)
-    rasterout.SetProjection(r'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
-    rasterout.GetRasterBand(1).WriteArray(prob)
+    rasterout = tiff.Create(outputname + '.tif', nx, 
+                            ny, 1, gdal.GDT_Float32)
+    raster_xfrm = [float(bbox[0]), xres, 0.0, float(bbox[3]), 0.0, -yres]
+    rasterout.SetGeoTransform(raster_xfrm)
+    srs = osr.SpatialReference()
+    srs.SetWellKnownGeogCS( 'WGS84' )
+    rasterout.SetProjection( srs.ExportToWkt() )
+    rasterout.GetRasterBand(1).WriteArray(prob[::-1, :])
     
