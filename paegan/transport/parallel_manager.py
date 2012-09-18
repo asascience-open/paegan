@@ -13,7 +13,7 @@ from multiprocessing import Value
 import multiprocessing, logging
 from paegan.logging.null_handler import NullHandler
 from paegan.cdm.dataset import CommonDataset
-import os, sys
+import os, sys, time
 import random
 import math
 import traceback
@@ -816,11 +816,18 @@ class ForceParticle(object):
         modelTimestep, newtimes = AsaTransport.get_time_objects_from_model_timesteps(self.times, start=self.start_time)
 
         # Get variable names for parameters required by model
-        remote = CommonDataset(self.remotehydropath)
+        remote = None
+        while remote == None:
+            try:
+                remote = CommonDataset(self.remotehydropath)
+            except:
+                logger.warn("Problem opening remote dataset, trying again...")
+                time.sleep(30)
         self.get_variablenames_for_model(remote)
 
         # Figure out indices corresponding to timesteps
         timevar = remote.gettimevar(self.uname)
+        
         if self.time_method == 'interp':
             time_indexs = timevar.nearest_index(newtimes, select='before')
         elif self.time_method == 'nearest':
@@ -877,7 +884,7 @@ class ForceParticle(object):
                         distance=movement['distance'], angle=movement['angle'], 
                         azimuth=movement['azimuth'], reverse_azimuth=movement['reverse_azimuth'], 
                         vertical_distance=movement['vertical_distance'], vertical_angle=movement['vertical_angle'])
-        
+        remote = None
         return part
     
     def boundary_interaction(self, bathy, shore, usebathy, useshore, usesurface,
