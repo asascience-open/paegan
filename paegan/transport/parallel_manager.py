@@ -813,6 +813,8 @@ class ForceParticle(object):
         self._shoreline = None  
         if self.useshore == True:
             self._shoreline = Shoreline(point=self.release_location_centroid)
+            # Make sure we are not starting on land.  Raises exception if we are.
+            self._shoreline.intersect(start_point=self.release_location_centroid, end_point=self.release_location_centroid)
             
         self.proc = proc
         part = self.part
