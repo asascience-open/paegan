@@ -716,6 +716,8 @@ class ForceParticle(object):
             Method to streamline request for data from cache,
             Uses nearest time to get u,v,w,temp,salt
         """
+        logger = multiprocessing.get_logger()
+        logger.addHandler(NullHandler())
         if self.active.value == True:
             while self.get_data.value == True:
                 pass
