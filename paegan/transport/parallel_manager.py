@@ -54,7 +54,7 @@ class Consumer(multiprocessing.Process):
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 logger.error("Disabling Error: " +\
                              repr(traceback.format_exception(exc_type, exc_value,
-                                          exc_traceback)))                    
+                                          exc_traceback)))
                 answer = -1
                 self.active.value = False
             self.task_queue.task_done()
@@ -560,9 +560,10 @@ class ForceParticle(object):
             the particle needs
         """
         self.particle_get.value = True
-        self.dataset.opennc()
-        # Test if the cache has the data we need
+        
         try:
+            self.dataset.opennc()
+            # Test if the cache has the data we need
             # If the point we request contains fill values, 
             # we need data
             if type(np.mean(np.mean(self.dataset.get_values('domain', timeinds=[np.asarray([i])], point=self.part.location )))) == np.ma.core.MaskedArray:
@@ -572,9 +573,10 @@ class ForceParticle(object):
         except:
             # If the time index doesnt even exist, we need
             need = True
-        self.dataset.closenc()
-        self.particle_get.value = False
-        #print self.proc, need
+        finally:
+            self.dataset.closenc()
+            self.particle_get.value = False
+
         return need # return true if need data or false if dont
         
     def linterp(self, setx, sety, x):
@@ -631,71 +633,79 @@ class ForceParticle(object):
                
         # Announce that someone is getting data from the local
         self.particle_get.value = True
-        # Open netcdf file on disk from commondataset
-        self.dataset.opennc()
-        # Grab data at time index closest to particle location
-        u = [np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location ))),
-             np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i+1])], point=self.part.location )))]
-        v = [np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location ))),
-             np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i+1])], point=self.part.location )))]
-        # if there is vertical velocity inthe dataset, get it
-        if 'w' in self.dataset.nc.variables:
-            w = [np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location ))),
-                np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i+1])], point=self.part.location )))]
-        else:
-            w = [0.0, 0.0]
-        # If there is salt and temp in the dataset, get it
-        if self.temp_name != None and self.salt_name != None:
-            temp = [np.mean(np.mean(self.dataset.get_values('temp', timeinds=[np.asarray([i])], point=self.part.location ))),
-                    np.mean(np.mean(self.dataset.get_values('temp', timeinds=[np.asarray([i+1])], point=self.part.location )))]
-            salt = [np.mean(np.mean(self.dataset.get_values('salt', timeinds=[np.asarray([i])], point=self.part.location ))),
-                    np.mean(np.mean(self.dataset.get_values('salt', timeinds=[np.asarray([i+1])], point=self.part.location )))]
         
-        # Check for nans that occur in the ocean (happens because
-        # of model and coastline resolution mismatches)
-        if np.isnan(u).any() or np.isnan(v).any() or np.isnan(w).any():
-            # Take the mean of the closest 4 points
-            # If this includes nan which it will, result is nan
-            uarray1 = self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=2)
-            varray1 = self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=2)
-            uarray2 = self.dataset.get_values('u', timeinds=[np.asarray([i+1])], point=self.part.location, num=2)
-            varray2 = self.dataset.get_values('v', timeinds=[np.asarray([i+1])], point=self.part.location, num=2)
+        try:
+            # Open netcdf file on disk from commondataset
+            self.dataset.opennc()
+
+            # Grab data at time index closest to particle location
+            u = [np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location ))),
+                 np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i+1])], point=self.part.location )))]
+            v = [np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location ))),
+                 np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i+1])], point=self.part.location )))]
+            # if there is vertical velocity inthe dataset, get it
             if 'w' in self.dataset.nc.variables:
-                warray1 = self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location, num=2)
-                warray2 = self.dataset.get_values('w', timeinds=[np.asarray([i+1])], point=self.part.location, num=2)
-                w = [warray1.mean(), warray2.mean()]
+                w = [np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location ))),
+                    np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i+1])], point=self.part.location )))]
             else:
                 w = [0.0, 0.0]
-                
+            # If there is salt and temp in the dataset, get it
             if self.temp_name != None and self.salt_name != None:
-                temparray1 = self.dataset.get_values('temp', timeinds=[np.asarray([i])], point=self.part.location, num=2)
-                saltarray1 = self.dataset.get_values('salt', timeinds=[np.asarray([i])], point=self.part.location, num=2)
-                temparray2 = self.dataset.get_values('temp', timeinds=[np.asarray([i+1])], point=self.part.location, num=2)
-                saltarray2 = self.dataset.get_values('salt', timeinds=[np.asarray([i+1])], point=self.part.location, num=2)
-                temp = [temparray1.mean(), temparray2.mean()]
-                salt = [saltarray1.mean(), saltarray2.mean()]
-            u = [uarray1.mean(), uarray2.mean()]
-            v = [varray1.mean(), varray2.mean()]             
-        
-        # Linear interp of data between timesteps
-        currenttime = pylab.date2num(currenttime)
-        timevar = timevar.jd
-        u = self.linterp(timevar[i:i+2], u, currenttime)
-        v = self.linterp(timevar[i:i+2], v, currenttime)
-        w = self.linterp(timevar[i:i+2], w, currenttime)
-        if self.temp_name != None and self.salt_name != None:
-            temp = self.linterp(timevar[i:i+2], temp, currenttime)
-            salt = self.linterp(timevar[i:i+2], salt, currenttime)
-        
-        # If the final data results are nan, set velocities to zero
-        # TODO: need to validate this implementation
-        if np.isnan(u) or np.isnan(v) or np.isnan(w):
-            u, v, w = 0.0, 0.0, 0.0
-        elif math.isnan(u) or math.isnan(v) or math.isnan(w):
-            u, v, w = 0.0, 0.0, 0.0
+                temp = [np.mean(np.mean(self.dataset.get_values('temp', timeinds=[np.asarray([i])], point=self.part.location ))),
+                        np.mean(np.mean(self.dataset.get_values('temp', timeinds=[np.asarray([i+1])], point=self.part.location )))]
+                salt = [np.mean(np.mean(self.dataset.get_values('salt', timeinds=[np.asarray([i])], point=self.part.location ))),
+                        np.mean(np.mean(self.dataset.get_values('salt', timeinds=[np.asarray([i+1])], point=self.part.location )))]
+            
+            # Check for nans that occur in the ocean (happens because
+            # of model and coastline resolution mismatches)
+            if np.isnan(u).any() or np.isnan(v).any() or np.isnan(w).any():
+                # Take the mean of the closest 4 points
+                # If this includes nan which it will, result is nan
+                uarray1 = self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=2)
+                varray1 = self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=2)
+                uarray2 = self.dataset.get_values('u', timeinds=[np.asarray([i+1])], point=self.part.location, num=2)
+                varray2 = self.dataset.get_values('v', timeinds=[np.asarray([i+1])], point=self.part.location, num=2)
+                if 'w' in self.dataset.nc.variables:
+                    warray1 = self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location, num=2)
+                    warray2 = self.dataset.get_values('w', timeinds=[np.asarray([i+1])], point=self.part.location, num=2)
+                    w = [warray1.mean(), warray2.mean()]
+                else:
+                    w = [0.0, 0.0]
+                    
+                if self.temp_name != None and self.salt_name != None:
+                    temparray1 = self.dataset.get_values('temp', timeinds=[np.asarray([i])], point=self.part.location, num=2)
+                    saltarray1 = self.dataset.get_values('salt', timeinds=[np.asarray([i])], point=self.part.location, num=2)
+                    temparray2 = self.dataset.get_values('temp', timeinds=[np.asarray([i+1])], point=self.part.location, num=2)
+                    saltarray2 = self.dataset.get_values('salt', timeinds=[np.asarray([i+1])], point=self.part.location, num=2)
+                    temp = [temparray1.mean(), temparray2.mean()]
+                    salt = [saltarray1.mean(), saltarray2.mean()]
+                u = [uarray1.mean(), uarray2.mean()]
+                v = [varray1.mean(), varray2.mean()]             
+            
+            # Linear interp of data between timesteps
+            currenttime = pylab.date2num(currenttime)
+            timevar = timevar.jd
+            u = self.linterp(timevar[i:i+2], u, currenttime)
+            v = self.linterp(timevar[i:i+2], v, currenttime)
+            w = self.linterp(timevar[i:i+2], w, currenttime)
+            if self.temp_name != None and self.salt_name != None:
+                temp = self.linterp(timevar[i:i+2], temp, currenttime)
+                salt = self.linterp(timevar[i:i+2], salt, currenttime)
+            
+            # If the final data results are nan, set velocities to zero
+            # TODO: need to validate this implementation
+            if np.isnan(u) or np.isnan(v) or np.isnan(w):
+                u, v, w = 0.0, 0.0, 0.0
+            elif math.isnan(u) or math.isnan(v) or math.isnan(w):
+                u, v, w = 0.0, 0.0, 0.0
 
-        self.dataset.closenc()
-        self.particle_get.value = False
+        except:
+            logger.error("Error in data_interp method on ForceParticle")
+            raise
+        finally:
+            self.dataset.closenc()
+            self.particle_get.value = False
+
         if self.temp_name != None and self.salt_name != None:
             return u, v, w, temp, salt
         else:
@@ -732,51 +742,59 @@ class ForceParticle(object):
                
         # Announce that someone is getting data from the local
         self.particle_get.value = True
-        # Open netcdf file on disk from commondataset
-        self.dataset.opennc()
-        # Grab data at time index closest to particle location
-        u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )))
-        v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )))
-        # if there is vertical velocity inthe dataset, get it
-        if 'w' in self.dataset.nc.variables:
-            w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
-        else:
-            w = 0.0
-        # If there is salt and temp in the dataset, get it
-        if self.temp_name != None and self.salt_name != None:
-            temp = np.mean(np.mean(self.dataset.get_values('temp', timeinds=[np.asarray([i])], point=self.part.location )))
-            salt = np.mean(np.mean(self.dataset.get_values('salt', timeinds=[np.asarray([i])], point=self.part.location )))
-        
-        # Check for nans that occur in the ocean (happens because
-        # of model and coastline resolution mismatches)
-        if np.isnan(u).any() or np.isnan(v).any() or np.isnan(w).any():
-            # Take the mean of the closest 4 points
-            # If this includes nan which it will, result is nan
-            uarray1 = self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=2)
-            varray1 = self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=2)
+
+        try:
+            # Open netcdf file on disk from commondataset
+            self.dataset.opennc()
+
+            # Grab data at time index closest to particle location
+            u = np.mean(np.mean(self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location )))
+            v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )))
+            # if there is vertical velocity inthe dataset, get it
             if 'w' in self.dataset.nc.variables:
-                warray1 = self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location, num=2)
-                w = warray1.mean()
+                w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
             else:
                 w = 0.0
-                
+            # If there is salt and temp in the dataset, get it
             if self.temp_name != None and self.salt_name != None:
-                temparray1 = self.dataset.get_values('temp', timeinds=[np.asarray([i])], point=self.part.location, num=2)
-                saltarray1 = self.dataset.get_values('salt', timeinds=[np.asarray([i])], point=self.part.location, num=2)
-                temp = temparray1.mean()
-                salt = saltarray1.mean()
-            u = uarray1.mean()
-            v = varray1.mean()             
-        
-        # If the final data results are nan, set velocities to zero
-        # TODO: need to validate this implementation
-        if np.isnan(u) or np.isnan(v) or np.isnan(w):
-            u, v, w = 0.0, 0.0, 0.0
-        elif math.isnan(u) or math.isnan(v) or math.isnan(w):
-            u, v, w = 0.0, 0.0, 0.0
+                temp = np.mean(np.mean(self.dataset.get_values('temp', timeinds=[np.asarray([i])], point=self.part.location )))
+                salt = np.mean(np.mean(self.dataset.get_values('salt', timeinds=[np.asarray([i])], point=self.part.location )))
+            
+            # Check for nans that occur in the ocean (happens because
+            # of model and coastline resolution mismatches)
+            if np.isnan(u).any() or np.isnan(v).any() or np.isnan(w).any():
+                # Take the mean of the closest 4 points
+                # If this includes nan which it will, result is nan
+                uarray1 = self.dataset.get_values('u', timeinds=[np.asarray([i])], point=self.part.location, num=2)
+                varray1 = self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location, num=2)
+                if 'w' in self.dataset.nc.variables:
+                    warray1 = self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location, num=2)
+                    w = warray1.mean()
+                else:
+                    w = 0.0
+                    
+                if self.temp_name != None and self.salt_name != None:
+                    temparray1 = self.dataset.get_values('temp', timeinds=[np.asarray([i])], point=self.part.location, num=2)
+                    saltarray1 = self.dataset.get_values('salt', timeinds=[np.asarray([i])], point=self.part.location, num=2)
+                    temp = temparray1.mean()
+                    salt = saltarray1.mean()
+                u = uarray1.mean()
+                v = varray1.mean()             
+            
+            # If the final data results are nan, set velocities to zero
+            # TODO: need to validate this implementation
+            if np.isnan(u) or np.isnan(v) or np.isnan(w):
+                u, v, w = 0.0, 0.0, 0.0
+            elif math.isnan(u) or math.isnan(v) or math.isnan(w):
+                u, v, w = 0.0, 0.0, 0.0
 
-        self.dataset.closenc()
-        self.particle_get.value = False
+        except:
+            logger.error("Error in data_nearest on ForceParticle")
+            raise
+        finally:
+            self.dataset.closenc()
+            self.particle_get.value = False
+
         if self.temp_name != None and self.salt_name != None:
             return u, v, w, temp, salt
         else:
