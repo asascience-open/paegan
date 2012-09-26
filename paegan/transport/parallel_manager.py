@@ -20,7 +20,7 @@ import traceback
 import pylab
 
 class Consumer(multiprocessing.Process):
-    def __init__(self, task_queue, result_queue, n_run, lock, active):
+    def __init__(self, task_queue, result_queue, n_run, lock, active, get_data):
         """
             This is the process class that does all the handling of queued tasks
         """
@@ -30,6 +30,7 @@ class Consumer(multiprocessing.Process):
         self.n_run = n_run
         self.lock = lock
         self.active = active
+        self.get_data = get_data
         #lock.acquire()
         #self.n_run.value = self.n_run.value + 1
         #lock.release()
@@ -57,6 +58,7 @@ class Consumer(multiprocessing.Process):
                                           exc_traceback)))                    
                 answer = -1
                 self.active.value = False
+                self.get_data.value = False
             self.task_queue.task_done()
             self.result_queue.put(answer)
         return
