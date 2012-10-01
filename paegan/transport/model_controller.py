@@ -248,7 +248,7 @@ class ModelController(object):
         active = mgr.Value('bool', True)
         
         # Create workers
-        procs = [ parallel.Consumer(tasks, results, n_run, nproc_lock, active)
+        procs = [ parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data)
                   for i in xrange(nproc) ]
         
         # Start workers
