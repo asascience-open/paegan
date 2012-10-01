@@ -1,5 +1,4 @@
 import unittest
-import time
 import numpy as np
 import netCDF4
 from paegan.transport.models.transport import Transport
@@ -13,7 +12,8 @@ from multiprocessing import Value
 import multiprocessing, logging
 from paegan.logging.null_handler import NullHandler
 from paegan.cdm.dataset import CommonDataset
-import os, sys, time
+import os, sys
+import time as timer
 import random
 import math
 import traceback
@@ -223,7 +223,7 @@ class DataController(object):
         # stay alive, if not break
         while self.n_run.value > 1:
             logger.debug("Particles are still running, waiting for them to request data...")
-            time.sleep(1)
+            timer.sleep(1)
             # If particle asks for data, do the following
             if self.get_data.value == True:
                 logger.debug("Particle asked for data!")
@@ -240,7 +240,7 @@ class DataController(object):
                         # Wait for particles to get out
                         while self.particle_get == True:
                             logger.debug("Waiting for particles to get out...")
-                            time.sleep(1)
+                            timer.sleep(1)
                             pass
                         
                         logger.debug("All particles are out of file, updating...")
@@ -426,7 +426,7 @@ class DataController(object):
                         # poorly implemented)
                         while self.particle_get == True:
                             logger.debug("Waiting for particles to get out...")
-                            time.sleep(1)
+                            timer.sleep(1)
                             pass
                             
                         logger.debug("All particles are out of file, updating...")
@@ -865,7 +865,7 @@ class ForceParticle(object):
                 remote = CommonDataset(self.remotehydropath)
             except:
                 logger.warn("Problem opening remote dataset, trying again...")
-                time.sleep(30)
+                timer.sleep(30)
         self.get_variablenames_for_model(remote)
 
         # Figure out indices corresponding to timesteps
