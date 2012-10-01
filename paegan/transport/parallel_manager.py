@@ -222,13 +222,13 @@ class DataController(object):
         # While there is at least 1 particle still running, 
         # stay alive, if not break
         while self.n_run.value > 1:
-            logger.debug("Particles are still running, waiting for them to request data...")
+            logger.info("Particles are still running, waiting for them to request data...")
             timer.sleep(1)
             # If particle asks for data, do the following
             if self.get_data.value == True:
-                logger.debug("Particle asked for data!")
+                logger.info("Particle asked for data!")
                 if c == 0:
-                    logger.debug("Creating cache file (first request)")
+                    logger.info("Creating cache file (first request)")
                     try:
                         indices = self.dataset.get_indices(self.uname, timeinds=[np.asarray([0])], point=self.start)
                         self.point_get.value = [self.inds[0], indices[-2], indices[-1]]
@@ -239,11 +239,11 @@ class DataController(object):
                         
                         # Wait for particles to get out
                         while self.particle_get == True:
-                            logger.debug("Waiting for particles to get out...")
+                            logger.info("Waiting for particles to get out...")
                             timer.sleep(1)
                             pass
                         
-                        logger.debug("All particles are out of file, updating...")
+                        logger.info("All particles are out of file, updating...")
                         # Open local cache for writing, overwrites
                         # existing file with same name
                         self.local = netCDF4.Dataset(cachepath, 'w')
@@ -413,23 +413,23 @@ class DataController(object):
                         logger.error("DataController failed to get data (first request)")
                         raise
                     finally:
-                        logger.debug("Done updating, closing file and releasing locks")
+                        logger.info("Done updating, closing file and releasing locks")
                         self.local.sync()
                         self.local.close()
                         self.updating.value = False
                         self.get_data.value = False
                 else:
-                    logger.debug("Appending to cache file")
+                    logger.info("Appending to cache file")
                     try:
                         self.updating.value = True
                         # Wait for particles to get out (this is
                         # poorly implemented)
                         while self.particle_get == True:
-                            logger.debug("Waiting for particles to get out...")
+                            logger.info("Waiting for particles to get out...")
                             timer.sleep(1)
                             pass
                             
-                        logger.debug("All particles are out of file, updating...")
+                        logger.info("All particles are out of file, updating...")
                         # Open local cache dataset for appending
                         self.local = netCDF4.Dataset(cachepath, 'a')
                         
@@ -483,7 +483,7 @@ class DataController(object):
                         logger.error("DataController failed to get data (not first request)")
                         raise
                     finally:
-                        logger.debug("Done updating, closing file and releasing locks")
+                        logger.info("Done updating, closing file and releasing locks")
                         self.local.sync()
                         self.local.close()
                         self.updating.value = False
@@ -911,7 +911,7 @@ class ForceParticle(object):
             # Age the particle by the modelTimestep (seconds)
             # 'Age' meaning the amount of time it has been forced.
             part.age(seconds=modelTimestep[loop_i])
-            logger.debug("Aged particle by %d seconds" % modelTimestep[loop_i])
+            logger.info("Aged particle by %d seconds" % modelTimestep[loop_i])
 
             if part.halted:
                 logger.info("Particle %s is halted." % part.uid)
