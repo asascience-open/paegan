@@ -62,9 +62,9 @@ class EasyLogger(object):
     def __init__(self, logpath):
         self.logpath = logpath
         self.logger = multiprocessing.get_logger()
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.DEBUG)
         handler = MultiProcessingLogHandler(logpath)
-        handler.setLevel(logging.INFO)
+        handler.setLevel(logging.DEBUG)
         formatter = logging.Formatter('[%(asctime)s] - %(levelname)s - %(name)s - %(processName)s - %(message)s')
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
