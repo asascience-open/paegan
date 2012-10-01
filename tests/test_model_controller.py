@@ -20,8 +20,17 @@ from paegan.logging.multi_process_logging import MultiProcessingLogHandler, Easy
 
 
 class ModelControllerTest(unittest.TestCase):
+
+    def setUp(self):
+        self.log = EasyLogger('testlog.txt')
+
+    def tearDown(self):
+        self.log.close()
+
     def test_run_individual_particles(self):
-        print "lat / lon"
+        self.log.logger.info("**************************************")
+        self.log.logger.info("Running: test_run_individual_particles")
+
         # Set the start position and time for the models
         start_lat = 60.75
         start_lon = -147
@@ -44,7 +53,9 @@ class ModelControllerTest(unittest.TestCase):
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
 
     def test_run_from_point(self):
-        print "point"
+        self.log.logger.info("**************************************")
+        self.log.logger.info("Running: test_run_from_point")
+
         # Set the start position and time for the models
         start_lat = 60.75
         start_lon = -147
@@ -64,8 +75,10 @@ class ModelControllerTest(unittest.TestCase):
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
 
     def test_run_from_polygon(self):
+        self.log.logger.info("**************************************")
+        self.log.logger.info("Running: test_run_from_polygon")
+
         # Set the start position and time for the models
-        print "polygon"
         start_lat = 60.75
         start_lon = -147
         start_depth = 10
@@ -84,8 +97,10 @@ class ModelControllerTest(unittest.TestCase):
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
 
     def test_behaviors_interp(self):
+        self.log.logger.info("**************************************")
+        self.log.logger.info("Running: test_behaviors_interp")
+
         # Set the start position and time for the models
-        print "behavior"
         start_lat = 60.75
         start_lon = -147
         start_depth = 0
@@ -102,9 +117,6 @@ class ModelControllerTest(unittest.TestCase):
         models.append(lb)
 
         start_time = datetime(2012, 8, 1, 00)
-
-        log = EasyLogger('testlog.txt')
-        log.logger.info('From Test')
 
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=10, horiz_chunk=2)
@@ -116,12 +128,13 @@ class ModelControllerTest(unittest.TestCase):
         output_formats = ['Shapefile','NetCDF','Trackline']
 
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
-
-        log.close()
+        
 
     def test_behaviors_nearest(self):
+        self.log.logger.info("**************************************")
+        self.log.logger.info("Running: test_behaviors_nearest")
+
         # Set the start position and time for the models
-        print "behavior"
         start_lat = 60.75
         start_lon = -147
         start_depth = 0
@@ -138,10 +151,7 @@ class ModelControllerTest(unittest.TestCase):
         models.append(lb)
 
         start_time = datetime(2012, 8, 1, 00)
-
-        log = EasyLogger('testlog.txt')
-        log.logger.info('From Test')
-
+        
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=10, horiz_chunk=2, time_method='nearest')
 
@@ -153,11 +163,11 @@ class ModelControllerTest(unittest.TestCase):
 
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
 
-        log.close()
-
     def test_start_on_land(self):
+        self.log.logger.debug("**************************************")
+        self.log.logger.debug("Running: test_start_on_land")
+
         # Set the start position and time for the models
-        print "on land"
         start_lat = 60.15551950079041
         start_lon = -148.1999130249019
         start_depth = 0
@@ -175,9 +185,6 @@ class ModelControllerTest(unittest.TestCase):
 
         start_time = datetime(2012, 8, 1, 00)
 
-        log = EasyLogger('testlog.txt')
-        log.logger.info('From Land')
-
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=10, horiz_chunk=2, time_method='nearest')
 
@@ -188,5 +195,3 @@ class ModelControllerTest(unittest.TestCase):
         output_formats = ['Shapefile','NetCDF','Trackline']
 
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
-
-        log.close()
