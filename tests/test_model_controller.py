@@ -154,3 +154,39 @@ class ModelControllerTest(unittest.TestCase):
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
 
         log.close()
+
+    def test_start_on_land(self):
+        # Set the start position and time for the models
+        print "on land"
+        start_lat = 60.15551950079041
+        start_lon = -148.1999130249019
+        start_depth = 0
+        num_particles = 4
+        time_step = 3600
+        num_steps = 10
+
+        models = []
+        models.append(Transport(horizDisp=0.05, vertDisp=0.0003))
+
+        behavior_config = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/behavior_for_run_testing.json"))).read()
+        lb = LarvaBehavior(json=behavior_config)
+        
+        models.append(lb)
+
+        start_time = datetime(2012, 8, 1, 00)
+
+        log = EasyLogger('testlog.txt')
+        log.logger.info('From Land')
+
+        model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
+            time_chunk=10, horiz_chunk=2, time_method='nearest')
+
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache")
+        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/behaviors")
+        shutil.rmtree(output_path, ignore_errors=True)
+        os.makedirs(output_path)
+        output_formats = ['Shapefile','NetCDF','Trackline']
+
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
+
+        log.close()
