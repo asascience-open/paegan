@@ -15,7 +15,8 @@ class PyTest(Command):
         errno = subprocess.call([sys.executable, 'runtests.py'])
         raise SystemExit(errno)
 
-setup(name              = "paegan",
+setup(namespace_packages = ['paegan'],
+    name                = "paegan",
     version             = "0.9.0",
     description         = "Processing and Analysis for Numerical Data",
     long_description    = readme,
