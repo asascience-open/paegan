@@ -31,9 +31,6 @@ class Consumer(multiprocessing.Process):
         self.lock = lock
         self.active = active
         self.get_data = get_data
-        #lock.acquire()
-        #self.n_run.value = self.n_run.value + 1
-        #lock.release()
         
     def run(self):
         logger = multiprocessing.get_logger()
@@ -41,26 +38,27 @@ class Consumer(multiprocessing.Process):
         proc_name = self.name
         while self.active.value:
             next_task = self.task_queue.get()
+
             if next_task is None:
-                # Poison pill means shutdown
-                #print '%s: Exiting' % proc_name
-                self.lock.acquire()
-                self.n_run.value = self.n_run.value - 1
-                self.lock.release()
-                self.task_queue.task_done()
-                break
-            try:
-                answer = next_task(proc_name, self.active)
-            except Exception as detail:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                logger.error("Disabling Error: " +\
-                             repr(traceback.format_exception(exc_type, exc_value,
-                                          exc_traceback)))
-                answer = -1
+                # There are no tasks left to process, kill this process
                 self.active.value = False
-                self.get_data.value = False
-            self.task_queue.task_done()
-            self.result_queue.put(answer)
+            else:
+                try:
+                    answer = next_task(proc_name, self.active)
+                except Exception as detail:
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    logger.error("Disabling Error: " +\
+                                 repr(traceback.format_exception(exc_type, exc_value,
+                                              exc_traceback)))
+                    answer = -1
+                finally:
+                    self.result_queue.put(answer)
+
+            self.lock.acquire()
+            self.n_run.value = self.n_run.value - 1
+            self.lock.release()
+            
+        self.task_queue.task_done()
         return
 
 class DataController(object):
@@ -222,13 +220,13 @@ class DataController(object):
         # While there is at least 1 particle still running, 
         # stay alive, if not break
         while self.n_run.value > 1:
-            logger.info("Particles are still running, waiting for them to request data...")
-            timer.sleep(1)
+            logger.debug("Particles are still running, waiting for them to request data...")
+            timer.sleep(2)
             # If particle asks for data, do the following
             if self.get_data.value == True:
                 logger.info("Particle asked for data!")
                 if c == 0:
-                    logger.info("Creating cache file (first request)")
+                    logger.debug("Creating cache file (first request)")
                     try:
                         indices = self.dataset.get_indices(self.uname, timeinds=[np.asarray([0])], point=self.start)
                         self.point_get.value = [self.inds[0], indices[-2], indices[-1]]
@@ -419,17 +417,17 @@ class DataController(object):
                         self.updating.value = False
                         self.get_data.value = False
                 else:
-                    logger.info("Appending to cache file")
+                    logger.debug("Appending to existing cache file")
                     try:
                         self.updating.value = True
                         # Wait for particles to get out (this is
                         # poorly implemented)
                         while self.particle_get == True:
-                            logger.info("Waiting for particles to get out...")
+                            logger.debug("Waiting for particles to get out...")
                             timer.sleep(1)
                             pass
                             
-                        logger.info("All particles are out of file, updating...")
+                        logger.info("All particles are out of cache file, updating...")
                         # Open local cache dataset for appending
                         self.local = netCDF4.Dataset(cachepath, 'a')
                         
@@ -490,8 +488,9 @@ class DataController(object):
                         self.get_data.value = False
             else:
                 pass        
-        return
-            
+
+        return None
+
         
 class ForceParticle(object):
     from paegan.transport.shoreline import Shoreline

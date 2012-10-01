@@ -228,20 +228,28 @@ class ModelController(object):
         # Get the number of cores (may take some tuning) and create that
         # many workers then pass particles into the queue for the workers
         mgr = multiprocessing.Manager()
-        nproc = multiprocessing.cpu_count()
-        if nproc <= 1:
+        nproc = multiprocessing.cpu_count() - 1
+        if nproc <= 0:
             raise ValueError("Model does not run using less than two CPU cores")
+
+        # Each particle is a task, plus the DataController
+        number_of_tasks = len(self.particles) + 1
+
+        # We need a process for each particle and one for the data controller
+        nproc = min(number_of_tasks, nproc)
 
         request_lock = mgr.Lock()
         nproc_lock = mgr.Lock()
         
-        # Create the task and result queues
-        tasks = multiprocessing.JoinableQueue()
-        results = multiprocessing.Queue()
+        # Create the task queue for all of the particles and the DataController
+        tasks = multiprocessing.JoinableQueue(number_of_tasks)
+        # Create the result queue for all of the particles and the DataController
+        results = mgr.Queue(number_of_tasks)
         
         # Create the shared state objects
         get_data = mgr.Value('bool', True)
-        n_run = mgr.Value('int', nproc)
+        # Number of tasks
+        n_run = mgr.Value('int', number_of_tasks)
         updating = mgr.Value('bool', False)
         particle_get = mgr.Value('bool', False)
         point_get = mgr.Value('list', [0, 0, 0])
@@ -252,7 +260,7 @@ class ModelController(object):
                   for i in xrange(nproc) ]
         
         # Start workers
-        logger.debug('Starting workers')
+        logger.info('Starting %i workers' % len(procs))
         for w in procs:
             w.start()
         
@@ -262,6 +270,7 @@ class ModelController(object):
         
         # Add data controller to the queue first so that it 
         # can get the initial data and is not blocked
+        logger.info('Adding DataController as task')
         tasks.put(parallel.DataController(
                   hydrodataset, n_run, get_data, updating,
                   time_chunk, horiz_chunk, particle_get, times,
@@ -288,43 +297,79 @@ class ModelController(object):
                                             request_lock,
                                             cache=self.cache_path,
                                             time_method=self.time_method))
-        [tasks.put(None) for i in xrange(nproc)]
 
-        # Wait for all tasks to finish
-        tasks.join()
+        logger.info('Adding %i particles as tasks' % len(self.particles))
+        [tasks.put(None) for i in xrange(nproc)]
         
         # Get results back from queue, test for failed particles
-        for i,v in enumerate(self.particles):
+        return_particles = []
+        retrieved = 0
+        logger.info("Waiting for %i particle results" % len(self.particles))
+        while retrieved < len(self.particles):
             tempres = results.get()
-            self.particles[i] = tempres
-            # Don't save failed particles
-            while tempres == None or tempres == -1:
-                if tempres == -1:
-                    logger.warn('A particle failed!  Please check log file!')  
-                tempres = results.get()
-                self.particles[i] = tempres
+            if tempres == None or tempres == -1:
+                logger.info("Result not a particle")
+            else:
+                logger.info("Retrieving particle from result queue")
+                return_particles.append(tempres)
 
-        logger.debug('Workers complete')
+            retrieved += 1
+
+            logger.info("Retrieved %i results" % retrieved)
+        
+        if len(return_particles) != len(self.particles):
+            logger.warn("Some particles failed and are not included in the output")
+
+        self.particles = return_particles
+
+        # The Data Controller is still on the queue, remove that
+        logger.info("Waiting for DataController to finish")
+        dc = results.get()
+        logger.info("DataController finished")
+
+        # Ther results queue should be empty at this point
+        assert results.empty() is True
+
+        logger.info("Clearing extra tasks from task queue")
+        while True:
+            try:
+                tasks.task_done()
+            except:
+                logger.info("Queue clear")
+                break
+
+        # Should be good to join on the tasks now that the queue is empty
+        tasks.join()
+        
+        logger.info('Workers complete')
 
         # Remove the cache file
-        os.remove(self.cache_path)
+        try:
+            os.remove(self.cache_path)
+        except:
+            logger.info("Could not remove cache file, it probably never existed")
+            pass
 
-        # If output_formats and path specified,
-        # output particle run data to disk when completed
-        if "output_formats" in kwargs:
-            # Make sure output_path is also included
-            if kwargs.get("output_path", None) != None:
-                formats = kwargs.get("output_formats")
-                output_path = kwargs.get("output_path")
-                if isinstance(formats, list):
-                    for format in formats:
-                        self.export(output_path, format=format)
+
+        if len(self.particles) > 0:
+            # If output_formats and path specified,
+            # output particle run data to disk when completed
+            if "output_formats" in kwargs:
+                # Make sure output_path is also included
+                if kwargs.get("output_path", None) != None:
+                    formats = kwargs.get("output_formats")
+                    output_path = kwargs.get("output_path")
+                    if isinstance(formats, list):
+                        for format in formats:
+                            self.export(output_path, format=format)
+                    else:
+                        logger.warn('The output_formats parameter should be a list, not saving any output!')  
                 else:
-                    logger.warn('The output_formats parameter should be a list, not saving any output!')  
+                    logger.warn('No output path defined, not saving any output!')  
             else:
-                logger.warn('No output path defined, not saving any output!')  
+                logger.warn('No output format defined, not saving any output!')
         else:
-            logger.warn('No output format defined, not saving any output!')
+            logger.warn('No particles did anything, so not exporting anything')
     
     def export(self, folder_path, format=None):
         """
