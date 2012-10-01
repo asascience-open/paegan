@@ -1,3 +1,23 @@
+0.9.0 - 2012-10-01
+===================
+Improve the model_controller logging and spawning process.  fixes #33
+User INFO messages in parellel_manager, since a DEBUG logger hangs
+Avoid conflict in naming by importing time as timer.
+Manage an EasyLogger for testing in the setUp and tearDown methods
+Remove existing handlers when using the EasyLogger
+Apparently setting the logger level to logger.DEBUG hangs everything.
+Add test to start a run on land
+Add sleeping and debug messages. Set testing logger to DEBUG by default.
+Merge remote branch 'origin/larva_alex'
+when failing a consumer, change get_data.value to False so the remaining particles crash
+Wrap more functionality in a try/catch to avoid locking woes
+Add logger when needed...
+Test if we are dropped particles on land to start with.
+Always close nc files and set particle_get to False
+some fixes for large particles, asastochastic
+working stochastic
+initial commit of asastochastic.py for computing probability grids
+
 0.8.9 - 2012-09-07
 ===================
 fixing alex's inability to run the tests.  comments #29
