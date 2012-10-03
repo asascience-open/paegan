@@ -172,6 +172,11 @@ class ModelController(object):
 
     def run(self, hydrodataset, **kwargs):
 
+        logger = multiprocessing.get_logger()
+        logger.addHandler(NullHandler())
+        # Add ModelController description to logfile
+        logger.info(self)
+
         if self.start == None:
             raise TypeError("must provide a start time to run the models")
 
@@ -201,12 +206,6 @@ class ModelController(object):
             temp_name = AsaRandom.filename(prefix=str(datetime.now().microsecond), suffix=".nc")
             self.cache_path = os.path.join(default_cache_dir, temp_name)
         
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
-
-        # Add ModelController description to logfile
-        logger.info(self)
-
         logger.debug('Setting up particle start locations')
         point_locations = []
         if isinstance(self.geometry, Point):
