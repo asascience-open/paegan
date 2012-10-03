@@ -14,13 +14,6 @@ from paegan.external import shapefile as shp
 from shapely.geometry import mapping
 import json
 
-# Map2D
-import matplotlib
-import matplotlib.pyplot
-from matplotlib import cm
-from mpl_toolkits.mplot3d import Axes3D
-
-
 class Export(object):
     @classmethod
     def export(cls, **kwargs):
@@ -178,65 +171,3 @@ class NetCDF(Export):
         #nc.cdm_dataset_type = "trajectory"
         nc.sync()
         nc.close()
-
-class Map2D(Export):
-    @classmethod
-    def export(cls, folder, particles, midpoint):
-        fig = matplotlib.pyplot.figure(figsize=(20,16)) # call a blank figure
-        ax = fig.gca(projection='3d') # line with points
-        
-        tracks = []
-
-        #for x in range(len(arr)):
-        for particle in particles:
-            tracks.append(particle.linestring())
-            p_proj_lats = map(lambda la: la.latitude, particle.locations)
-            p_proj_lons = map(lambda lo: lo.longitude, particle.locations)
-            p_proj_depths = map(lambda dp: dp.depth, particle.locations)
-
-            ax.plot(p_proj_lons, p_proj_lats, p_proj_depths, marker='o', c='red') # particles
-
-        visual_bbox = (midpoint.x-1.5, midpoint-1.5, midpoint.x+1.5, midpoint.y+1.5)
-        coast_line = Shoreline(point=midpoint, spatialbuffer=1.5).linestring
-
-        c_lons, c_lats = coast_line.xy
-        c_lons = np.array(c_lons)
-        c_lats = np.array(c_lats)
-        c_lons = np.where((c_lons >= visual_bbox[0]) & (c_lons <= visual_bbox[2]), c_lons, np.nan)
-        c_lats = np.where((c_lats >= visual_bbox[1]) & (c_lats <= visual_bbox[3]), c_lats, np.nan)
-
-        #add bathymetry
-        nc1 = netCDF4.Dataset(os.path.normpath(os.path.join(__file__,"..","..","resources/bathymetry/ETOPO1_Bed_g_gmt4.grd")))
-        x = nc1.variables['x']
-        y = nc1.variables['y']
-
-        x_indexes = np.where((x[:] >= visual_bbox[0]) & (x[:] <= visual_bbox[2]))[0]
-        y_indexes = np.where((y[:] >= visual_bbox[1]) & (y[:] <= visual_bbox[3]))[0]
-
-        x_min = x_indexes[0] 
-        x_max = x_indexes[-1]
-        y_min = y_indexes[0]
-        y_max = y_indexes[-1]
-
-        lons = x[x_min:x_max]
-        lats = y[y_min:y_max]
-        bath = nc1.variables['z'][y_min:y_max,x_min:x_max]
-
-        x_grid, y_grid = np.meshgrid(lons, lats)
-
-        mpl_extent = matplotlib.transforms.Bbox.from_extents(visual_bbox[0],visual_bbox[1],visual_bbox[2],visual_bbox[3])
-        
-        ax.plot_surface(x_grid,y_grid,bath, rstride=1, cstride=1,
-            cmap="gist_earth", shade=True, linewidth=0, antialiased=False,
-            edgecolors=None) # bathymetry
-
-        ax.plot(c_lons, c_lats, clip_box=mpl_extent, clip_on=True, color='c') # shoreline
-        ax.set_xlim3d(visual_bbox[0],visual_bbox[2])
-        ax.set_ylim3d(visual_bbox[1],visual_bbox[3])
-        ax.set_zmargin(0.1)
-        ax.view_init(85, -90)
-        ax.set_xlabel('Longitude')
-        ax.set_ylabel('Latitude')
-        ax.set_zlabel('Depth (m)')
-        matplotlib.pyplot.show()
-        return fig

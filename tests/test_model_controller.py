@@ -2,9 +2,6 @@ import os
 import shutil
 import unittest
 import random
-import matplotlib
-import matplotlib.pyplot
-from mpl_toolkits.mplot3d import Axes3D
 import numpy
 from datetime import datetime, timedelta
 from paegan.transport.models.transport import Transport
