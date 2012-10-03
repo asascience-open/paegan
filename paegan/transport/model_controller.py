@@ -14,16 +14,8 @@ from multiprocessing import Value
 import multiprocessing
 import paegan.transport.parallel_manager as parallel
 import os
-import uuid 
 import paegan.transport.export as ex
 from paegan.logging.null_handler import NullHandler
-
-def unique_filename(prefix=None, suffix=None):
-    fn = []
-    if prefix: fn.extend([prefix, '-'])
-    fn.append(str(uuid.uuid4()))
-    if suffix: fn.extend(['.', suffix.lstrip('.')])
-    return ''.join(fn)
 
 class ModelController(object):
     """
