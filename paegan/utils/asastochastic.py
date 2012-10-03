@@ -30,10 +30,14 @@ def compute_probability(trajectory_files, bbox=None,
             lon = run.variables['lon'][:].flatten()
             column_i, row_i = [], []
             for clon, clat in zip(lon, lat):
-                column_i.append(bisect.bisect(xarray, clon))
-                row_i.append(bisect.bisect(yarray, clat))
+                column_i.append(bisect.bisect(xarray, clon)-1)
+                row_i.append(bisect.bisect(yarray, clat)-1)
+                column_i[-1] = max(column_i[-1], 0)
+                column_i[-1] = min(column_i[-1], len(xarray-2))
+                row_i[-1] = max(row_i[-1], 0)
+                row_i[-1] = min(row_i[-1], len(yarray-2))
                 try:
-                    prob[row_i[-1], column_i[-1]] += 1
+                    prob[row_i[-1], mcolumn_i[-1]] += 1
                 except:
                     pass
         shape = lat.shape
@@ -51,6 +55,12 @@ def compute_probability(trajectory_files, bbox=None,
             for clon, clat in zip(lon, lat):
                 column_i.append(bisect.bisect(xarray, clon))
                 row_i.append(bisect.bisect(yarray, clat))
+                column_i.append(bisect.bisect(xarray, clon)-1)
+                row_i.append(bisect.bisect(yarray, clat)-1)
+                column_i[-1] = max(column_i[-1], 0)
+                column_i[-1] = min(column_i[-1], len(xarray-2))
+                row_i[-1] = max(row_i[-1], 0)
+                row_i[-1] = min(row_i[-1], len(yarray-2))
                 try:
                     if prob[i][row_i[-1], column_i[-1]] == 0:
                         prob[i][row_i[-1], column_i[-1]] = 1
