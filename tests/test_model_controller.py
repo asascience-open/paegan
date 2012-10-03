@@ -41,7 +41,7 @@ class ModelControllerTest(unittest.TestCase):
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=2, horiz_chunk=2)
 
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache")
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_run_individual_particles.nc")
         output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/transport")
         shutil.rmtree(output_path, ignore_errors=True)
         os.makedirs(output_path)
@@ -68,7 +68,7 @@ class ModelControllerTest(unittest.TestCase):
         model = ModelController(geometry=p, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=2, horiz_chunk=2)
 
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache")
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_run_from_point.nc")
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
 
     def test_run_from_polygon(self):
@@ -90,7 +90,7 @@ class ModelControllerTest(unittest.TestCase):
         model = ModelController(geometry=poly, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=2, horiz_chunk=2)
 
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache")
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_run_from_polygon.nc")
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
 
     def test_behaviors_interp(self):
@@ -118,7 +118,7 @@ class ModelControllerTest(unittest.TestCase):
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=10, horiz_chunk=2)
 
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache")
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_behaviors_interp.nc")
         output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/behaviors")
         shutil.rmtree(output_path, ignore_errors=True)
         os.makedirs(output_path)
@@ -152,7 +152,7 @@ class ModelControllerTest(unittest.TestCase):
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=10, horiz_chunk=2, time_method='nearest')
 
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache")
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_behaviors_nearest.nc")
         output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/behaviors")
         shutil.rmtree(output_path, ignore_errors=True)
         os.makedirs(output_path)
@@ -185,7 +185,7 @@ class ModelControllerTest(unittest.TestCase):
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=10, horiz_chunk=2, time_method='nearest')
 
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache")
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_start_on_land.nc")
         output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/behaviors")
         shutil.rmtree(output_path, ignore_errors=True)
         os.makedirs(output_path)
