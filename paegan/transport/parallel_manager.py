@@ -74,7 +74,6 @@ class DataController(object):
         assert "cache" in kwargs
         self.cache_path = kwargs["cache"]
         self.url = url
-        #self.local = Dataset(".cache/localcache.nc", 'w')
         self.n_run = n_run
         self.get_data = get_data
         self.updating = updating
