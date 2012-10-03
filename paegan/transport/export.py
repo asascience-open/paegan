@@ -107,7 +107,7 @@ class NetCDF(Export):
         nc.createDimension('time', None)
         nc.createDimension('particle', None)
         # Create netcdf variables
-        time = nc.createVariable('time', 'f', ('time',))
+        time = nc.createVariable('time', 'd', ('time',))
         part = nc.createVariable('particle', 'i', ('particle',))
         depth = nc.createVariable('depth', 'f', ('time','particle'))
         lat = nc.createVariable('lat', 'f', ('time','particle'))
