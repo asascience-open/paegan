@@ -4,7 +4,7 @@ import uuid
 class AsaRandom(object):
 
     @staticmethod
-    def random(cls):
+    def random():
         """
         pseudo random number generator
         """
