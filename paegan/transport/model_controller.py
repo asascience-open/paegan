@@ -190,8 +190,16 @@ class ModelController(object):
         horiz_chunk = self._horiz_chunk
         hydrodataset = hydrodataset
         low_memory = kwargs.get("low_memory", False)
-        self.cache_path = kwargs.get("cache",
-                                os.path.join(os.path.dirname(__file__), "_cache"))
+
+        # Should we remove the cache file at the end of the run?
+        remove_cache = kwargs.get("remove_cache", True)
+
+        self.cache_path = kwargs.get("cache", None)
+        if self.cache_path is None:
+            # Generate temp filename for dataset cache
+            default_cache_dir = os.path.join(os.path.dirname(__file__), "_cache")
+            temp_name = AsaRandom.filename(prefix=str(datetime.now().microsecond), suffix=".nc")
+            self.cache_path = os.path.join(default_cache_dir, temp_name)
         
         logger = multiprocessing.get_logger()
         logger.addHandler(NullHandler())
@@ -255,11 +263,7 @@ class ModelController(object):
         logger.info('Starting %i workers' % len(procs))
         for w in procs:
             w.start()
-        
-        # Generate temp filename for dataset cache
-        temp_name = unique_filename(prefix=str(datetime.now().microsecond), suffix=".nc")
-        self.cache_path = os.path.join(self.cache_path, temp_name)
-        
+               
         # Add data controller to the queue first so that it 
         # can get the initial data and is not blocked
         logger.info('Adding DataController as task')
@@ -336,11 +340,12 @@ class ModelController(object):
         logger.info('Workers complete')
 
         # Remove the cache file
-        try:
-            os.remove(self.cache_path)
-        except:
-            logger.info("Could not remove cache file, it probably never existed")
-            pass
+        if remove_cache:
+            try:
+                os.remove(self.cache_path)
+            except:
+                logger.info("Could not remove cache file, it probably never existed")
+                pass
 
 
         if len(self.particles) > 0:
