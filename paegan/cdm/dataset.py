@@ -6,6 +6,9 @@ from gridvar import Gridobj
 from variable import Coordinates as cachevar
 from variable import SubCoordinates as subs
 
+import multiprocessing
+from paegan.logging.null_handler import NullHandler
+
 _possiblet = ["time", "TIME", "Time",
            "t", "T",
            "ocean_time", "OCEAN_TIME",
@@ -72,7 +75,11 @@ def CommonDataset(ncfile, xname='lon', yname='lat',
     if isinstance(ncfile, str):
         ncfile = unicode(ncfile)
 
+    logger = multiprocessing.get_logger()
+    logger.addHandler(NullHandler())
+
     if isinstance(ncfile, unicode):
+        logger.info("Loading dataset: %s" % ncfile)
         nc = netCDF4.Dataset(ncfile)
 
     self.nc = nc
