@@ -339,7 +339,7 @@ class ModelController(object):
         logger.info('Workers complete')
 
         # Remove the cache file
-        if remove_cache:
+        if remove_cache is True:
             try:
                 os.remove(self.cache_path)
             except:
@@ -366,6 +366,8 @@ class ModelController(object):
                 logger.warn('No output format defined, not saving any output!')
         else:
             logger.warn('No particles did anything, so not exporting anything')
+
+        return True
     
     def export(self, folder_path, format=None):
         """
