@@ -36,13 +36,15 @@ class Consumer(multiprocessing.Process):
         logger = multiprocessing.get_logger()
         logger.addHandler(NullHandler())
         proc_name = self.name
-        while self.active.value:
+
+        while True:
+
             next_task = self.task_queue.get()
 
             if next_task is None:
-                # There are no tasks left to process, kill this process
-                self.active.value = False
+                break
             else:
+                answer = None
                 try:
                     answer = next_task(proc_name, self.active)
                 except Exception as detail:
@@ -50,15 +52,24 @@ class Consumer(multiprocessing.Process):
                     logger.error("Disabling Error: " +\
                                  repr(traceback.format_exception(exc_type, exc_value,
                                               exc_traceback)))
-                    answer = -1
-                finally:
-                    self.result_queue.put(answer)
+                    if isinstance(next_task, DataController):
+                        answer = -2
+                        # Tell the particles that the DataController is releasing file
+                        self.get_data.value = False
+                        # The data controller has died, so don't process any more tasks
+                        self.active.value = False
+                    elif isinstance(next_task, ForceParticle):
+                        answer = -1
+                    else:
+                        logger.info("Strange task raised an exception: %s" % str(next_task.__class__))
+                        answer = None
+                
+                self.result_queue.put(answer)
 
             self.lock.acquire()
             self.n_run.value = self.n_run.value - 1
             self.lock.release()
             
-        self.task_queue.task_done()
         return
 
 class DataController(object):
@@ -219,7 +230,7 @@ class DataController(object):
         # While there is at least 1 particle still running, 
         # stay alive, if not break
         while self.n_run.value > 1:
-            logger.debug("Particles are still running, waiting for them to request data...")
+            logger.info("Particles are still running, waiting for them to request data...")
             timer.sleep(2)
             # If particle asks for data, do the following
             if self.get_data.value == True:
@@ -488,7 +499,7 @@ class DataController(object):
             else:
                 pass        
 
-        return None
+        return "DataController"
 
         
 class ForceParticle(object):
@@ -501,7 +512,7 @@ class ForceParticle(object):
     def __init__(self, part, remotehydro, times, start_time, models, 
                  release_location_centroid, usebathy, useshore, usesurface,
                  get_data, n_run, updating, particle_get,
-                 point_get, request_lock, 
+                 point_get, request_lock,
                  cache=None, time_method=None):
         """
             This is the task/class/object/job that forces an
@@ -614,41 +625,54 @@ class ForceParticle(object):
             Uses linear interpolation bewtween timesteps to
             get u,v,w,temp,salt
         """
+        logger = multiprocessing.get_logger()
+        logger.addHandler(NullHandler())
+
         if self.active.value == True:
             while self.get_data.value == True:
+                logger.info("Waiting for DataController to get out...")
+                timer.sleep(2)
                 pass
-        #print self.proc, "done waiting"
+
         if self.need_data(i+1):
-            #print self.proc, "yes i do need data"
             # Acquire lock for asking for data
             self.request_lock.acquire()
-            if self.need_data(i+1):
-                # Open netcdf file on disk from commondataset
-                self.dataset.opennc()
-                # Get the indices for the current particle location
-                indices = self.dataset.get_indices('u', timeinds=[np.asarray([i-1])], point=self.part.location )
-                self.dataset.closenc()
-                # Override the time
+            try:
+                if self.need_data(i+1):
+                    # Open netcdf file on disk from commondataset
+                    self.dataset.opennc()
+                    # Get the indices for the current particle location
+                    indices = self.dataset.get_indices('u', timeinds=[np.asarray([i-1])], point=self.part.location )
+                    self.dataset.closenc()
+                    # Override the time
 
-                # get the current time index data
-                self.point_get.value = [indices[0] + 1, indices[-2], indices[-1]]
-                # Request that the data controller update the cache
-                self.get_data.value = True
-                # Wait until the data controller is done
-                if self.active.value == True:
-                    while self.get_data.value == True:
-                        pass 
+                    # get the current time index data
+                    self.point_get.value = [indices[0] + 1, indices[-2], indices[-1]]
+                    # Request that the data controller update the cache
+                    self.get_data.value = True
+                    # Wait until the data controller is done
+                    if self.active.value == True:
+                        while self.get_data.value == True:
+                            logger.info("Waiting for DataController to update cache with the CURRENT time index")
+                            timer.sleep(2)
+                            pass 
 
-                # get the next time index data
-                self.point_get.value = [indices[0] + 2, indices[-2], indices[-1]]
-                # Request that the data controller update the cache
-                self.get_data.value = True
-                # Wait until the data controller is done
-                if self.active.value == True:
-                    while self.get_data.value == True:
-                        pass
-
-            self.request_lock.release()
+                    # get the next time index data
+                    self.point_get.value = [indices[0] + 2, indices[-2], indices[-1]]
+                    # Request that the data controller update the cache
+                    self.get_data.value = True
+                    # Wait until the data controller is done
+                    if self.active.value == True:
+                        while self.get_data.value == True:
+                            logger.info("Waiting for DataController to update cache with the NEXT time index")
+                            timer.sleep(2)
+                            pass
+            except:
+                logger.info("Particle failed to request data correctly")
+                raise
+            finally:
+                # Release lock for asking for data
+                self.request_lock.release()
                
         # Announce that someone is getting data from the local
         self.particle_get.value = True
@@ -739,27 +763,35 @@ class ForceParticle(object):
         logger.addHandler(NullHandler())
         if self.active.value == True:
             while self.get_data.value == True:
+                logger.info("Waiting for DataController to get out...")
+                timer.sleep(2)
                 pass
-        #print self.proc, "done waiting"
+
         if self.need_data(i):
             #print self.proc, "yes i do need data"
             # Acquire lock for asking for data
             self.request_lock.acquire()
-            if self.need_data(i):
-                # Open netcdf file on disk from commondataset
-                self.dataset.opennc()
-                # Get the indices for the current particle location
-                indices = self.dataset.get_indices('u', timeinds=[np.asarray([i-1])], point=self.part.location )
-                self.dataset.closenc()
-                # Override the time
-                self.point_get.value = [indices[0]+1, indices[-2], indices[-1]]
-                # Request that the data controller update the cache
-                self.get_data.value = True
-                # Wait until the data controller is done
-                if self.active.value == True:
-                    while self.get_data.value == True:
-                        pass 
-            self.request_lock.release()
+            try:
+                if self.need_data(i):
+                    # Open netcdf file on disk from commondataset
+                    self.dataset.opennc()
+                    # Get the indices for the current particle location
+                    indices = self.dataset.get_indices('u', timeinds=[np.asarray([i-1])], point=self.part.location )
+                    self.dataset.closenc()
+                    # Override the time
+                    self.point_get.value = [indices[0]+1, indices[-2], indices[-1]]
+                    # Request that the data controller update the cache
+                    self.get_data.value = True
+                    # Wait until the data controller is done
+                    if self.active.value == True:
+                        while self.get_data.value == True:
+                            logger.info("Waiting for DataController to get out...")
+                            timer.sleep(2)
+                            pass 
+            except:
+                raise
+            finally:
+                self.request_lock.release()
                
         # Announce that someone is getting data from the local
         self.particle_get.value = True
@@ -843,6 +875,8 @@ class ForceParticle(object):
         
         if self.active.value == True:
             while self.get_data.value == True:
+                logger.info("Waiting for DataController to get out...")
+                timer.sleep(2)
                 pass
         # Initialize commondataset of local cache, then
         # close the related netcdf file
@@ -850,8 +884,8 @@ class ForceParticle(object):
             self.dataset = CommonDataset(self.localpath)
             self.dataset.closenc()
         except:
-            logger.warn("%s not found!" % self.localpath)
-            raise ValueError("%s not found!" % self.localpath)
+            logger.info("No cache file: %s.  Particle exiting" % self.localpath)
+            raise
 
         # Calculate datetime at every timestep
         modelTimestep, newtimes = AsaTransport.get_time_objects_from_model_timesteps(self.times, start=self.start_time)
@@ -862,8 +896,9 @@ class ForceParticle(object):
             try:
                 remote = CommonDataset(self.remotehydropath)
             except:
-                logger.warn("Problem opening remote dataset, trying again...")
+                logger.warn("Problem opening remote dataset, trying again in 30 seconds...")
                 timer.sleep(30)
+
         self.get_variablenames_for_model(remote)
 
         # Figure out indices corresponding to timesteps
@@ -875,7 +910,6 @@ class ForceParticle(object):
             time_indexs = timevar.nearest_index(newtimes)
         else:
             logger.warn("Method for computing u,v,w,temp,salt not supported!")
-
         try:
             assert len(newtimes) == len(time_indexs)
         except AssertionError:
@@ -888,14 +922,16 @@ class ForceParticle(object):
         # location as the 'newtime' object.
         for loop_i, i in enumerate(time_indexs[0:-1]):
 
+            if self.active.value == False:
+                raise ValueError("Particle exiting due to Failure.")
+
             newloc = None
             
-            # Get data from local netcdf here
-            # dataset = CommonDataset(".cache/localcache.nc")
-            
-            # if need a time that is outside of what we have:e
+            # if need a time that is outside of what we have
             if self.active.value == True:
                 while self.get_data.value == True:
+                    logger.info("Waiting for DataController to get out...")
+                    timer.sleep(2)
                     pass
                 
             # Get the variable data required by the models

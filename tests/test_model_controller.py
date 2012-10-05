@@ -32,9 +32,9 @@ class ModelControllerTest(unittest.TestCase):
         start_lat = 60.75
         start_lon = -147
         start_depth = 0
-        num_particles = 10
+        num_particles = 4
         time_step = 3600
-        num_steps = 2
+        num_steps = 10
         models = [Transport(horizDisp=0.05, vertDisp=0.0003)]
         start_time = datetime(2012, 8, 1, 00)
 
@@ -192,3 +192,31 @@ class ModelControllerTest(unittest.TestCase):
         output_formats = ['Shapefile','NetCDF','Trackline']
 
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
+
+    def test_bad_dataset(self):
+        self.log.logger.debug("**************************************")
+        self.log.logger.debug("Running: test_bad_dataset")
+
+        # Set the start position and time for the models
+        start_lat = 60.75
+        start_lon = -147
+        start_depth = 0
+        num_particles = 1
+        time_step = 3600
+        num_steps = 10
+
+        models = []
+        models.append(Transport(horizDisp=0.05, vertDisp=0.0003))
+
+        start_time = datetime(2012, 8, 1, 00)
+
+        model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
+            time_chunk=10, horiz_chunk=2, time_method='nearest')
+
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_bad_dataset.nc")
+        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/behaviors")
+        shutil.rmtree(output_path, ignore_errors=True)
+        os.makedirs(output_path)
+        output_formats = ['Shapefile','NetCDF','Trackline']
+
+        model.run("http://asascience.com/thisisnotadataset.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)

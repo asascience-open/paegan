@@ -3,6 +3,7 @@ import time
 from datetime import datetime
 from paegan.transport.models.transport import Transport
 from paegan.transport.particles.particle import LarvaParticle
+from paegan.transport.particles.particle import Particle
 from paegan.transport.location4d import Location4D
 from paegan.utils.asarandom import AsaRandom
 from paegan.utils.asatransport import AsaTransport
@@ -299,33 +300,42 @@ class ModelController(object):
         # Get results back from queue, test for failed particles
         return_particles = []
         retrieved = 0
+
         logger.info("Waiting for %i particle results" % len(self.particles))
-        while retrieved < len(self.particles):
+        while retrieved < number_of_tasks:
             tempres = results.get()
-            if tempres == None or tempres == -1:
-                logger.info("Result not a particle")
-            else:
-                logger.info("Retrieving particle from result queue")
+            if tempres == None:
+                logger.warn("Got an unrecognized response from a task.")
+            elif tempres == -1:
+                logger.info("A particle has FAILED!!")
+            elif tempres == -2:
+                logger.info("DataController has FAILED!!  Removing cache file so the particles fail.")
+                try:
+                    os.remove(self.cache_path)
+                except:
+                    logger.info("Could not remove cache file, it probably never existed")
+                    pass
+                finally:
+                    remove_cache = False
+            elif isinstance(tempres, Particle):
+                logger.info("Particle %d finished" % tempres.uid)
                 return_particles.append(tempres)
+            elif tempres == "DataController":
+                logger.info("DataController finished")
 
             retrieved += 1
 
-            logger.info("Retrieved %i results" % retrieved)
+            logger.info("Retrieved %i/%i results" % (retrieved,number_of_tasks))
         
         if len(return_particles) != len(self.particles):
             logger.warn("Some particles failed and are not included in the output")
 
-        self.particles = return_particles
+        self.particles = return_particles     
 
-        # The Data Controller is still on the queue, remove that
-        logger.info("Waiting for DataController to finish")
-        dc = results.get()
-        logger.info("DataController finished")
-
-        # Ther results queue should be empty at this point
+        # The results queue should be empty at this point
         assert results.empty() is True
 
-        logger.info("Clearing extra tasks from task queue")
+        logger.info("Clearing all tasks from task queue")
         while True:
             try:
                 tasks.task_done()
@@ -345,7 +355,6 @@ class ModelController(object):
             except:
                 logger.info("Could not remove cache file, it probably never existed")
                 pass
-
 
         if len(self.particles) > 0:
             # If output_formats and path specified,
@@ -367,7 +376,7 @@ class ModelController(object):
         else:
             logger.warn('No particles did anything, so not exporting anything')
 
-        return True
+        return
     
     def export(self, folder_path, format=None):
         """

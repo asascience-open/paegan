@@ -80,7 +80,10 @@ def CommonDataset(ncfile, xname='lon', yname='lat',
 
     if isinstance(ncfile, unicode):
         logger.info("Loading dataset: %s" % ncfile)
-        nc = netCDF4.Dataset(ncfile)
+        try:
+            nc = netCDF4.Dataset(ncfile)
+        except:
+            raise ValueError("Could not load dataset: %s" % ncfile)
 
     self.nc = nc
     self._filename = ncfile
