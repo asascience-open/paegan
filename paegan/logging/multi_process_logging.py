@@ -25,8 +25,12 @@ class MultiProcessingLogHandler(logging.Handler):
                 raise
             except EOFError:
                 break
+            except IOError:
+                traceback.print_exc(file=sys.stderr)
+                break
             except:
                 traceback.print_exc(file=sys.stderr)
+                break
 
     def send(self, s):
         self.queue.put_nowait(s)
@@ -59,7 +63,6 @@ class MultiProcessingLogHandler(logging.Handler):
 
         # Close the queue
         self.queue.close()
-        self.queue.join_thread()
 
         logging.Handler.close(self)
         
