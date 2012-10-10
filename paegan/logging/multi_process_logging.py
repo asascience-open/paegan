@@ -1,11 +1,13 @@
 from logging import FileHandler
 import multiprocessing, threading, logging, sys, traceback
+import Queue
 
 class MultiProcessingLogHandler(logging.Handler):
     def __init__(self, name):
         logging.Handler.__init__(self)
 
         self._handler = FileHandler(name)
+        self._done = False
         self.queue = multiprocessing.Queue(-1)
 
         t = threading.Thread(target=self.receive)
@@ -17,7 +19,7 @@ class MultiProcessingLogHandler(logging.Handler):
         self._handler.setFormatter(fmt)
 
     def receive(self):
-        while True:
+        while True and not self._done:
             try:
                 record = self.queue.get()
                 self._handler.emit(record)
@@ -31,6 +33,22 @@ class MultiProcessingLogHandler(logging.Handler):
             except:
                 traceback.print_exc(file=sys.stderr)
                 break
+
+        # Clear the queue
+        while True:
+            try:
+                record = self.queue.get(False)
+                self._handler.emit(record)
+            except Queue.Empty:
+                break
+            except:
+                traceback.print_exc(file=sys.stderr)
+                break
+
+        self.queue.close()
+        self._handler.close()
+        logging.Handler.close(self)
+        return
 
     def send(self, s):
         self.queue.put_nowait(s)
@@ -59,12 +77,8 @@ class MultiProcessingLogHandler(logging.Handler):
             self.handleError(record)
 
     def close(self):
-        self._handler.close()
-
-        # Close the queue
-        self.queue.close()
-
-        logging.Handler.close(self)
+        # Stop the thread loop and close queue
+        self._done = True
         
 class EasyLogger(object):
     def __init__(self, logpath):
