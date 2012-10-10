@@ -55,8 +55,11 @@ class MultiProcessingLogHandler(logging.Handler):
             self.handleError(record)
 
     def close(self):
+        self.queue.close()
+        self.queue.join_thread()
         self._handler.close()
         logging.Handler.close(self)
+
         
 class EasyLogger(object):
     def __init__(self, logpath):
