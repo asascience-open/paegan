@@ -2,18 +2,15 @@ from logging import FileHandler
 import multiprocessing, threading, logging, sys, traceback
 
 class MultiProcessingLogHandler(logging.Handler):
-    def __init__(self, name):
+    def __init__(self, name, queue):
         logging.Handler.__init__(self)
 
         self._handler = FileHandler(name)
-        self.queue = multiprocessing.Queue(-1)
+        self.queue = queue
 
         t = threading.Thread(target=self.receive)
         t.daemon = True
         t.start()
-        t.join()
-        # After finishing, close the queue
-        self.queue.close()
 
     def setFormatter(self, fmt):
         logging.Handler.setFormatter(self, fmt)
