@@ -11,6 +11,9 @@ class MultiProcessingLogHandler(logging.Handler):
         t = threading.Thread(target=self.receive)
         t.daemon = True
         t.start()
+        t.join()
+        # After finishing, close the queue
+        self.queue.close()
 
     def setFormatter(self, fmt):
         logging.Handler.setFormatter(self, fmt)
@@ -27,6 +30,7 @@ class MultiProcessingLogHandler(logging.Handler):
                 break
             except:
                 traceback.print_exc(file=sys.stderr)
+                break
 
     def send(self, s):
         self.queue.put_nowait(s)
