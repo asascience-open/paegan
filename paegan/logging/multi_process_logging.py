@@ -1,13 +1,11 @@
 from logging import FileHandler
 import multiprocessing, threading, logging, sys, traceback
-import Queue
 
 class MultiProcessingLogHandler(logging.Handler):
     def __init__(self, name):
         logging.Handler.__init__(self)
 
         self._handler = FileHandler(name)
-        self._done = False
         self.queue = multiprocessing.Queue(-1)
 
         t = threading.Thread(target=self.receive)
@@ -19,38 +17,16 @@ class MultiProcessingLogHandler(logging.Handler):
         self._handler.setFormatter(fmt)
 
     def receive(self):
-        while True and not self._done:
+        while True:
             try:
                 record = self.queue.get()
-                if record != -1:
-                    self._handler.emit(record)
+                self._handler.emit(record)
             except (KeyboardInterrupt, SystemExit):
                 raise
             except EOFError:
                 break
-            except IOError:
-                traceback.print_exc(file=sys.stderr)
-                break
             except:
                 traceback.print_exc(file=sys.stderr)
-                break
-
-        # Clear the queue
-        while True:
-            try:
-                record = self.queue.get(False)
-                if record != -1:
-                    self._handler.emit(record)
-            except Queue.Empty:
-                break
-            except:
-                traceback.print_exc(file=sys.stderr)
-                break
-
-        self._handler.close()
-        logging.Handler.close(self)
-        self.queue.close()
-        return
 
     def send(self, s):
         self.queue.put_nowait(s)
@@ -79,10 +55,8 @@ class MultiProcessingLogHandler(logging.Handler):
             self.handleError(record)
 
     def close(self):
-        # Stop the thread loop and close queue
-        self._done = True
-        # Send the final message to the queue so it loops again
-        self.send(-1)
+        self._handler.close()
+        logging.Handler.close(self)
         
 class EasyLogger(object):
     def __init__(self, logpath):
