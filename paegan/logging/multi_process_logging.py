@@ -79,6 +79,8 @@ class MultiProcessingLogHandler(logging.Handler):
     def close(self):
         # Stop the thread loop and close queue
         self._done = True
+        # Send the final message to the queue so it loops again
+        self.emit("Closing Queue")
         
 class EasyLogger(object):
     def __init__(self, logpath):
