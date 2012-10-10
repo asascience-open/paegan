@@ -377,7 +377,7 @@ class ModelController(object):
             else:
                 logger.warn('No output format defined, not saving any output!')
         else:
-            logger.warn('No particles did anything, so not exporting anything')
+            raise ValueError("Model didn't actually do anything, check the log.")
 
         return
     
