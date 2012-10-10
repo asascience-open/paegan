@@ -22,7 +22,8 @@ class MultiProcessingLogHandler(logging.Handler):
         while True and not self._done:
             try:
                 record = self.queue.get()
-                self._handler.emit(record)
+                if record != -1:
+                    self._handler.emit(record)
             except (KeyboardInterrupt, SystemExit):
                 raise
             except EOFError:
@@ -80,7 +81,7 @@ class MultiProcessingLogHandler(logging.Handler):
         # Stop the thread loop and close queue
         self._done = True
         # Send the final message to the queue so it loops again
-        self.emit("Closing Queue")
+        self.send(-1)
         
 class EasyLogger(object):
     def __init__(self, logpath):
