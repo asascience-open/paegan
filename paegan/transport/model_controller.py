@@ -348,6 +348,9 @@ class ModelController(object):
         
         logger.info('Workers complete')
 
+        # Remove Manager so it shuts down
+        del mgr
+
         # Remove the cache file
         if remove_cache is True:
             try:
