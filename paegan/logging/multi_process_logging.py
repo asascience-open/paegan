@@ -17,17 +17,29 @@ class MultiProcessingLogHandler(logging.Handler):
         self._handler.setFormatter(fmt)
 
     def receive(self):
-        while True:
+        while self.queue.get():
             try:
-                record = self.queue.get()
                 self._handler.emit(record)
             except (KeyboardInterrupt, SystemExit):
                 raise
-            except (EOFError, MemoryError):
-                break
             except:
                 traceback.print_exc(file=sys.stderr)
                 break
+
+
+        # while True:
+        #     try:
+        #         record = self.queue.get()
+        #         self._handler.emit(record)
+        #     except (KeyboardInterrupt, SystemExit):
+        #         raise
+        #     except (EOFError, MemoryError):
+        #         break
+        #     except:
+        #         traceback.print_exc(file=sys.stderr)
+        #         break
+
+        # return
 
     def send(self, s):
         self.queue.put_nowait(s)
