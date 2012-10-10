@@ -23,7 +23,7 @@ class MultiProcessingLogHandler(logging.Handler):
                 self._handler.emit(record)
             except (KeyboardInterrupt, SystemExit):
                 raise
-            except EOFError:
+            except (EOFError, MemoryError):
                 break
             except:
                 traceback.print_exc(file=sys.stderr)
