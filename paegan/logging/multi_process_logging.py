@@ -47,9 +47,9 @@ class MultiProcessingLogHandler(logging.Handler):
                 traceback.print_exc(file=sys.stderr)
                 break
 
-        self.queue.close()
         self._handler.close()
         logging.Handler.close(self)
+        self.queue.close()
         return
 
     def send(self, s):
