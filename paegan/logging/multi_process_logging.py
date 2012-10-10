@@ -39,7 +39,8 @@ class MultiProcessingLogHandler(logging.Handler):
         while True:
             try:
                 record = self.queue.get(False)
-                self._handler.emit(record)
+                if record != -1:
+                    self._handler.emit(record)
             except Queue.Empty:
                 break
             except:
