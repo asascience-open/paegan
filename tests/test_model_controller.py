@@ -19,53 +19,29 @@ from paegan.logging.multi_process_logging import MultiProcessingLogHandler, Easy
 class ModelControllerTest(unittest.TestCase):
 
     def setUp(self):
-        self.log = EasyLogger('testlog.txt')
+        self.start_lat = 60.75
+        self.start_lon = -147
+        self.start_depth = 0
+        self.num_particles = 4
+        self.time_step = 3600
+        self.num_steps = 10
+        self.start_time = datetime(2012, 8, 1, 00)
+        self.transport = Transport(horizDisp=0.05, vertDisp=0.0003)
+
+        self.log = EasyLogger('testlog.txt', logging.INFO)
 
     def tearDown(self):
         self.log.close()
-
-    def test_run_individual_particles(self):
-        self.log.logger.info("**************************************")
-        self.log.logger.info("Running: test_run_individual_particles")
-
-        # Set the start position and time for the models
-        start_lat = 60.75
-        start_lon = -147
-        start_depth = 0
-        num_particles = 4
-        time_step = 3600
-        num_steps = 10
-        models = [Transport(horizDisp=0.05, vertDisp=0.0003)]
-        start_time = datetime(2012, 8, 1, 00)
-
-        model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
-            time_chunk=2, horiz_chunk=2)
-
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_run_individual_particles.nc")
-        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/transport")
-        shutil.rmtree(output_path, ignore_errors=True)
-        os.makedirs(output_path)
-        output_formats = ['Shapefile','NetCDF','Trackline']
-
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
 
     def test_run_from_point(self):
         self.log.logger.info("**************************************")
         self.log.logger.info("Running: test_run_from_point")
 
-        # Set the start position and time for the models
-        start_lat = 60.75
-        start_lon = -147
-        start_depth = 0
-        num_particles = 2
-        time_step = 3600
-        num_steps = 2
-        models = [Transport(horizDisp=0.05, vertDisp=0.0003)]
-        start_time = datetime(2012, 8, 1, 00)
+        models = [self.transport]
 
-        p = Point(start_lon, start_lat, start_depth)
+        p = Point(self.start_lon, self.start_lat, self.start_depth)
 
-        model = ModelController(geometry=p, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
+        model = ModelController(geometry=p, start=self.start_time, step=self.time_step, nstep=self.num_steps, npart=self.num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=2, horiz_chunk=2)
 
         cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_run_from_point.nc")
@@ -75,148 +51,89 @@ class ModelControllerTest(unittest.TestCase):
         self.log.logger.info("**************************************")
         self.log.logger.info("Running: test_run_from_polygon")
 
-        # Set the start position and time for the models
-        start_lat = 60.75
-        start_lon = -147
-        start_depth = 10
-        num_particles = 2
-        time_step = 3600
-        num_steps = 2
-        models = [Transport(horizDisp=0.05, vertDisp=0.0003)]
-        start_time = datetime(2012, 8, 1, 00)
+        models = [self.transport]
 
-        poly = Point(start_lon, start_lat, start_depth).buffer(0.001)
+        poly = Point(self.start_lon, self.start_lat, self.start_depth).buffer(0.001)
 
-        model = ModelController(geometry=poly, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
+        model = ModelController(geometry=poly, start=self.start_time, step=self.time_step, nstep=self.num_steps, npart=self.num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=2, horiz_chunk=2)
 
         cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_run_from_polygon.nc")
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
 
-    def test_behaviors_interp(self):
+    def test_interp(self):
         self.log.logger.info("**************************************")
-        self.log.logger.info("Running: test_behaviors_interp")
+        self.log.logger.info("Running: test_interp")
 
-        # Set the start position and time for the models
-        start_lat = 60.75
-        start_lon = -147
-        start_depth = 0
-        num_particles = 4
-        time_step = 3600
-        num_steps = 10
+        models = [self.transport]
 
-        models = []
-        models.append(Transport(horizDisp=0.05, vertDisp=0.0003))
-
-        behavior_config = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/behavior_for_run_testing.json"))).read()
-        lb = LarvaBehavior(json=behavior_config)
-        
-        models.append(lb)
-
-        start_time = datetime(2012, 8, 1, 00)
-
-        model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
+        model = ModelController(latitude=self.start_lat, longitude=self.start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=self.num_steps, npart=self.num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=10, horiz_chunk=2)
 
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_behaviors_interp.nc")
-        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/behaviors")
-        shutil.rmtree(output_path, ignore_errors=True)
-        os.makedirs(output_path)
-        output_formats = ['Shapefile','NetCDF','Trackline']
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_interp.nc")
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
 
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
-        
-
-    def test_behaviors_nearest(self):
+    def test_nearest(self):
         self.log.logger.info("**************************************")
-        self.log.logger.info("Running: test_behaviors_nearest")
+        self.log.logger.info("Running: test_nearest")
 
-        # Set the start position and time for the models
-        start_lat = 60.75
-        start_lon = -147
-        start_depth = 0
-        num_particles = 4
-        time_step = 3600
-        num_steps = 10
-
-        models = []
-        models.append(Transport(horizDisp=0.05, vertDisp=0.0003))
-
-        behavior_config = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/behavior_for_run_testing.json"))).read()
-        lb = LarvaBehavior(json=behavior_config)
+        models = [self.transport]
         
-        models.append(lb)
+        model = ModelController(latitude=self.start_lat, longitude=self.start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=self.num_steps, npart=self.num_particles, models=models, use_bathymetry=False, use_shoreline=True,
+            time_chunk=2, horiz_chunk=2, time_method='nearest')
 
-        start_time = datetime(2012, 8, 1, 00)
-        
-        model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
-            time_chunk=10, horiz_chunk=2, time_method='nearest')
-
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_behaviors_nearest.nc")
-        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/behaviors")
-        shutil.rmtree(output_path, ignore_errors=True)
-        os.makedirs(output_path)
-        output_formats = ['Shapefile','NetCDF','Trackline']
-
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_nearest.nc")
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
 
     def test_start_on_land(self):
-        self.log.logger.debug("**************************************")
-        self.log.logger.debug("Running: test_start_on_land")
+        self.log.logger.info("**************************************")
+        self.log.logger.info("Running: test_start_on_land")
 
         # Set the start position and time for the models
         start_lat = 60.15551950079041
         start_lon = -148.1999130249019
-        start_depth = 0
-        num_particles = 4
-        time_step = 3600
-        num_steps = 10
 
-        models = []
-        models.append(Transport(horizDisp=0.05, vertDisp=0.0003))
+        models = [self.transport]
 
-        behavior_config = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/behavior_for_run_testing.json"))).read()
-        lb = LarvaBehavior(json=behavior_config)
-        
-        models.append(lb)
-
-        start_time = datetime(2012, 8, 1, 00)
-
-        model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
-            time_chunk=10, horiz_chunk=2, time_method='nearest')
+        model = ModelController(latitude=start_lat, longitude=start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=self.num_steps, npart=self.num_particles, models=models, use_bathymetry=False, use_shoreline=True,
+            time_chunk=2, horiz_chunk=2, time_method='nearest')
 
         cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_start_on_land.nc")
-        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/behaviors")
-        shutil.rmtree(output_path, ignore_errors=True)
-        os.makedirs(output_path)
-        output_formats = ['Shapefile','NetCDF','Trackline']
-
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
 
     def test_bad_dataset(self):
-        self.log.logger.debug("**************************************")
-        self.log.logger.debug("Running: test_bad_dataset")
+        self.log.logger.info("**************************************")
+        self.log.logger.info("Running: test_bad_dataset")
 
-        # Set the start position and time for the models
-        start_lat = 60.75
-        start_lon = -147
-        start_depth = 0
-        num_particles = 1
-        time_step = 3600
-        num_steps = 10
+        models = [self.transport]
 
-        models = []
-        models.append(Transport(horizDisp=0.05, vertDisp=0.0003))
-
-        start_time = datetime(2012, 8, 1, 00)
-
-        model = ModelController(latitude=start_lat, longitude=start_lon, depth=start_depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=False, use_shoreline=True,
-            time_chunk=10, horiz_chunk=2, time_method='nearest')
+        model = ModelController(latitude=self.start_lat, longitude=self.start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=self.num_steps, npart=self.num_particles, models=models, use_bathymetry=False, use_shoreline=True,
+            time_chunk=2, horiz_chunk=2, time_method='nearest')
 
         cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_bad_dataset.nc")
+        model.run("http://asascience.com/thisisnotadataset.nc", cache=cache_path)
+
+    def test_behavior_growth_and_settlement(self):
+        self.log.logger.info("**************************************")
+        self.log.logger.info("Running: test_behavior_growth_and_settlement")
+
+        # 6 days
+        num_steps = 144
+
+        # Behavior
+        behavior_config = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/behavior_for_run_testing.json"))).read()
+        lb = LarvaBehavior(json=behavior_config)
+
+        models = [self.transport]
+        models.append(lb)
+
+        model = ModelController(latitude=self.start_lat, longitude=self.start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=num_steps, npart=self.num_particles, models=models, use_bathymetry=False, use_shoreline=True,
+            time_chunk=2, horiz_chunk=2, time_method='nearest')
+
         output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/behaviors")
         shutil.rmtree(output_path, ignore_errors=True)
         os.makedirs(output_path)
         output_formats = ['Shapefile','NetCDF','Trackline']
 
-        model.run("http://asascience.com/thisisnotadataset.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_behavior_growth_and_settlement.nc")
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
