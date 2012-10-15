@@ -71,11 +71,11 @@ class Particle(object):
             if units == "days":
                 z = self._age
             elif units == "hours":
-                z = self._age * 24
+                z = self._age * 24.
             elif units == "minutes":
-                z = self._age * 24 * 60
+                z = self._age * 24. * 60.
             elif units == "seconds":
-                z = self._age * 24 * 60 * 60
+                z = self._age * 24. * 60. * 60.
             else:
                 raise
             return round(z,8) 
