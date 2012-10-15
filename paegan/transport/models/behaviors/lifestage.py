@@ -70,8 +70,14 @@ class LifeStage(BaseModel):
 
         behaviors_to_run = filter(None, [self.settlement] + [active_diel] + self.taxis)
         # Sort these in the order you want them to be run.
+
+        try:
+            vss = self.capability.calculated_vss
+        except AttributeError:
+            vss = 0
+
         for behave in behaviors_to_run:
-            behave_results = behave.move(particle, 0, 0, self.capability.calculated_vss, modelTimestep, **kwargs)
+            behave_results = behave.move(particle, 0, 0, vss, modelTimestep, **kwargs)
             u += behave_results['u']
             v += behave_results['v']
             z += behave_results['z']
