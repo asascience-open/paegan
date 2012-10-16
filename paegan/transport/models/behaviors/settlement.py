@@ -19,8 +19,9 @@ class Settlement(object):
                     pass
 
             try:
-                self.upper = data.get('upper')
-                self.lower = data.get('lower')
+                # Convert positive down to negative down
+                self.upper = data.get('upper') * -1.
+                self.lower = data.get('lower') * -1.
                 self.type = data.get('type')
             except:
                 raise ValueError("A settlement must consist of a 'type' and 'upper / 'lower' bounds.")

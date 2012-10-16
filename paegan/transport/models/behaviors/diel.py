@@ -37,8 +37,9 @@ class Diel(BaseModel):
                 t = datetime.utcfromtimestamp(t / 1000)
             self.time = t
             self.plus_or_minus = data.get('plus_or_minus', None)
-            self.min_depth = data.get('min', None)
-            self.max_depth = data.get('max', None)
+            # Convert from positive down to negative down
+            self.min_depth = data.get('min') * -1.
+            self.max_depth = data.get('max') * -1.
             self.time_delta = data.get('hours', None)
 
     def get_pattern(self):
