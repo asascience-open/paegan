@@ -61,7 +61,7 @@ class Consumer(multiprocessing.Process):
                     elif isinstance(next_task, ForceParticle):
                         answer = -1
                     else:
-                        logger.info("Strange task raised an exception: %s" % str(next_task.__class__))
+                        logger.warn("Strange task raised an exception: %s" % str(next_task.__class__))
                         answer = None
                 
                 self.result_queue.put(answer)
@@ -230,11 +230,11 @@ class DataController(object):
         # While there is at least 1 particle still running, 
         # stay alive, if not break
         while self.n_run.value > 1:
-            logger.info("Particles are still running, waiting for them to request data...")
+            logger.debug("Particles are still running, waiting for them to request data...")
             timer.sleep(2)
             # If particle asks for data, do the following
             if self.get_data.value == True:
-                logger.info("Particle asked for data!")
+                logger.debug("Particle asked for data!")
                 if c == 0:
                     logger.debug("Creating cache file (first request)")
                     try:
@@ -247,11 +247,11 @@ class DataController(object):
                         
                         # Wait for particles to get out
                         while self.particle_get == True:
-                            logger.info("Waiting for particles to get out...")
+                            logger.debug("Waiting for particles to get out...")
                             timer.sleep(1)
                             pass
                         
-                        logger.info("All particles are out of file, updating...")
+                        logger.debug("All particles are out of file, updating...")
                         # Open local cache for writing, overwrites
                         # existing file with same name
                         self.local = netCDF4.Dataset(cachepath, 'w')
@@ -421,7 +421,7 @@ class DataController(object):
                         logger.error("DataController failed to get data (first request)")
                         raise
                     finally:
-                        logger.info("Done updating, closing file and releasing locks")
+                        logger.debug("Done updating, closing file and releasing locks")
                         self.local.sync()
                         self.local.close()
                         self.updating.value = False
@@ -437,7 +437,7 @@ class DataController(object):
                             timer.sleep(1)
                             pass
                             
-                        logger.info("All particles are out of cache file, updating...")
+                        logger.debug("All particles are out of cache file, updating...")
                         # Open local cache dataset for appending
                         self.local = netCDF4.Dataset(cachepath, 'a')
                         
@@ -491,7 +491,7 @@ class DataController(object):
                         logger.error("DataController failed to get data (not first request)")
                         raise
                     finally:
-                        logger.info("Done updating, closing file and releasing locks")
+                        logger.debug("Done updating, closing file and releasing locks")
                         self.local.sync()
                         self.local.close()
                         self.updating.value = False
@@ -631,7 +631,7 @@ class ForceParticle(object):
 
         if self.active.value == True:
             while self.get_data.value == True:
-                logger.info("Waiting for DataController to get out...")
+                logger.debug("Waiting for DataController to get out...")
                 timer.sleep(2)
                 pass
 
@@ -654,7 +654,7 @@ class ForceParticle(object):
                     # Wait until the data controller is done
                     if self.active.value == True:
                         while self.get_data.value == True:
-                            logger.info("Waiting for DataController to update cache with the CURRENT time index")
+                            logger.debug("Waiting for DataController to update cache with the CURRENT time index")
                             timer.sleep(2)
                             pass 
 
@@ -665,11 +665,11 @@ class ForceParticle(object):
                     # Wait until the data controller is done
                     if self.active.value == True:
                         while self.get_data.value == True:
-                            logger.info("Waiting for DataController to update cache with the NEXT time index")
+                            logger.debug("Waiting for DataController to update cache with the NEXT time index")
                             timer.sleep(2)
                             pass
             except:
-                logger.info("Particle failed to request data correctly")
+                logger.warn("Particle failed to request data correctly")
                 raise
             finally:
                 # Release lock for asking for data
@@ -764,7 +764,7 @@ class ForceParticle(object):
         logger.addHandler(NullHandler())
         if self.active.value == True:
             while self.get_data.value == True:
-                logger.info("Waiting for DataController to get out...")
+                logger.debug("Waiting for DataController to get out...")
                 timer.sleep(2)
                 pass
 
@@ -786,7 +786,7 @@ class ForceParticle(object):
                     # Wait until the data controller is done
                     if self.active.value == True:
                         while self.get_data.value == True:
-                            logger.info("Waiting for DataController to get out...")
+                            logger.debug("Waiting for DataController to get out...")
                             timer.sleep(2)
                             pass 
             except:
@@ -874,7 +874,7 @@ class ForceParticle(object):
         
         if self.active.value == True:
             while self.get_data.value == True:
-                logger.info("Waiting for DataController to get out...")
+                logger.debug("Waiting for DataController to get out...")
                 timer.sleep(2)
                 pass
         # Initialize commondataset of local cache, then
@@ -883,7 +883,7 @@ class ForceParticle(object):
             self.dataset = CommonDataset(self.localpath)
             self.dataset.closenc()
         except:
-            logger.info("No cache file: %s.  Particle exiting" % self.localpath)
+            logger.warn("No cache file: %s.  Particle exiting" % self.localpath)
             raise
 
         # Calculate datetime at every timestep
@@ -929,7 +929,7 @@ class ForceParticle(object):
             # if need a time that is outside of what we have
             if self.active.value == True:
                 while self.get_data.value == True:
-                    logger.info("Waiting for DataController to get out...")
+                    logger.debug("Waiting for DataController to get out...")
                     timer.sleep(2)
                     pass
                 
@@ -947,16 +947,12 @@ class ForceParticle(object):
             # Age the particle by the modelTimestep (seconds)
             # 'Age' meaning the amount of time it has been forced.
             part.age(seconds=modelTimestep[loop_i])
-            logger.info("Aged particle by %d seconds" % modelTimestep[loop_i])
-
-            if part.halted:
-                logger.info("Particle %s is halted." % part.uid)
 
             # loop over models - sort these in the order you want them to run
             for model in models:
                 movement = model.move(part, u, v, w, modelTimestep[loop_i], temperature=temp, salinity=salt, bathymetry_value=bathymetry_value)
                 newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtimes[loop_i+1])
-                logger.info("Particle %d moved %f meters (horizontally) and %f meters (vertically) by %s with data from %s and recorded at %s" % (part.uid,movement['distance'], movement['vertical_distance'], model.__class__.__name__, newtimes[loop_i].isoformat(), newtimes[loop_i+1].isoformat()))
+                logger.info("%s - moved %.3f meters (horizontally) and %.3f meters (vertically) by %s with data from %s and recorded at %s" % (part.logstring(), movement['distance'], movement['vertical_distance'], model.__class__.__name__, newtimes[loop_i].isoformat(), newtimes[loop_i+1].isoformat()))
                 if newloc:
                     self.boundary_interaction(self._bathymetry, self._shoreline, self.usebathy, self.useshore, self.usesurface,
                         particle=part, starting=part.location, ending=newloc,

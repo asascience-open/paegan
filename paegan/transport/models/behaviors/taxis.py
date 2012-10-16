@@ -61,17 +61,17 @@ class Taxis(BaseModel):
         Units: %s
         """ % (self.min_value, self.max_value, self.gradient, self.variable, self.units)
 
-    def move(self, particle, u, v, z, modelTimestep, **kwargs):
+    def move(self, particle, u, v, w, modelTimestep, **kwargs):
 
         # If the particle is settled, don't move it anywhere
         if particle.settled:
-            return { 'u': 0, 'v': 0, 'z': 0 }
+            return { 'u': 0, 'v': 0, 'w': 0 }
 
         # If the particle is halted (but not settled), don't move it anywhere
         if particle.halted:
-            return { 'u': 0, 'v': 0, 'z': 0 }    
+            return { 'u': 0, 'v': 0, 'w': 0 }    
         
-        z = 0
         u = 0
         v = 0
-        return { 'u': u, 'v': v, 'z': z }
+        w = 0
+        return { 'u': u, 'v': v, 'w': w }

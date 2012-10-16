@@ -30,17 +30,14 @@ class Settlement(object):
         logger = multiprocessing.get_logger()
         logger.addHandler(NullHandler())
 
-        # We may want to have settlement affect the u/v/z in the future
+        # We may want to have settlement affect the u/v/w in the future
         u = 0
         v = 0
-        z = 0
+        w = 0
 
         # If the particle is settled, don't move it anywhere
         if particle.settled:
             return (0,0,0)
-
-        logger.info("Particle trying to settle from: %s" % particle.location)
-        logger.info("Bathy at this point is %d" % depth)
 
         # A particle is negative down from the sea surface, so "-3" is 3 meters below the surface.
         # We are assuming here that the bathymetry is also negative down.
@@ -67,7 +64,7 @@ class Settlement(object):
         else:
             logger.info("Settlement type %s not recognized, not trying to settle Particle %d." % (self.type, particle.uid))
 
-        return (u,v,z)
+        return (u,v,w)
 
     def __str__(self):
         return \
@@ -77,14 +74,14 @@ class Settlement(object):
         Type: %s
         """ % (self.upper, self.lower, self.type)
 
-    def move(self, particle, u, v, z, modelTimestep, **kwargs):
+    def move(self, particle, u, v, w, modelTimestep, **kwargs):
 
         bathymetry_value = kwargs.pop("bathymetry_value", None)
         if bathymetry_value is None:
             logger.info("No bathymetry so can not attempt to settle particle")
-            return { 'u': 0, 'v': 0, 'z': 0 }
+            return { 'u': 0, 'v': 0, 'w': 0 }
 
-        u,v,z = self.attempt(particle, bathymetry_value)
+        u,v,w = self.attempt(particle, bathymetry_value)
 
-        return { 'u': u, 'v': v, 'z': z }
+        return { 'u': u, 'v': v, 'w': w }
         

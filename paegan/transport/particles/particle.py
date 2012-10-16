@@ -10,6 +10,10 @@ class Particle(object):
         self._id = kwargs.get("id", -1)
         self._halted = False
 
+        self._u = []
+        self._v = []
+        self._w = []
+
     def get_id(self):
         return self._id
     uid = property(get_id)
@@ -19,7 +23,6 @@ class Particle(object):
     def get_location(self):
         return self._locations[-1]
     location = property(get_location, set_location)
-
     def get_locations(self):
         return self._locations
     locations = property(get_locations, None)
@@ -30,7 +33,36 @@ class Particle(object):
         this is used if the particle moves twice within a timestep.
         This can happen if they hit a shoreline, etc.
         """
-        pass
+        self._u.append(self.u)
+        self._v.append(self.v)
+        self._w.append(self.w)
+
+    def set_u_vector(self, u):
+        self._u.append(u)
+    def get_u_vector(self):
+        return self._u[-1]
+    u_vector = property(get_u_vector, set_u_vector)
+    def get_u_vectors(self):
+        return self._u
+    u_vectors = property(get_u_vectors, None)
+    
+    def set_v_vector(self, v):
+        self._v.append(v)
+    def get_v_vector(self):
+        return self._v[-1]
+    v_vector = property(get_v_vector, set_v_vector)
+    def get_v_vectors(self):
+        return self._v
+    v_vectors = property(get_v_vectors, None)
+
+    def set_w_vector(self, w):
+        self._w.append(v)
+    def get_w_vector(self):
+        return self._w[-1]
+    w_vector = property(get_w_vector, set_w_vector)
+    def get_w_vectors(self):
+        return self._w
+    w_vectors = property(get_w_vectors, None)
 
     def proceed(self):
         """
@@ -109,6 +141,15 @@ class Particle(object):
 
     def linestring(self):
         return LineString(map(lambda x: list(x.point.coords)[0], self.locations))
+
+    def noramlized_u_vectors(self, model_timesteps):
+        return [u for i,u in enumerate(self.u_vectors) if i in self.normalized_indexes(model_timesteps)]
+
+    def noramlized_v_vectors(self, model_timesteps):
+        return [v for i,v in enumerate(self.v_vectors) if i in self.normalized_indexes(model_timesteps)]
+
+    def noramlized_w_vectors(self, model_timesteps):
+        return [w for i,w in enumerate(self.w_vectors) if i in self.normalized_indexes(model_timesteps)]
 
     def noramlized_locations(self, model_timesteps):
         return [loc for i,loc in enumerate(self.locations) if i in self.normalized_indexes(model_timesteps)]
@@ -202,10 +243,8 @@ class LarvaParticle(Particle):
 
     def die(self):
         self._dead = True
-        self.halt()
     def undie(self):
         self._dead = False
-        self.proceed()
     def get_dead(self):
         return self._dead
     dead = property(get_dead, None)
@@ -217,6 +256,7 @@ class LarvaParticle(Particle):
         return [s for i,s in enumerate(self.salts) if i in self.normalized_indexes(model_timesteps)]
 
     def fill_location_gap(self):
+        super(LarvaParticle,self).fill_location_gap()
         self._temp.append(self.temp)
         self._salt.append(self.salt)
 
@@ -231,6 +271,12 @@ class LarvaParticle(Particle):
         """
         self.lifestage_progress += amount
         
+    def logstring(self):
+        return "Particle %d (Age: %.3f days, Lifestage %d: %.3f%%, Status: %s)" % (self.uid, self.get_age(units='days'), self.lifestage_index, (self.lifestage_progress % 1) * 100., self.status())
+
+    def status(self):
+        return "settled - %s / dead - %s / halted - %s" % (self.settled, self.dead, self.halted)
+
 class ChemistryParticle(Particle):
     """
         A chemical particle for time and chemistry dependent

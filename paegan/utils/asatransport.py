@@ -63,11 +63,11 @@ class AsaTransport(object):
         return points
 
     @classmethod
-    def distance_from_location_using_u_v_z(cls, u=None, v=None, z=None, timestep=None, location=None):
+    def distance_from_location_using_u_v_w(cls, u=None, v=None, w=None, timestep=None, location=None):
         """
-            Calculate the greate distance from a location using u, v, and z.
+            Calculate the greate distance from a location using u, v, and w.
 
-            u, v, and z must be in the same units as the timestep.  Stick with seconds.
+            u, v, and w must be in the same units as the timestep.  Stick with seconds.
 
         """
         # Move horizontally
@@ -83,9 +83,9 @@ class AsaTransport(object):
             azimuth = AsaMath.math_angle_to_azimuth(angle=angle)
             
         distance_vert = 0
-        if z is not None:
+        if w is not None:
             # Move vertically
-            distance_vert = z * timestep # calculate the vertical distance in meters using z and model timestep
+            distance_vert = w * timestep # calculate the vertical distance in meters using w and model timestep
             # We need to represent depths as positive up when transporting.
             depth = location.depth
             depth += distance_vert

@@ -48,15 +48,18 @@ class Shapefile(Export):
         logger.addHandler(NullHandler())
 
         # Create the shapefile writer
-        w = shp.Writer(shp.POINT)
+        shape = shp.Writer(shp.POINT)
         # Create the attribute fields/columns
-        w.field('Particle')
-        w.field('Date')
-        w.field('Lat')
-        w.field('Lon')
-        w.field('Depth')
-        w.field('Temp')
-        w.field('Salt')
+        shape.field('Particle')
+        shape.field('Date')
+        shape.field('Lat')
+        shape.field('Lon')
+        shape.field('Depth')
+        shape.field('Temp')
+        shape.field('Salt')
+        shape.field('U')
+        shape.field('V')
+        shape.field('W')
         
         # Loop through locations in particles,
         # add as points to the shapefile
@@ -67,26 +70,44 @@ class Shapefile(Export):
             normalized_locations = particle.noramlized_locations(datetimes)
             noramlized_temps = particle.noramlized_temps(datetimes)
             noramlized_salts = particle.noramlized_salts(datetimes)
+            noramlized_u = particle.noramlized_u_vectors(datetimes)
+            noramlized_v = particle.noramlized_v_vectors(datetimes)
+            noramlized_w = particle.noramlized_w_vectors(datetimes)
 
             if len(normalized_locations) != len(noramlized_temps):
-                logger.debug("No temperature being added to shapefile.")
+                logger.info("No temperature being added to shapefile.")
                 # Create list of 'None' equal to the length of locations
                 noramlized_temps = [None] * len(normalized_locations) 
 
             if len(normalized_locations) != len(noramlized_salts):
-                logger.debug("No salinity being added to shapefile.")
+                logger.info("No salinity being added to shapefile.")
                 # Create list of 'None' equal to the length of locations
                 noramlized_salts = [None] * len(normalized_locations)
 
-            for loc, temp, salt in zip(normalized_locations, noramlized_temps, noramlized_salts):
+            if len(normalized_locations) != len(noramlized_u):
+                logger.info("No U being added to shapefile.")
+                # Create list of 'None' equal to the length of locations
+                noramlized_u = [None] * len(normalized_locations)
+
+            if len(normalized_locations) != len(noramlized_v):
+                logger.info("No V being added to shapefile.")
+                # Create list of 'None' equal to the length of locations
+                noramlized_v = [None] * len(normalized_locations) 
+
+            if len(normalized_locations) != len(noramlized_w):
+                logger.info("No W being added to shapefile.")
+                # Create list of 'None' equal to the length of locations
+                noramlized_w = [None] * len(normalized_locations) 
+
+            for loc, temp, salt, u, v, w in zip(normalized_locations, noramlized_temps, noramlized_salts, noramlized_u, noramlized_v, noramlized_w):
                 # Add point geometry
-                w.point(loc.longitude, loc.latitude)
+                shape.point(loc.longitude, loc.latitude)
                 # Add attribute records
-                w.record(particle.uid, loc.time.isoformat(), loc.latitude, loc.longitude, loc.depth, temp, salt)
+                shape.record(particle.uid, loc.time.isoformat(), loc.latitude, loc.longitude, loc.depth, temp, salt, u, v, w)
 
         filepath = os.path.join(folder, "shape.zip")
         # Write out shapefle to disk
-        w.save(filepath, zipup=True)
+        shape.save(filepath, zipup=True)
 
 class NetCDF(Export):
     @classmethod

@@ -114,15 +114,15 @@ class Diel(BaseModel):
             return self._time
     time = property(get_time, set_time)
 
-    def move(self, particle, u, v, z, modelTimestep, **kwargs):
+    def move(self, particle, u, v, w, modelTimestep, **kwargs):
 
         # If the particle is settled, don't move it anywhere
         if particle.settled:
-            return { 'u': 0, 'v': 0, 'z': 0 }
+            return { 'u': 0, 'v': 0, 'w': 0 }
 
         # If the particle is halted (but not settled), don't move it anywhere
         if particle.halted:
-            return { 'u': 0, 'v': 0, 'z': 0 }
+            return { 'u': 0, 'v': 0, 'w': 0 }
 
         """
             This only works if min is less than max.
@@ -139,7 +139,7 @@ class Diel(BaseModel):
             ______________________________________
         """
         if particle.location.depth < self.max_depth:
-            return { 'u': u, 'v': v, 'z': z }
+            return { 'u': u, 'v': v, 'w': w }
 
         """ I'm above my desired max depth, so i need to go down
 
@@ -150,7 +150,7 @@ class Diel(BaseModel):
             ______________________________________
         """
         if particle.location.depth > self.min_depth:
-            return { 'u': u, 'v': v, 'z': -z }
+            return { 'u': u, 'v': v, 'w': -w }
 
         """ I'm in my desired depth, so I'm just gonna chill here
 
@@ -160,7 +160,7 @@ class Diel(BaseModel):
             -------------------------------------- max
             ______________________________________
         """
-        return { 'u': u, 'v': v, 'z': 0 }
+        return { 'u': u, 'v': v, 'w': 0 }
 
     def __str__(self):
         return \

@@ -39,7 +39,7 @@ class LifeStage(BaseModel):
             if data.get('settlement', None) is not None:
                 self.settlement = Settlement(data=data.get('settlement'))
 
-    def move(self, particle, u, v, z, modelTimestep, **kwargs):
+    def move(self, particle, u, v, w, modelTimestep, **kwargs):
 
         logger = multiprocessing.get_logger()
         logger.addHandler(NullHandler())
@@ -63,10 +63,10 @@ class LifeStage(BaseModel):
                 active_diel = self.diel[diel_times.index(min(diel_times))]
 
         # Run the active diel behavior and all of the taxis behaviors
-        # u, v, and z store the continuous resutls from all of the behavior models.
+        # u, v, and w store the continuous resutls from all of the behavior models.
         u = 0
         v = 0
-        z = 0
+        w = 0
 
         behaviors_to_run = filter(None, [self.settlement] + [active_diel] + self.taxis)
         # Sort these in the order you want them to be run.
@@ -80,7 +80,7 @@ class LifeStage(BaseModel):
             behave_results = behave.move(particle, 0, 0, vss, modelTimestep, **kwargs)
             u += behave_results['u']
             v += behave_results['v']
-            z += behave_results['z']
+            w += behave_results['w']
 
         # Grow the particle.  Growth affects which lifestage the particle is in.
         growth = 0.
@@ -101,38 +101,31 @@ class LifeStage(BaseModel):
             growth = modelTimestepDays / self.duration
             particle.grow(growth)
 
-        logger.info("Particle %d progressed %f%% of the current lifestage" % (particle.uid, growth * 100.))
-
         # Do the calculation to determine the new location after running the behaviors
-        result = AsaTransport.distance_from_location_using_u_v_z(u=u, v=v, z=z, timestep=modelTimestep, location=particle.location)
+        result = AsaTransport.distance_from_location_using_u_v_w(u=u, v=v, w=w, timestep=modelTimestep, location=particle.location)
         result['u'] = u
         result['v'] = v
-        result['z'] = z
+        result['w'] = w
         return result
 
 class DeadLifeStage(LifeStage):
     def __init__(self, **kwargs):
         super(DeadLifeStage,self).__init__(**kwargs)
 
-    def move(self, particle, u, v, z, modelTimestep, **kwargs):
+    def move(self, particle, u, v, w, modelTimestep, **kwargs):
         """ I'm dead, so no behaviors should act on me """
 
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
-
-        # Kill the particle if it isn't already dead
-        if not particle.dead:
+        # Kill the particle if it isn't settled and isn't already dead.
+        if not particle.settled and not particle.dead:
             particle.die()
 
         u = 0
         v = 0
-        z = 0
-
-        logger.info("Particle %s is dead" % (particle.uid))
+        w = 0
 
         # Do the calculation to determine the new location
-        result = AsaTransport.distance_from_location_using_u_v_z(u=u, v=v, z=z, timestep=modelTimestep, location=particle.location)
+        result = AsaTransport.distance_from_location_using_u_v_w(u=u, v=v, w=w, timestep=modelTimestep, location=particle.location)
         result['u'] = u
         result['v'] = v
-        result['z'] = z
+        result['w'] = w
         return result

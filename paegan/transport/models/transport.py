@@ -6,7 +6,7 @@ from paegan.transport.models.base_model import BaseModel
 
 class Transport(BaseModel):
     """
-        Transport a particle in the x y and z direction. Requires horizontal and vertical dispersion coefficients.
+        Transport a particle in the x y and w direction. Requires horizontal and vertical dispersion coefficients.
         Will only move particle when self.move() is called with the proper arguments.
     """
 
@@ -30,10 +30,10 @@ class Transport(BaseModel):
         return self._vertDisp
     vertDisp = property(get_vertDisp, set_vertDisp)
 
-    def move(self, particle, u, v, z, modelTimestep, **kwargs):
+    def move(self, particle, u, v, w, modelTimestep, **kwargs):
         """
         Returns the lat, lon, H, and velocity of a projected point given a starting
-        lat and lon (dec deg), a depth (m) below sea surface (positive up), u, v, and z velocity components (m/s), a horizontal and vertical
+        lat and lon (dec deg), a depth (m) below sea surface (positive up), u, v, and w velocity components (m/s), a horizontal and vertical
         displacement coefficient (m^2/s) H (m), and a model timestep (s).
 
         GreatCircle calculations are done based on the Vincenty Direct method.
@@ -46,24 +46,36 @@ class Transport(BaseModel):
                 'depth': x, 
                 'u': x
                 'v': x, 
-                'z': x, 
+                'w': x, 
                 'distance': x, 
                 'angle': x, 
                 'vertical_distance': x, 
                 'vertical_angle': x }
         """
 
+        if u is not None and math.isnan(u):
+            u = None
+        particle.u = u
+
+        if v is not None and math.isnan(v):
+            v = None
+        particle.v = v
+
+        if w is not None and math.isnan(w):
+            w = None
+        particle.w = w
+
         if particle.halted:
-            u,v,z = 0,0,0
+            u,v,w = 0,0,0
         else:
             u += AsaRandom.random() * ((2 * self._horizDisp / modelTimestep) ** 0.5) # u transformation calcualtions
             v += AsaRandom.random() * ((2 * self._horizDisp / modelTimestep) ** 0.5) # v transformation calcualtions
-            z += AsaRandom.random() * ((2 * self._vertDisp / modelTimestep) ** 0.5) # z transformation calculations
+            w += AsaRandom.random() * ((2 * self._vertDisp / modelTimestep) ** 0.5) # w transformation calculations
 
-        result = AsaTransport.distance_from_location_using_u_v_z(u=u, v=v, z=z, timestep=modelTimestep, location=particle.location)
+        result = AsaTransport.distance_from_location_using_u_v_w(u=u, v=v, w=w, timestep=modelTimestep, location=particle.location)
         result['u'] = u
         result['v'] = v
-        result['z'] = z
+        result['w'] = w
         return result
 
     def __str__(self):

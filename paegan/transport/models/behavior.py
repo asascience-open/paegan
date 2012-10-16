@@ -26,17 +26,13 @@ class LarvaBehavior(BaseModel):
         # Be dead.
         self.lifestages.append(DeadLifeStage())
 
-    def move(self, particle, u, v, z, modelTimestep, **kwargs):
-        # Only run that lifestage model that corresponds to the particles growth progress
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
-        logger.info("Particle %s at lifestage %i" % (particle.uid, particle.lifestage_index))
+    def move(self, particle, u, v, w, modelTimestep, **kwargs):
 
         try:
             lifestage = self.lifestages[particle.lifestage_index]
         except IndexError:
             # The particle should never progress outside of the available lifestages because a Dead
-            # particle should not progress!
+            # particle should not progress and the last lifestage is the DeadLifeStage.
             raise
         
-        return lifestage.move(particle, u, v, z, modelTimestep, **kwargs)
+        return lifestage.move(particle, u, v, w, modelTimestep, **kwargs)
