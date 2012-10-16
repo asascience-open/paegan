@@ -200,6 +200,8 @@ class ModelController(object):
         # Should we remove the cache file at the end of the run?
         remove_cache = kwargs.get("remove_cache", True)
 
+        self.bathy_path = kwargs.get("bathy", None)
+
         self.cache_path = kwargs.get("cache", None)
         if self.cache_path is None:
             # Generate temp filename for dataset cache
@@ -291,6 +293,7 @@ class ModelController(object):
                                             particle_get,
                                             point_get,
                                             request_lock,
+                                            bathy=self.bathy_path,
                                             cache=self.cache_path,
                                             time_method=self.time_method))
 

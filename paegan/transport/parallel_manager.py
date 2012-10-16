@@ -512,7 +512,7 @@ class ForceParticle(object):
     def __init__(self, part, remotehydro, times, start_time, models, 
                  release_location_centroid, usebathy, useshore, usesurface,
                  get_data, n_run, updating, particle_get,
-                 point_get, request_lock,
+                 point_get, request_lock, bathy,
                  cache=None, time_method=None):
         """
             This is the task/class/object/job that forces an
@@ -522,6 +522,7 @@ class ForceParticle(object):
         """
         assert cache != None
         self.cache_path = cache
+        self.bathy = bathy
         self.remotehydropath = remotehydro
         self.localpath =  self.cache_path
         self.release_location_centroid = release_location_centroid
@@ -859,9 +860,7 @@ class ForceParticle(object):
 
         self.active = active
 
-        self._bathymetry = None
-        if self.usebathy == True:
-            self._bathymetry = Bathymetry(point=self.release_location_centroid)
+        self._bathymetry = Bathymetry(file=self.bathy)
         
         self._shoreline = None  
         if self.useshore == True:
@@ -941,6 +940,9 @@ class ForceParticle(object):
                 u, v, w, temp, salt = self.data_interp(i, timevar, newtimes[loop_i])
             else:
                 logger.warn("Method for computing u,v,w,temp,salt not supported!")
+
+            # Get the bathy value at the particles location
+            bathymetry_value = self._bathymetry.get_depth(part.location)
                 
             # Age the particle by the modelTimestep (seconds)
             # 'Age' meaning the amount of time it has been forced.
@@ -952,11 +954,11 @@ class ForceParticle(object):
 
             # loop over models - sort these in the order you want them to run
             for model in models:
-                movement = model.move(part, u, v, w, modelTimestep[loop_i], temperature=temp, salinity=salt, bathymetry=self._bathymetry)
+                movement = model.move(part, u, v, w, modelTimestep[loop_i], temperature=temp, salinity=salt, bathymetry_value=bathymetry_value)
                 newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtimes[loop_i+1])
-                logger.info("Particle %d moved %d meters (horizontally) and %d meters (vertically) by %s with data from %s and recorded at %s" % (part.uid,movement['distance'], movement['vertical_distance'], model.__class__.__name__, newtimes[loop_i].isoformat(), newtimes[loop_i+1].isoformat()))
+                logger.info("Particle %d moved %f meters (horizontally) and %f meters (vertically) by %s with data from %s and recorded at %s" % (part.uid,movement['distance'], movement['vertical_distance'], model.__class__.__name__, newtimes[loop_i].isoformat(), newtimes[loop_i+1].isoformat()))
                 if newloc:
-                    self.boundary_interaction(self._bathymetry, self._shoreline, self.usebathy,self.useshore,self.usesurface,
+                    self.boundary_interaction(self._bathymetry, self._shoreline, self.usebathy, self.useshore, self.usesurface,
                         particle=part, starting=part.location, ending=newloc,
                         distance=movement['distance'], angle=movement['angle'], 
                         azimuth=movement['azimuth'], reverse_azimuth=movement['reverse_azimuth'], 

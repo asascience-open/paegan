@@ -164,6 +164,7 @@ class LarvaParticle(Particle):
         self._temp = []
         self._salt = []
         self._settled = False
+        self._dead = False
 
     def set_temp(self, temp):
         self._temp.append(temp)
@@ -198,6 +199,16 @@ class LarvaParticle(Particle):
     def get_settled(self):
         return self._settled
     settled = property(get_settled, None)
+
+    def die(self):
+        self._dead = True
+        self.halt()
+    def undie(self):
+        self._dead = False
+        self.proceed()
+    def get_dead(self):
+        return self._dead
+    dead = property(get_dead, None)
 
     def noramlized_temps(self, model_timesteps):
         return [t for i,t in enumerate(self.temps) if i in self.normalized_indexes(model_timesteps)]

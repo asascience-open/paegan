@@ -30,7 +30,6 @@ class Transport(BaseModel):
         return self._vertDisp
     vertDisp = property(get_vertDisp, set_vertDisp)
 
-    
     def move(self, particle, u, v, z, modelTimestep, **kwargs):
         """
         Returns the lat, lon, H, and velocity of a projected point given a starting

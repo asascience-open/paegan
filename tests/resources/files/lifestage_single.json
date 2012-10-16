@@ -4,6 +4,7 @@
   "notes": "", 
   "linear_a": 0.03, 
   "duration": 3, 
+  "settlement": null,
   "capability": {
     "nonswim_turning": "random", 
     "variance": 2.0, 

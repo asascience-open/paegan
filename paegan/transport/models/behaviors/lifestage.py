@@ -101,9 +101,36 @@ class LifeStage(BaseModel):
             growth = modelTimestepDays / self.duration
             particle.grow(growth)
 
-        logger.info("Particle %s grew %f" % (particle.uid, growth))
+        logger.info("Particle %d progressed %f%% of the current lifestage" % (particle.uid, growth * 100.))
 
         # Do the calculation to determine the new location after running the behaviors
+        result = AsaTransport.distance_from_location_using_u_v_z(u=u, v=v, z=z, timestep=modelTimestep, location=particle.location)
+        result['u'] = u
+        result['v'] = v
+        result['z'] = z
+        return result
+
+class DeadLifeStage(LifeStage):
+    def __init__(self, **kwargs):
+        super(DeadLifeStage,self).__init__(**kwargs)
+
+    def move(self, particle, u, v, z, modelTimestep, **kwargs):
+        """ I'm dead, so no behaviors should act on me """
+
+        logger = multiprocessing.get_logger()
+        logger.addHandler(NullHandler())
+
+        # Kill the particle if it isn't already dead
+        if not particle.dead:
+            particle.die()
+
+        u = 0
+        v = 0
+        z = 0
+
+        logger.info("Particle %s is dead" % (particle.uid))
+
+        # Do the calculation to determine the new location
         result = AsaTransport.distance_from_location_using_u_v_z(u=u, v=v, z=z, timestep=modelTimestep, location=particle.location)
         result['u'] = u
         result['v'] = v

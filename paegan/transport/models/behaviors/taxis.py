@@ -51,11 +51,25 @@ class Taxis(BaseModel):
         self._units = unicode(units)
     units = property(get_units, set_units)
 
+    def __str__(self):
+        return \
+        """*** Taxis  ***
+        Min: %d
+        Max: %d
+        Gradient: %d
+        Variables: %s
+        Units: %s
+        """ % (self.min_value, self.max_value, self.gradient, self.variable, self.units)
+
     def move(self, particle, u, v, z, modelTimestep, **kwargs):
 
         # If the particle is settled, don't move it anywhere
         if particle.settled:
             return { 'u': 0, 'v': 0, 'z': 0 }
+
+        # If the particle is halted (but not settled), don't move it anywhere
+        if particle.halted:
+            return { 'u': 0, 'v': 0, 'z': 0 }    
         
         z = 0
         u = 0

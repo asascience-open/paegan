@@ -119,6 +119,10 @@ class Diel(BaseModel):
         if particle.settled:
             return { 'u': 0, 'v': 0, 'z': 0 }
 
+        # If the particle is halted (but not settled), don't move it anywhere
+        if particle.halted:
+            return { 'u': 0, 'v': 0, 'z': 0 }
+
         """
             This only works if min is less than max.
             No checks are done here, so it should be done before
@@ -159,13 +163,12 @@ class Diel(BaseModel):
 
     def __str__(self):
         return \
-        """
-        Diel:
-            Pattern: %s
-            Cycle: %s
-            Time: %s
-            Plus or Minus: %s
-            Min Depth: %s
-            Max Depth: %s
-            Time Delta: %s
+        """*** Diel  ***
+        Pattern: %s
+        Cycle: %s
+        Time: %s
+        Plus or Minus: %s
+        Min Depth: %d
+        Max Depth: %d
+        Time Delta: %d
         """ % (self.pattern, self.cycle, self._time, self.plus_or_minus, self.min_depth, self.max_depth, self.time_delta)

@@ -121,7 +121,11 @@
       "notes": "", 
       "linear_a": null, 
       "duration": 2,
-      "settlement": null,
+      "settlement": {
+        "upper": 0.0, 
+        "lower": 100000.0,
+        "type": "benthic"
+      },
       "capability": null,
       "diel": [], 
       "taxis": []

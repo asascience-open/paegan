@@ -1,6 +1,8 @@
+import os
 import netCDF4
 from paegan.cdm.dataset import CommonDataset
 from paegan.transport.location4d import Location4D
+import numpy as np
 
 class Bathymetry():
     def __init__(self, **kwargs):
@@ -10,7 +12,7 @@ class Bathymetry():
 
         """
         
-        if "file" in kwargs:
+        if kwargs.get("file", None) is not None:
             self._file = os.path.normpath(kwargs.pop('file'))
         else:
             self._file = os.path.normpath(os.path.join(__file__,"../../resources/bathymetry/ETOPO1_Bed_g_gmt4.grd"))
