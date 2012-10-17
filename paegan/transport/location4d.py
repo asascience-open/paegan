@@ -87,6 +87,9 @@ class Location4D(object):
                 "\ndepth: " + str(self.depth) + \
                 "\ntime: " + str(self.time)
 
+    def logstring(self):
+        return "Time: %s, Lat: %f, Lon: %f, Depth: %fm " % (self.time, self.latitude, self.longitude, self.depth)
+
     def __eq__(self, other):
         return (isinstance(other, self.__class__)
             and self.__dict__ == other.__dict__)

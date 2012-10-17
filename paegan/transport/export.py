@@ -25,7 +25,7 @@ class Trackline(Export):
         """
             Export trackline data to GeoJSON file
         """
-        normalized_locations = [particle.noramlized_locations(datetimes) for particle in particles]
+        normalized_locations = [particle.normalized_locations(datetimes) for particle in particles]
 
         track_coords = []
         for x in xrange(0, len(datetimes)):
@@ -60,50 +60,70 @@ class Shapefile(Export):
         shape.field('U')
         shape.field('V')
         shape.field('W')
+        shape.field('Settled')
+        shape.field('Dead')
+        shape.field('Halted')
         
         # Loop through locations in particles,
         # add as points to the shapefile
         for particle in particles:
             # If there was temperature and salinity in the model, and
             # we ran behaviors, the lengths should be the same
+            normalized_locations = particle.normalized_locations(datetimes)
+            normalized_temps = particle.normalized_temps(datetimes)
+            normalized_salts = particle.normalized_salts(datetimes)
+            normalized_u = particle.normalized_u_vectors(datetimes)
+            normalized_v = particle.normalized_v_vectors(datetimes)
+            normalized_w = particle.normalized_w_vectors(datetimes)
+            normalized_settled = particle.normalized_settles(datetimes)
+            normalized_dead = particle.normalized_deads(datetimes)
+            normalized_halted = particle.normalized_halts(datetimes)
 
-            normalized_locations = particle.noramlized_locations(datetimes)
-            noramlized_temps = particle.noramlized_temps(datetimes)
-            noramlized_salts = particle.noramlized_salts(datetimes)
-            noramlized_u = particle.noramlized_u_vectors(datetimes)
-            noramlized_v = particle.noramlized_v_vectors(datetimes)
-            noramlized_w = particle.noramlized_w_vectors(datetimes)
-
-            if len(normalized_locations) != len(noramlized_temps):
+            if len(normalized_locations) != len(normalized_temps):
                 logger.info("No temperature being added to shapefile.")
                 # Create list of 'None' equal to the length of locations
-                noramlized_temps = [None] * len(normalized_locations) 
+                normalized_temps = [None] * len(normalized_locations) 
 
-            if len(normalized_locations) != len(noramlized_salts):
+            if len(normalized_locations) != len(normalized_salts):
                 logger.info("No salinity being added to shapefile.")
                 # Create list of 'None' equal to the length of locations
-                noramlized_salts = [None] * len(normalized_locations)
+                normalized_salts = [None] * len(normalized_locations)
 
-            if len(normalized_locations) != len(noramlized_u):
+            if len(normalized_locations) != len(normalized_u):
                 logger.info("No U being added to shapefile.")
                 # Create list of 'None' equal to the length of locations
-                noramlized_u = [None] * len(normalized_locations)
+                normalized_u = [None] * len(normalized_locations)
 
-            if len(normalized_locations) != len(noramlized_v):
+            if len(normalized_locations) != len(normalized_v):
                 logger.info("No V being added to shapefile.")
                 # Create list of 'None' equal to the length of locations
-                noramlized_v = [None] * len(normalized_locations) 
+                normalized_v = [None] * len(normalized_locations) 
 
-            if len(normalized_locations) != len(noramlized_w):
+            if len(normalized_locations) != len(normalized_w):
                 logger.info("No W being added to shapefile.")
                 # Create list of 'None' equal to the length of locations
-                noramlized_w = [None] * len(normalized_locations) 
+                normalized_w = [None] * len(normalized_locations) 
 
-            for loc, temp, salt, u, v, w in zip(normalized_locations, noramlized_temps, noramlized_salts, noramlized_u, noramlized_v, noramlized_w):
+            if len(normalized_locations) != len(normalized_settled):
+                logger.info("No Settled being added to shapefile.")
+                # Create list of 'None' equal to the length of locations
+                normalized_settled = [None] * len(normalized_locations) 
+
+            if len(normalized_locations) != len(normalized_dead):
+                logger.info("No Dead being added to shapefile.")
+                # Create list of 'None' equal to the length of locations
+                normalized_dead = [None] * len(normalized_locations) 
+
+            if len(normalized_locations) != len(normalized_halted):
+                logger.info("No Halted being added to shapefile.")
+                # Create list of 'None' equal to the length of locations
+                normalized_halted = [None] * len(normalized_locations) 
+
+            for loc, temp, salt, u, v, w, settled, dead, halted in zip(normalized_locations, normalized_temps, normalized_salts, normalized_u, normalized_v, normalized_w, normalized_settled, normalized_dead, normalized_halted):
                 # Add point geometry
                 shape.point(loc.longitude, loc.latitude)
                 # Add attribute records
-                shape.record(particle.uid, loc.time.isoformat(), loc.latitude, loc.longitude, loc.depth, temp, salt, u, v, w)
+                shape.record(particle.uid, loc.time.isoformat(), loc.latitude, loc.longitude, loc.depth, temp, salt, u, v, w, settled, dead, halted)
 
         filepath = os.path.join(folder, "shape.zip")
         # Write out shapefle to disk
@@ -135,6 +155,12 @@ class NetCDF(Export):
         lon = nc.createVariable('lon', 'f', ('time','particle'))
         salt = nc.createVariable('salt', 'f', ('time','particle'))
         temp = nc.createVariable('temp', 'f', ('time','particle'))
+        u = nc.createVariable('u', 'f', ('time','particle'))
+        v = nc.createVariable('v', 'f', ('time','particle'))
+        w = nc.createVariable('w', 'f', ('time','particle'))
+        settled = nc.createVariable('settled', 'f', ('time','particle'))
+        dead = nc.createVariable('dead', 'f', ('time','particle'))
+        halted = nc.createVariable('halted', 'f', ('time','particle'))
             
         # Loop through locations in each particle,
         # add to netcdf file
@@ -142,21 +168,57 @@ class NetCDF(Export):
             part[j] = particle.uid
             i = 0
 
-            normalized_locations = particle.noramlized_locations(datetimes)
-            noramlized_temps = particle.noramlized_temps(datetimes)
-            noramlized_salts = particle.noramlized_salts(datetimes)
+            normalized_locations = particle.normalized_locations(datetimes)
+            normalized_temps = particle.normalized_temps(datetimes)
+            normalized_salts = particle.normalized_salts(datetimes)
+            normalized_u = particle.normalized_u_vectors(datetimes)
+            normalized_v = particle.normalized_v_vectors(datetimes)
+            normalized_w = particle.normalized_w_vectors(datetimes)            
+            normalized_settled = particle.normalized_settles(datetimes)
+            normalized_dead = particle.normalized_deads(datetimes)
+            normalized_halted = particle.normalized_halts(datetimes)
 
-            if len(normalized_locations) != len(noramlized_temps):
-                logger.debug("No temperature being added to netcdf.")
+            if len(normalized_locations) != len(normalized_temps):
+                logger.info("No temperature being added to netcdf.")
                 # Create list of 'None' equal to the length of locations
-                noramlized_temps = [None] * len(normalized_locations)
+                normalized_temps = [None] * len(normalized_locations)
 
-            if len(normalized_locations) != len(noramlized_salts):
-                logger.debug("No salinity being added to netcdf.")
+            if len(normalized_locations) != len(normalized_salts):
+                logger.info("No salinity being added to netcdf.")
                 # Create list of 'None' equal to the length of locations
-                noramlized_salts = [None] * len(normalized_locations)
+                normalized_salts = [None] * len(normalized_locations)
 
-            for loc, _temp, _salt in zip(normalized_locations, noramlized_temps, noramlized_salts):
+            if len(normalized_locations) != len(normalized_u):
+                logger.info("No U being added to netcdf.")
+                # Create list of 'None' equal to the length of locations
+                normalized_u = [None] * len(normalized_locations)
+
+            if len(normalized_locations) != len(normalized_v):
+                logger.info("No V being added to netcdf.")
+                # Create list of 'None' equal to the length of locations
+                normalized_v = [None] * len(normalized_locations) 
+
+            if len(normalized_locations) != len(normalized_w):
+                logger.info("No W being added to netcdf.")
+                # Create list of 'None' equal to the length of locations
+                normalized_w = [None] * len(normalized_locations) 
+
+            if len(normalized_locations) != len(normalized_settled):
+                logger.info("No Settled being added to shapefile.")
+                # Create list of 'None' equal to the length of locations
+                normalized_settled = [None] * len(normalized_locations) 
+
+            if len(normalized_locations) != len(normalized_dead):
+                logger.info("No Dead being added to shapefile.")
+                # Create list of 'None' equal to the length of locations
+                normalized_dead = [None] * len(normalized_locations) 
+
+            if len(normalized_locations) != len(normalized_halted):
+                logger.info("No Halted being added to shapefile.")
+                # Create list of 'None' equal to the length of locations
+                normalized_halted = [None] * len(normalized_locations) 
+
+            for loc, _temp, _salt, _u, _v, _w, _settled, _dead, _halted in zip(normalized_locations, normalized_temps, normalized_salts, normalized_u, normalized_v, normalized_w, normalized_settled, normalized_dead, normalized_halted):
 
                 if j == 0:
                     time[i] = netCDF4.date2num(loc.time, time_units)
@@ -165,23 +227,60 @@ class NetCDF(Export):
                 lon[i, j] = loc.longitude
                 salt[i, j] = _salt
                 temp[i, j] = _temp
+                u[i, j] = _u
+                v[i, j] = _v
+                w[i, j] = _w
+                settled[i, j] = _settled
+                dead[i, j] = _dead
+                halted[i, j] = _halted
                 i += 1
+
         # Variable attributes
         depth.coordinates = "time particle lat lon"
         depth.standard_name = "depth_below_sea_surface"
         depth.units = "m"
         depth.POSITIVE = "up"
         depth.positive = "up"
+
         salt.coordinates = "time particle lat lon"
         salt.standard_name = "sea_water_salinity"
         salt.units = "psu"
+
         temp.coordinates = "time particle lat lon"
         temp.standard_name = "sea_water_temperature"
         temp.units = "degrees_C"
+
+        u.coordinates = "time particle lat lon"
+        u.standard_name = "eastward_sea_water_velocity"
+        u.units = "m/s"
+
+        v.coordinates = "time particle lat lon"
+        v.standard_name = "northward_sea_water_velocity"
+        v.units = "m/s"
+
+        w.coordinates = "time particle lat lon"
+        w.standard_name = "upward_sea_water_velocity"
+        w.units = "m/s"
+
+        settled.coordinates = "time particle lat lon"
+        settled.description = "Is the particle settled"
+        settled.standard_name = "particle_settled"
+
+        dead.coordinates = "time particle lat lon"
+        dead.description = "Is the particle dead"
+        dead.standard_name = "particle_dead"
+
+        halted.coordinates = "time particle lat lon"
+        halted.description = "Is the particle prevented from being forced by currents"
+        halted.standard_name = "particle_halted"
+
         time.units = time_units
         time.standard_name = "time"
+
         lat.units = "degrees_north"
+
         lon.units = "degrees_east"
+
         part.cf_role = "trajectory_id"
         
         # Global attributes
@@ -189,6 +288,6 @@ class NetCDF(Export):
         nc.summary = str(summary)
         for key in kwargs:
             nc.__setattr__(key, kwargs.get(key))
-        #nc.cdm_dataset_type = "trajectory"
+
         nc.sync()
         nc.close()

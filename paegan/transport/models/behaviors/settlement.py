@@ -50,7 +50,7 @@ class Settlement(object):
                 newloc = Location4D(location=particle.location)
                 newloc.depth = depth
                 particle.location = newloc
-                particle.fill_location_gap()
+                particle.fill_location_gaps()
                 particle.settle()
                 logger.info("Particle %d settled in %s mode" % (particle.uid, self.type))
         elif self.type.lower() == "pelagic":

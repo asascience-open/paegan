@@ -221,6 +221,10 @@ class ModelController(object):
         for x in xrange(0, self._npart):
             p = LarvaParticle(id=x)
             p.location = point_locations[x]
+            # We don't need to fill the location gaps here because
+            # the first data collected actually relates to this original
+            # position
+            #p.fill_location_gap()
             self.particles.append(p)
 
         # This is where it makes sense to implement the multiprocessing
@@ -372,6 +376,7 @@ class ModelController(object):
                     output_path = kwargs.get("output_path")
                     if isinstance(formats, list):
                         for format in formats:
+                            logger.info("Exporting to: %s" % format)
                             self.export(output_path, format=format)
                     else:
                         logger.warn('The output_formats parameter should be a list, not saving any output!')  
@@ -380,7 +385,8 @@ class ModelController(object):
             else:
                 logger.warn('No output format defined, not saving any output!')
         else:
-            raise ValueError("Model didn't actually do anything, check the log.")
+            logger.warn("Model didn't actually do anything, check the log.")
+            raise
 
         return
     

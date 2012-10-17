@@ -13,6 +13,7 @@ class Particle(object):
         self._u = []
         self._v = []
         self._w = []
+        self._halts = []
 
     def get_id(self):
         return self._id
@@ -27,20 +28,37 @@ class Particle(object):
         return self._locations
     locations = property(get_locations, None)
 
-    def fill_location_gap(self):
+    def fill_location_gaps(self, value=None):
         """
         To keep certain parameters the same length as 'locations',
         this is used if the particle moves twice within a timestep.
         This can happen if they hit a shoreline, etc.
         """
-        self._u.append(self.u)
-        self._v.append(self.v)
-        self._w.append(self.w)
+        def fillvalue(v):
+            if unicode(value).lower() == u"last":
+                return v
+            else:
+                return value
+
+        while len(self.locations) > len(self.u_vectors):
+            self.u_vectors.append(fillvalue(self.u_vector))
+
+        while len(self.locations) > len(self.v_vectors):
+            self.v_vectors.append(fillvalue(self.v_vector))
+
+        while len(self.locations) > len(self.w_vectors):
+            self.w_vectors.append(fillvalue(self.w_vector))
+
+        while len(self.locations) > len(self.halts):
+            self.halts.append(self.halted)
 
     def set_u_vector(self, u):
         self._u.append(u)
     def get_u_vector(self):
-        return self._u[-1]
+        try:
+            return self._u[-1]
+        except IndexError:
+            return None
     u_vector = property(get_u_vector, set_u_vector)
     def get_u_vectors(self):
         return self._u
@@ -49,16 +67,22 @@ class Particle(object):
     def set_v_vector(self, v):
         self._v.append(v)
     def get_v_vector(self):
-        return self._v[-1]
+        try:
+            return self._v[-1]
+        except IndexError:
+            return None
     v_vector = property(get_v_vector, set_v_vector)
     def get_v_vectors(self):
         return self._v
     v_vectors = property(get_v_vectors, None)
 
     def set_w_vector(self, w):
-        self._w.append(v)
+        self._w.append(w)
     def get_w_vector(self):
-        return self._w[-1]
+        try:
+            return self._w[-1]
+        except IndexError:
+            return None
     w_vector = property(get_w_vector, set_w_vector)
     def get_w_vectors(self):
         return self._w
@@ -77,6 +101,9 @@ class Particle(object):
     def get_halted(self):
         return self._halted
     halted = property(get_halted, None)
+    def get_halts(self):
+        return self._halts
+    halts = property(get_halts, None)
 
     def set_active(self, active):
         self._active = active
@@ -142,17 +169,20 @@ class Particle(object):
     def linestring(self):
         return LineString(map(lambda x: list(x.point.coords)[0], self.locations))
 
-    def noramlized_u_vectors(self, model_timesteps):
+    def normalized_u_vectors(self, model_timesteps):
         return [u for i,u in enumerate(self.u_vectors) if i in self.normalized_indexes(model_timesteps)]
 
-    def noramlized_v_vectors(self, model_timesteps):
+    def normalized_v_vectors(self, model_timesteps):
         return [v for i,v in enumerate(self.v_vectors) if i in self.normalized_indexes(model_timesteps)]
 
-    def noramlized_w_vectors(self, model_timesteps):
+    def normalized_w_vectors(self, model_timesteps):
         return [w for i,w in enumerate(self.w_vectors) if i in self.normalized_indexes(model_timesteps)]
 
-    def noramlized_locations(self, model_timesteps):
+    def normalized_locations(self, model_timesteps):
         return [loc for i,loc in enumerate(self.locations) if i in self.normalized_indexes(model_timesteps)]
+
+    def normalized_halts(self, model_timesteps):
+        return [loc for i,loc in enumerate(self.halts) if i in self.normalized_indexes(model_timesteps)]
 
     def normalized_indexes(self, model_timesteps):
         """
@@ -204,13 +234,20 @@ class LarvaParticle(Particle):
         self.lifestage_progress = 0.
         self._temp = []
         self._salt = []
+
         self._settled = False
+        self._settles = []
+
         self._dead = False
+        self._deads = []
 
     def set_temp(self, temp):
         self._temp.append(temp)
     def get_temp(self):
-        return self._temp[-1]
+        try:
+            return self._temp[-1]
+        except IndexError:
+            return None
     temp = property(get_temp, set_temp)
     
     def get_temps(self):
@@ -220,7 +257,10 @@ class LarvaParticle(Particle):
     def set_salt(self, salt):
         self._salt.append(salt)
     def get_salt(self):
-        return self._salt[-1]
+        try:
+            return self._salt[-1]
+        except IndexError:
+            return None
     salt = property(get_salt, set_salt)
     
     def get_salts(self):
@@ -240,6 +280,9 @@ class LarvaParticle(Particle):
     def get_settled(self):
         return self._settled
     settled = property(get_settled, None)
+    def get_settles(self):
+        return self._settles
+    settles = property(get_settles, None)
 
     def die(self):
         self._dead = True
@@ -248,17 +291,42 @@ class LarvaParticle(Particle):
     def get_dead(self):
         return self._dead
     dead = property(get_dead, None)
+    def get_deads(self):
+        return self._deads
+    deads = property(get_deads, None)
 
-    def noramlized_temps(self, model_timesteps):
+    def normalized_temps(self, model_timesteps):
         return [t for i,t in enumerate(self.temps) if i in self.normalized_indexes(model_timesteps)]
 
-    def noramlized_salts(self, model_timesteps):
+    def normalized_salts(self, model_timesteps):
         return [s for i,s in enumerate(self.salts) if i in self.normalized_indexes(model_timesteps)]
 
-    def fill_location_gap(self):
-        super(LarvaParticle,self).fill_location_gap()
-        self._temp.append(self.temp)
-        self._salt.append(self.salt)
+    def normalized_settles(self, model_timesteps):
+        return [loc for i,loc in enumerate(self.settles) if i in self.normalized_indexes(model_timesteps)]
+
+    def normalized_deads(self, model_timesteps):
+        return [loc for i,loc in enumerate(self.deads) if i in self.normalized_indexes(model_timesteps)]
+
+    def fill_location_gaps(self, value=None):
+        super(LarvaParticle,self).fill_location_gaps(value=value)
+
+        def fillvalue(v):
+            if unicode(value).lower() == u"last":
+                return v
+            else:
+                return value
+
+        while len(self.locations) > len(self.salts):
+            self.salts.append(fillvalue(self.salt))
+
+        while len(self.locations) > len(self.temps):
+            self.temps.append(fillvalue(self.temp))
+
+        while len(self.locations) > len(self.deads):
+            self.deads.append(self.dead)
+
+        while len(self.locations) > len(self.settles):
+            self.settles.append(self.settled)
 
     def grow(self, amount):
         """

@@ -952,13 +952,17 @@ class ForceParticle(object):
             for model in models:
                 movement = model.move(part, u, v, w, modelTimestep[loop_i], temperature=temp, salinity=salt, bathymetry_value=bathymetry_value)
                 newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtimes[loop_i+1])
-                logger.info("%s - moved %.3f meters (horizontally) and %.3f meters (vertically) by %s with data from %s and recorded at %s" % (part.logstring(), movement['distance'], movement['vertical_distance'], model.__class__.__name__, newtimes[loop_i].isoformat(), newtimes[loop_i+1].isoformat()))
+                logger.info("%s - moved %.3f meters (horizontally) and %.3f meters (vertically) by %s with data from %s and is now at %s" % (part.logstring(), movement['distance'], movement['vertical_distance'], model.__class__.__name__, newtimes[loop_i].isoformat(), part.location.logstring()))
                 if newloc:
                     self.boundary_interaction(self._bathymetry, self._shoreline, self.usebathy, self.useshore, self.usesurface,
                         particle=part, starting=part.location, ending=newloc,
                         distance=movement['distance'], angle=movement['angle'], 
                         azimuth=movement['azimuth'], reverse_azimuth=movement['reverse_azimuth'], 
                         vertical_distance=movement['vertical_distance'], vertical_angle=movement['vertical_angle'])
+
+        # We won't pull data for the last entry in locations, but we need to populate it with fill data.
+        part.fill_location_gaps()
+
         remote = None
         return part
     
@@ -978,7 +982,7 @@ class ForceParticle(object):
                 # Set the intersection point
                 hitpoint = Location4D(point=intersection_point['point'], time=starting.time + (ending.time - starting.time))
                 particle.location = hitpoint
-                particle.fill_location_gap()
+                particle.fill_location_gaps()
                 resulting_point = shore.react(start_point=starting,
                                               end_point=ending,
                                               hit_point=hitpoint,
@@ -1008,4 +1012,5 @@ class ForceParticle(object):
                 ending.depth = 0
 
         particle.location = ending
+        particle.fill_location_gaps()
     

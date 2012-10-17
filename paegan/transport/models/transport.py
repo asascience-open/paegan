@@ -1,4 +1,6 @@
 import math
+import multiprocessing
+from paegan.logging.null_handler import NullHandler
 from paegan.utils.asamath import AsaMath
 from paegan.utils.asarandom import AsaRandom
 from paegan.utils.asatransport import AsaTransport
@@ -53,17 +55,20 @@ class Transport(BaseModel):
                 'vertical_angle': x }
         """
 
+        logger = multiprocessing.get_logger()
+        logger.addHandler(NullHandler())
+
         if u is not None and math.isnan(u):
             u = None
-        particle.u = u
+        particle.u_vector = u
 
         if v is not None and math.isnan(v):
             v = None
-        particle.v = v
+        particle.v_vector = v
 
         if w is not None and math.isnan(w):
             w = None
-        particle.w = w
+        particle.w_vector = w
 
         if particle.halted:
             u,v,w = 0,0,0
