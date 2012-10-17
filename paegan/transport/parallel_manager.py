@@ -960,8 +960,13 @@ class ForceParticle(object):
                         azimuth=movement['azimuth'], reverse_azimuth=movement['reverse_azimuth'], 
                         vertical_distance=movement['vertical_distance'], vertical_angle=movement['vertical_angle'])
 
+            # Each timestep, save the particles status.  This keep status fields such 
+            # as halted, settled, and dead matched up with the number of timesteps
+            part.save_status()
+
         # We won't pull data for the last entry in locations, but we need to populate it with fill data.
-        part.fill_location_gaps()
+        #part.fill_location_gaps()
+        part.fill_single_gap()
 
         remote = None
         return part
@@ -982,7 +987,8 @@ class ForceParticle(object):
                 # Set the intersection point
                 hitpoint = Location4D(point=intersection_point['point'], time=starting.time + (ending.time - starting.time))
                 particle.location = hitpoint
-                particle.fill_location_gaps()
+                #particle.fill_location_gaps(value='last')
+                part.fill_single_gap(value='last')
                 resulting_point = shore.react(start_point=starting,
                                               end_point=ending,
                                               hit_point=hitpoint,
@@ -1012,5 +1018,5 @@ class ForceParticle(object):
                 ending.depth = 0
 
         particle.location = ending
-        particle.fill_location_gaps()
+        #particle.fill_location_gaps()
     
