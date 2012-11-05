@@ -82,8 +82,8 @@ def CommonDataset(ncfile, xname='lon', yname='lat',
         logger.info("Loading dataset: %s" % ncfile)
         try:
             nc = netCDF4.Dataset(ncfile)
-        except:
-            raise ValueError("Could not load dataset: %s" % ncfile)
+        except StandardError:
+            raise
 
     self.nc = nc
     self._filename = ncfile
@@ -331,7 +331,7 @@ class Dataset:
         ncvar = self.nc.variables[var]
         try:
             coordinates = ncvar.coordinates.split()
-        except:
+        except StandardError:
             coordinates = []
         # If the coordinate names not in kwargs, then figure
         # out the remaining coordinate names
@@ -383,7 +383,7 @@ class Dataset:
                 for cdim in cdims:
                     try:
                         total.append(dims.index(cdim))
-                    except:
+                    except StandardError:
                         pass 
         total = np.unique(np.asarray(total))
 
@@ -433,7 +433,7 @@ class Dataset:
                     sn = self.nc.variables[var].standard_name
                     if standard_name == sn:
                         var_matches.append(var)
-                except:
+                except StandardError:
                     pass
         else:
             pass
@@ -517,7 +517,7 @@ class Dataset:
                     for cdim in cdims:
                         try:
                             positions[common_name].append(dims.index(cdim))
-                        except:
+                        except StandardError:
                             pass
 
         if positions["time"] != None:
@@ -611,7 +611,7 @@ class Dataset:
                     for cdim in cdims:
                         try:
                             positions[common_name].append(dims.index(cdim))
-                        except:
+                        except StandardError:
                             pass
         # get t inds, z inds, xy inds
         # tinds = [[1,],]

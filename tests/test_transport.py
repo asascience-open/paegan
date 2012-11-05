@@ -45,7 +45,7 @@ class TransportTest(unittest.TestCase):
                 try:
                     modelTimestep = self.times[i+1] - self.times[i]
                     calculatedTime = self.times[i+1]
-                except:
+                except StandardError:
                     modelTimestep = self.times[i] - self.times[i-1]
                     calculatedTime = self.times[i] + modelTimestep
 

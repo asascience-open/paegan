@@ -20,15 +20,15 @@ class SettlementTest(unittest.TestCase):
         d = Settlement(json=self.data)
 
         assert d.type == 'benthic'
-        assert d.upper == 100.0
-        assert d.lower == 200.0
+        assert d.upper == -100.0
+        assert d.lower == -200.0
 
     def test_from_dict(self):
         d = Settlement(data=json.loads(self.data))
 
         assert d.type == 'benthic'
-        assert d.upper == 100.0
-        assert d.lower == 200.0
+        assert d.upper == -100.0
+        assert d.lower == -200.0
 
     def test_attempts(self):
         start_lat = 38
@@ -37,11 +37,11 @@ class SettlementTest(unittest.TestCase):
         settle = Settlement(json='{"upper": 100.0, "lower": 200.0, "type": "benthic"}')
         # Particle above the upper bound
         particle = LarvaParticle()
-        particle.location = Location4D(latitude=start_lat, longitude=start_lon, depth=50, time=self.start_time)
+        particle.location = Location4D(latitude=start_lat, longitude=start_lon, depth=-50, time=self.start_time)
         # Set bathymetry BETWEEN lower (200) and upper (100)
-        settle.attempt(particle, 150)
+        settle.attempt(particle, -150)
         # We should have moved vertically to the bottom and settled
-        assert particle.location.depth == 150
+        assert particle.location.depth == -150
         assert particle.location.latitude == particle.locations[-2].latitude
         assert particle.location.longitude == particle.locations[-2].longitude
         assert particle.location.time == particle.locations[-2].time
@@ -51,9 +51,9 @@ class SettlementTest(unittest.TestCase):
         settle = Settlement(json='{"upper": 100.0, "lower": 200.0, "type": "benthic"}')
         # Particle above the upper bound
         particle = LarvaParticle()
-        particle.location = Location4D(latitude=start_lat, longitude=start_lon, depth=250, time=self.start_time)
+        particle.location = Location4D(latitude=start_lat, longitude=start_lon, depth=-250, time=self.start_time)
         # Set bathymetry BELOW lower (200) and upper (100)
-        settle.attempt(particle, 400)
+        settle.attempt(particle, -400)
         # We should not have moved
         assert len(particle.locations) == 1
         assert not particle.settled
@@ -62,9 +62,9 @@ class SettlementTest(unittest.TestCase):
         settle = Settlement(json='{"upper": 100.0, "lower": 200.0, "type": "pelagic"}')
         # Particle above the upper bound
         particle = LarvaParticle()
-        particle.location = Location4D(latitude=start_lat, longitude=start_lon, depth=50, time=self.start_time)
+        particle.location = Location4D(latitude=start_lat, longitude=start_lon, depth=-50, time=self.start_time)
         # Set bathymetry BELOW lower (200) and upper (100)
-        settle.attempt(particle, 400)
+        settle.attempt(particle, -400)
         # We should not have moved
         assert len(particle.locations) == 1
         assert not particle.settled
@@ -73,9 +73,9 @@ class SettlementTest(unittest.TestCase):
         settle = Settlement(json='{"upper": 100.0, "lower": 200.0, "type": "pelagic"}')
         # Particle is between the upper and lower bounds
         particle = LarvaParticle()
-        particle.location = Location4D(latitude=start_lat, longitude=start_lon, depth=150, time=self.start_time)
+        particle.location = Location4D(latitude=start_lat, longitude=start_lon, depth=-150, time=self.start_time)
         # Set bathymetry BELOW lower (200) and upper (100)
-        settle.attempt(particle, 400)
+        settle.attempt(particle, -400)
         # We should have settled, but not moved anywhere
         assert len(particle.locations) == 1
         assert particle.settled    

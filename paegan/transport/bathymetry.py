@@ -28,6 +28,7 @@ class Bathymetry():
         """
         end_point = kwargs.pop('end_point')
         depth = self.get_depth(location=end_point)
+        # Bathymetry and a particle's depth are both negative down
         if depth > end_point.depth:
             inter = True
         else:
@@ -48,7 +49,7 @@ class Bathymetry():
             
     def __hover(self, **kwargs):
         end_point = kwargs.pop('end_point')
-        depth = np.mean(np.mean(self._nc.get_values(self._bathy_name, point=end_point)))
+        depth = self.get_depth(location=end_point)
         return Location4D(latitude=end_point.latitude, longitude=end_point.longitude, depth=depth + 1)
         
         

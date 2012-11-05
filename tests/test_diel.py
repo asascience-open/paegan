@@ -15,8 +15,8 @@ class DielTest(unittest.TestCase):
 
         assert d.pattern == "cycles"
         assert d.plus_or_minus == "+"
-        assert d.min_depth == 4.0
-        assert d.max_depth == 5.0
+        assert d.min_depth == -4.0
+        assert d.max_depth == -5.0
         assert d.time_delta == 4
         assert d.cycle == "sunrise"
 
@@ -26,8 +26,8 @@ class DielTest(unittest.TestCase):
 
         assert d.pattern == "cycles"
         assert d.plus_or_minus == "+"
-        assert d.min_depth == 4.0
-        assert d.max_depth == 5.0
+        assert d.min_depth == -4.0
+        assert d.max_depth == -5.0
         assert d.time_delta == 4
         assert d.cycle == "sunrise"
 
@@ -36,8 +36,8 @@ class DielTest(unittest.TestCase):
         d = Diel(json=data)
 
         assert d.pattern == "specifictime"
-        assert d.min_depth == 4.0
-        assert d.max_depth == 5.0
+        assert d.min_depth == -4.0
+        assert d.max_depth == -5.0
         assert d.time == datetime.utcfromtimestamp(1344272400000 / 1000).replace(tzinfo=pytz.utc)
 
     def test_specifictime_object_from_dict(self):
@@ -45,8 +45,8 @@ class DielTest(unittest.TestCase):
         d = Diel(data=json.loads(data))
 
         assert d.pattern == "specifictime"
-        assert d.min_depth == 4.0
-        assert d.max_depth == 5.0
+        assert d.min_depth == -4.0
+        assert d.max_depth == -5.0
         assert d.time == datetime.utcfromtimestamp(1344272400000 / 1000).replace(tzinfo=pytz.utc)
 
     def test_cycle(self):
@@ -58,8 +58,8 @@ class DielTest(unittest.TestCase):
         sunset = c[SunCycles.SETTING]
 
         d = Diel()
-        d.min_depth = 4
-        d.max_depth = 10
+        d.min_depth = -4
+        d.max_depth = -10
         d.pattern = 'cycles'
         d.cycle = 'sunrise'
         d.plus_or_minus = '+'
@@ -67,8 +67,8 @@ class DielTest(unittest.TestCase):
         assert d.get_time(loc4d=loc) == sunrise + timedelta(hours=4)
 
         d = Diel()
-        d.min_depth = 4
-        d.max_depth = 10
+        d.min_depth = -4
+        d.max_depth = -10
         d.pattern = 'cycles'
         d.cycle = 'sunset'
         d.plus_or_minus = '-'

@@ -8,12 +8,21 @@ class Particle(object):
         self._locations = []
         self._age = 0. # Age in days
         self._id = kwargs.get("id", -1)
-        self._halted = False
 
-        self._u = []
-        self._v = []
-        self._w = []
+        self._u = None
+        self._us = []
+
+        self._v = None        
+        self._vs = []
+
+        self._w = None
+        self._ws = []
+
+        self._halted = False
         self._halts = []
+
+        self._note = ""
+        self._notes = []
 
     def get_id(self):
         return self._id
@@ -28,10 +37,31 @@ class Particle(object):
         return self._locations
     locations = property(get_locations, None)
 
-    def save_status(self):
+    def save(self):
         self.halts.append(self.halted)
+        self.u_vectors.append(self.u_vector)
+        self.v_vectors.append(self.v_vector)
+        self.w_vectors.append(self.w_vector)
+        self.notes.append(self.note)
 
-    def fill_single_gap(self, value=None):
+        self.u_vector = None
+        self.v_vector = None
+        self.w_vector = None
+        self.note = ""
+
+    def fill_status_gap(self, value=None):
+
+        def fillvalue(v):
+            if unicode(value).lower() == u"last":
+                return v
+            else:
+                return value
+
+        if len(self.locations) > len(self.halts):
+            self.halts.append(self.halted)
+
+    def fill_environment_gap(self, value=None):
+
         def fillvalue(v):
             if unicode(value).lower() == u"last":
                 return v
@@ -39,76 +69,73 @@ class Particle(object):
                 return value
 
         if len(self.locations) > len(self.u_vectors):
-            self.u_vectors.append(fillvalue(self.u_vector))
+            self.u_vectors.append(fillvalue(self.last_u()))
 
         if len(self.locations) > len(self.v_vectors):
-            self.v_vectors.append(fillvalue(self.v_vector))
+            self.v_vectors.append(fillvalue(self.last_v()))
 
         if len(self.locations) > len(self.w_vectors):
-            self.w_vectors.append(fillvalue(self.w_vector))
+            self.w_vectors.append(fillvalue(self.last_w()))
 
-        if len(self.locations) > len(self.halts):
-            self.halts.append(self.halted)
-
-    def fill_location_gaps(self, value=None):
-        """
-        To keep certain parameters the same length as 'locations',
-        this is used if the particle moves twice within a timestep.
-        This can happen if they hit a shoreline, etc.
-        """
-        def fillvalue(v):
-            if unicode(value).lower() == u"last":
-                return v
-            else:
-                return value
-
-        while len(self.locations) > len(self.u_vectors):
-            self.u_vectors.append(fillvalue(self.u_vector))
-
-        while len(self.locations) > len(self.v_vectors):
-            self.v_vectors.append(fillvalue(self.v_vector))
-
-        while len(self.locations) > len(self.w_vectors):
-            self.w_vectors.append(fillvalue(self.w_vector))
-
-        while len(self.locations) > len(self.halts):
-            self.halts.append(self.halted)
+    def fill_gap(self, value=None):
+        self.fill_environment_gap(value=value)
+        self.fill_status_gap(value=value)
 
     def set_u_vector(self, u):
-        self._u.append(u)
+        self._u = u
     def get_u_vector(self):
-        try:
-            return self._u[-1]
-        except IndexError:
-            return None
+        return self._u
     u_vector = property(get_u_vector, set_u_vector)
     def get_u_vectors(self):
-        return self._u
+        return self._us
     u_vectors = property(get_u_vectors, None)
+    def last_u(self):
+        try:
+            return self.u_vectors[-1]
+        except IndexError:
+            return None
     
     def set_v_vector(self, v):
-        self._v.append(v)
+        self._v = v
     def get_v_vector(self):
-        try:
-            return self._v[-1]
-        except IndexError:
-            return None
+        return self._v
     v_vector = property(get_v_vector, set_v_vector)
     def get_v_vectors(self):
-        return self._v
+        return self._vs
     v_vectors = property(get_v_vectors, None)
-
-    def set_w_vector(self, w):
-        self._w.append(w)
-    def get_w_vector(self):
+    def last_v(self):
         try:
-            return self._w[-1]
+            return self.v_vectors[-1]
         except IndexError:
             return None
+
+    def set_w_vector(self, w):
+        self._w = w
+    def get_w_vector(self):
+        return self._w
     w_vector = property(get_w_vector, set_w_vector)
     def get_w_vectors(self):
-        return self._w
+        return self._ws
     w_vectors = property(get_w_vectors, None)
+    def last_w(self):
+        try:
+            return self.w_vectors[-1]
+        except IndexError:
+            return None    
+
+    def set_note(self, note):
+        self._note = note
+    def get_note(self):
+        return self._note
+    note = property(get_note, set_note)
+    def get_notes(self):
+        return self._notes
+    notes = property(get_notes, None)
+    def last_note(self):
+        try:
+            return self.notes[-1]
+        except IndexError:
+            return ""  
 
     def proceed(self):
         """
@@ -160,7 +187,7 @@ class Particle(object):
             else:
                 raise
             return round(z,8) 
-        except:
+        except StandardError:
             raise KeyError("Could not return age of particle")
 
     def age(self, **kwargs):
@@ -191,24 +218,8 @@ class Particle(object):
     def linestring(self):
         return LineString(map(lambda x: list(x.point.coords)[0], self.locations))
 
-    def normalized_u_vectors(self, model_timesteps):
-        #return [u for i,u in enumerate(self.u_vectors) if i in self.normalized_indexes(model_timesteps)]
-        return self.u_vectors
-
-    def normalized_v_vectors(self, model_timesteps):
-        #return [v for i,v in enumerate(self.v_vectors) if i in self.normalized_indexes(model_timesteps)]
-        return self.v_vectors
-
-    def normalized_w_vectors(self, model_timesteps):
-        #return [w for i,w in enumerate(self.w_vectors) if i in self.normalized_indexes(model_timesteps)]
-        return self.w_vectors
-
     def normalized_locations(self, model_timesteps):
         return [loc for i,loc in enumerate(self.locations) if i in self.normalized_indexes(model_timesteps)]
-
-    def normalized_halts(self, model_timesteps):
-        #return [loc for i,loc in enumerate(self.halts) if i in self.normalized_indexes(model_timesteps)]
-        return self.halts
 
     def normalized_indexes(self, model_timesteps):
         """
@@ -233,7 +244,7 @@ class Particle(object):
                     continue
                 else:
                     clean_locs.append(loc)
-            except:
+            except StandardError:
                 clean_locs.append(loc)
 
         if len(clean_locs) == len(model_timesteps):
@@ -258,8 +269,12 @@ class LarvaParticle(Particle):
     def __init__(self, **kwargs):
         super(LarvaParticle,self).__init__(**kwargs)
         self.lifestage_progress = 0.
-        self._temp = []
-        self._salt = []
+
+        self._temp = None
+        self._temps = []
+
+        self._salt = None
+        self._salts = []
 
         self._settled = False
         self._settles = []
@@ -267,31 +282,35 @@ class LarvaParticle(Particle):
         self._dead = False
         self._deads = []
 
+    # Temp
     def set_temp(self, temp):
-        self._temp.append(temp)
+        self._temp = temp
     def get_temp(self):
-        try:
-            return self._temp[-1]
-        except IndexError:
-            return None
-    temp = property(get_temp, set_temp)
-    
-    def get_temps(self):
         return self._temp
+    temp = property(get_temp, set_temp)
+    def get_temps(self):
+        return self._temps
     temps = property(get_temps, None)
-    
-    def set_salt(self, salt):
-        self._salt.append(salt)
-    def get_salt(self):
+    def last_temp(self):
         try:
-            return self._salt[-1]
+            return self.temps[-1]
         except IndexError:
             return None
-    salt = property(get_salt, set_salt)
     
-    def get_salts(self):
+    # Salt
+    def set_salt(self, salt):
+        self._salt = salt
+    def get_salt(self):
         return self._salt
+    salt = property(get_salt, set_salt)
+    def get_salts(self):
+        return self._salts
     salts = property(get_salts, None)
+    def last_salt(self):
+        try:
+            return self.salts[-1]
+        except IndexError:
+            return None
     
     def get_lifestage_index(self):
         return int(self.lifestage_progress)
@@ -322,29 +341,33 @@ class LarvaParticle(Particle):
         return self._deads
     deads = property(get_deads, None)
 
-    def normalized_temps(self, model_timesteps):
-        #return [t for i,t in enumerate(self.temps) if i in self.normalized_indexes(model_timesteps)]
-        return self.temps
-
-    def normalized_salts(self, model_timesteps):
-        #return [s for i,s in enumerate(self.salts) if i in self.normalized_indexes(model_timesteps)]
-        return self.salts
-
-    def normalized_settles(self, model_timesteps):
-        #return [loc for i,loc in enumerate(self.settles) if i in self.normalized_indexes(model_timesteps)]
-        return self.settles
-
-    def normalized_deads(self, model_timesteps):
-        #return [loc for i,loc in enumerate(self.deads) if i in self.normalized_indexes(model_timesteps)]
-        return self.deads
-
-    def save_status(self):
-        super(LarvaParticle,self).save_status()
+    def save(self):
+        super(LarvaParticle,self).save()
         self.deads.append(self.dead)
         self.settles.append(self.settled)
+        self.temps.append(self.temp)
+        self.salts.append(self.salt)
 
-    def fill_single_gap(self, value=None):
-        super(LarvaParticle,self).fill_single_gap(value=value)
+        self.temp = None
+        self.salt = None
+
+    def fill_status_gap(self, value=None):
+        super(LarvaParticle,self).fill_status_gap(value=value)
+
+        def fillvalue(v):
+            if unicode(value).lower() == u"last":
+                return v
+            else:
+                return value
+
+        if len(self.locations) > len(self.deads):
+            self.deads.append(self.dead)
+
+        if len(self.locations) > len(self.settles):
+            self.settles.append(self.settled)
+
+    def fill_environment_gap(self, value=None):
+        super(LarvaParticle,self).fill_environment_gap(value=value)
 
         def fillvalue(v):
             if unicode(value).lower() == u"last":
@@ -353,37 +376,13 @@ class LarvaParticle(Particle):
                 return value
 
         if len(self.locations) > len(self.salts):
-            self.salts.append(fillvalue(self.salt))
+            self.salts.append(fillvalue(self.last_salt()))
 
         if len(self.locations) > len(self.temps):
-            self.temps.append(fillvalue(self.temp))
+            self.temps.append(fillvalue(self.last_temp()))
 
-        if len(self.locations) > len(self.deads):
-            self.deads.append(self.dead)
-
-        if len(self.locations) > len(self.settles):
-            self.settles.append(self.settled)
-
-    def fill_location_gaps(self, value=None):
-        super(LarvaParticle,self).fill_location_gaps(value=value)
-
-        def fillvalue(v):
-            if unicode(value).lower() == u"last":
-                return v
-            else:
-                return value
-
-        while len(self.locations) > len(self.salts):
-            self.salts.append(fillvalue(self.salt))
-
-        while len(self.locations) > len(self.temps):
-            self.temps.append(fillvalue(self.temp))
-
-        while len(self.locations) > len(self.deads):
-            self.deads.append(self.dead)
-
-        while len(self.locations) > len(self.settles):
-            self.settles.append(self.settled)
+    def fill_gap(self, value=None):
+        super(LarvaParticle,self).fill_gap(value=value)
 
     def grow(self, amount):
         """
@@ -398,6 +397,10 @@ class LarvaParticle(Particle):
         
     def logstring(self):
         return "Particle %d (Age: %.3f days, Lifestage %d: %.3f%%, Status: %s)" % (self.uid, self.get_age(units='days'), self.lifestage_index, (self.lifestage_progress % 1) * 100., self.status())
+
+    def outputstring(self):
+        """ For shapefiles, max 254 characters """
+        return "Age: %.3f days\nLifestage %d: %.3f%%\n" % (self.get_age(units='days'), self.lifestage_index, (self.lifestage_progress % 1) * 100.)
 
     def status(self):
         return "settled - %s / dead - %s / halted - %s" % (self.settled, self.dead, self.halted)

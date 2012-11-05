@@ -3,7 +3,7 @@ import numpy as np
 try:
     from osgeo import gdal
     from osgeo import osr
-except:
+except ImportError:
     import osr
     import gdal
 
@@ -34,7 +34,7 @@ def compute_probability(trajectory_files, bbox=None,
                 row_i.append(bisect.bisect(yarray, clat))
                 try:
                     prob[row_i[-1], column_i[-1]] += 1
-                except:
+                except StandardError:
                     pass
         shape = lat.shape
         prob = prob / (shape[0] * len(trajectory_files)) # Assumes same # of particles
@@ -54,7 +54,7 @@ def compute_probability(trajectory_files, bbox=None,
                 try:
                     if prob[i][row_i[-1], column_i[-1]] == 0:
                         prob[i][row_i[-1], column_i[-1]] = 1
-                except:
+                except StandardError:
                     pass
         prob2 = np.zeros((ny, nx))
         for run in prob:

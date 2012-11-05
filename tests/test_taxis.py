@@ -14,8 +14,8 @@ class TaxisTest(unittest.TestCase):
         assert d.gradient == 8
         assert d.units == "PSU"
         assert d.variable == "sea_water_salinity"
-        assert d.min_value == 30.0
-        assert d.max_value == 40.0
+        assert d.min_value == -30.0
+        assert d.max_value == -40.0
 
     def test_salt_from_dict(self):
         data = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/taxis_salinity.json"))).read()
@@ -24,8 +24,8 @@ class TaxisTest(unittest.TestCase):
         assert d.gradient == 8
         assert d.units == "PSU"
         assert d.variable == "sea_water_salinity"
-        assert d.min_value == 30.0
-        assert d.max_value == 40.0
+        assert d.min_value == -30.0
+        assert d.max_value == -40.0
 
     def test_temp_from_json(self):
         data = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/taxis_temperature.json"))).read()
@@ -34,8 +34,8 @@ class TaxisTest(unittest.TestCase):
         assert d.gradient == 8.0
         assert d.units == u"°C"
         assert d.variable == "sea_water_temperature"
-        assert d.min_value == 30.0
-        assert d.max_value == 40.0
+        assert d.min_value == -30.0
+        assert d.max_value == -40.0
 
     def test_temp_from_dict(self):
         data = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/taxis_temperature.json"))).read()
@@ -45,5 +45,5 @@ class TaxisTest(unittest.TestCase):
         assert isinstance(d.units, unicode)
         assert d.units == u"°C"
         assert d.variable == "sea_water_temperature"
-        assert d.min_value == 30.0
-        assert d.max_value == 40.0
+        assert d.min_value == -30.0
+        assert d.max_value == -40.0

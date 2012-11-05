@@ -9,10 +9,10 @@ class Capability(object):
             data = {}
             try:
                 data = json.loads(kwargs['json'])
-            except:
+            except StandardError:
                 try:
                     data = kwargs.get('data')
-                except:
+                except StandardError:
                     pass
 
             self.vss = data.get('vss', None)

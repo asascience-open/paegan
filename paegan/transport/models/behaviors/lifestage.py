@@ -19,10 +19,10 @@ class LifeStage(BaseModel):
             data = {}
             try:
                 data = json.loads(kwargs['json'])
-            except:
+            except StandardError:
                 try:
                     data = kwargs.get('data')
-                except:
+                except StandardError:
                     pass
 
             self.name = data.get('name',None)
@@ -54,6 +54,25 @@ class LifeStage(BaseModel):
             salt = None
         particle.salt = salt
 
+        # Grow the particle.  Growth affects which lifestage the particle is in.
+        growth = 0.
+        do_duration_growth = True
+        modelTimestepDays = modelTimestep / 60. / 60. / 24.
+        if self.linear_a is not None and self.linear_b is not None:
+            if particle.temp is not None:
+                # linear growth, compute q = t / (Ax+B)
+                # Where timestep t (days), at temperature x (deg C), proportion of stage completed (q)
+                growth = modelTimestepDays / (self.linear_a * particle.temp + self.linear_b)
+                particle.grow(growth)
+                do_duration_growth = False
+            else:
+                logger.info("No temperature found for Particle %s at this location and timestep, skipping linear temperature growth and using duration growth" % particle.uid)
+                pass
+                
+        if do_duration_growth is True:
+            growth = modelTimestepDays / self.duration
+            particle.grow(growth)
+
         # Find the closests Diel that the current particle time is AFTER, and MOVE.
         particle_time = particle.location.time
         active_diel = None
@@ -82,25 +101,6 @@ class LifeStage(BaseModel):
             v += behave_results['v']
             w += behave_results['w']
 
-        # Grow the particle.  Growth affects which lifestage the particle is in.
-        growth = 0.
-        do_duration_growth = True
-        modelTimestepDays = modelTimestep / 60. / 60. / 24.
-        if self.linear_a is not None and self.linear_b is not None:
-            if particle.temp is not None:
-                # linear growth, compute q = t / (Ax+B)
-                # Where timestep t (days), at temperature x (deg C), proportion of stage completed (q)
-                growth = modelTimestepDays / (self.linear_a * particle.temp + self.linear_b)
-                particle.grow(growth)
-                do_duration_growth = False
-            else:
-                logger.info("No temperature found for Particle %s at this location and timestep, skipping linear temperature growth and using duration growth" % particle.uid)
-                pass
-                
-        if do_duration_growth is True:
-            growth = modelTimestepDays / self.duration
-            particle.grow(growth)
-
         # Do the calculation to determine the new location after running the behaviors
         result = AsaTransport.distance_from_location_using_u_v_w(u=u, v=v, w=w, timestep=modelTimestep, location=particle.location)
         result['u'] = u
@@ -118,6 +118,17 @@ class DeadLifeStage(LifeStage):
         # Kill the particle if it isn't settled and isn't already dead.
         if not particle.settled and not particle.dead:
             particle.die()
+
+        # Still save the temperature and salinity for the model output
+        temp = kwargs.get('temperature', None)
+        if temp is not None and math.isnan(temp):
+            temp = None
+        particle.temp = temp
+
+        salt = kwargs.get('salinity', None)
+        if salt is not None and math.isnan(salt):
+            salt = None
+        particle.salt = salt
 
         u = 0
         v = 0

@@ -12,10 +12,10 @@ class LarvaBehavior(BaseModel):
             data = {}
             try:
                 data = json.loads(kwargs['json'])
-            except:
+            except StandardError:
                 try:
                     data = kwargs.get('data')
-                except:
+                except StandardError:
                     pass
 
         self.lifestages = []

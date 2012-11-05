@@ -12,10 +12,10 @@ class Settlement(object):
             data = {}
             try:
                 data = json.loads(kwargs['json'])
-            except:
+            except StandardError:
                 try:
                     data = kwargs.get('data')
-                except:
+                except StandardError:
                     pass
 
             try:
@@ -23,7 +23,7 @@ class Settlement(object):
                 self.upper = data.get('upper') * -1.
                 self.lower = data.get('lower') * -1.
                 self.type = data.get('type')
-            except:
+            except StandardError:
                 raise ValueError("A settlement must consist of a 'type' and 'upper / 'lower' bounds.")
 
     def attempt(self, particle, depth):
@@ -50,8 +50,6 @@ class Settlement(object):
                 newloc = Location4D(location=particle.location)
                 newloc.depth = depth
                 particle.location = newloc
-                #particle.fill_location_gaps(value='last')
-                particle.fill_single_gaps(value='last')
                 particle.settle()
                 logger.info("Particle %d settled in %s mode" % (particle.uid, self.type))
         elif self.type.lower() == "pelagic":

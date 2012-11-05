@@ -9,6 +9,7 @@ from paegan.utils.asarandom import AsaRandom
 from paegan.utils.asatransport import AsaTransport
 from paegan.transport.shoreline import Shoreline
 from paegan.transport.bathymetry import Bathymetry
+from paegan.transport.exceptions import ModelError, DataControllerError
 from shapely.geometry import Point, Polygon, MultiPolygon, LineString
 from shapely.ops import cascaded_union
 from multiprocessing import Value
@@ -221,10 +222,14 @@ class ModelController(object):
         for x in xrange(0, self._npart):
             p = LarvaParticle(id=x)
             p.location = point_locations[x]
-            # We don't need to fill the location gaps here because
-            # the first data collected actually relates to this original
-            # position
-            #p.fill_location_gap()
+            # We don't need to fill the location gaps here for environment variables
+            # because the first data collected actually relates to this original
+            # position.
+            # We do need to fill in fields such as settled, halted, etc.
+            p.fill_status_gap()
+            # Set the inital note
+            p.note = p.outputstring()
+            p.notes.append(p.note)
             self.particles.append(p)
 
         # This is where it makes sense to implement the multiprocessing
@@ -308,6 +313,8 @@ class ModelController(object):
         return_particles = []
         retrieved = 0
 
+        error_code = 0
+
         logger.info("Waiting for %i particle results" % len(self.particles))
         while retrieved < number_of_tasks:
             tempres = results.get()
@@ -316,14 +323,13 @@ class ModelController(object):
             elif tempres == -1:
                 logger.info("A particle has FAILED!!")
             elif tempres == -2:
+                error_code = 1
                 logger.info("DataController has FAILED!!  Removing cache file so the particles fail.")
                 try:
                     os.remove(self.cache_path)
-                except:
+                except OSError:
                     logger.info("Could not remove cache file, it probably never existed")
                     pass
-                finally:
-                    remove_cache = False
             elif isinstance(tempres, Particle):
                 logger.info("Particle %d finished" % tempres.uid)
                 return_particles.append(tempres)
@@ -346,7 +352,7 @@ class ModelController(object):
         while True:
             try:
                 tasks.task_done()
-            except:
+            except ValueError:
                 logger.info("Queue clear")
                 break
 
@@ -362,9 +368,8 @@ class ModelController(object):
         if remove_cache is True:
             try:
                 os.remove(self.cache_path)
-            except:
+            except OSError:
                 logger.info("Could not remove cache file, it probably never existed")
-                pass
 
         if len(self.particles) > 0:
             # If output_formats and path specified,
@@ -386,7 +391,10 @@ class ModelController(object):
                 logger.warn('No output format defined, not saving any output!')
         else:
             logger.warn("Model didn't actually do anything, check the log.")
-            raise
+            if error_code == 1:
+                raise DataControllerError("Error in the DataController")
+            else:
+                raise ModelError("Error in the model")
 
         return
     

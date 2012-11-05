@@ -295,7 +295,7 @@ class Reader:
                 try:
                     y, m, d = int(value[:4]), int(value[4:6]), int(value[6:8])
                     value = [y, m, d]
-                except:
+                except StandardError:
                     value = value.strip()
             elif typ == 'L':
                 value = (value in 'YyTt' and 'T') or \

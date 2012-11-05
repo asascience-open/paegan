@@ -274,7 +274,7 @@ class DataController(object):
                         shape = self.remote.variables[self.uname].shape
                         try:
                             fill = self.remote.variables[self.uname].missing_value
-                        except:
+                        except StandardError:
                             fill = None
                         
                         # Create domain variable that specifies
@@ -417,7 +417,7 @@ class DataController(object):
                         self.get_remote_data(localvars, remotevars, current_inds, shape) 
                         
                         c += 1
-                    except:
+                    except StandardError:
                         logger.error("DataController failed to get data (first request)")
                         raise
                     finally:
@@ -487,7 +487,7 @@ class DataController(object):
                         self.get_remote_data(localvars, remotevars, current_inds, shape)
                         
                         c += 1
-                    except:
+                    except StandardError:
                         logger.error("DataController failed to get data (not first request)")
                         raise
                     finally:
@@ -601,7 +601,7 @@ class ForceParticle(object):
                 need = True
             else:
                 need = False
-        except:
+        except StandardError:
             # If the time index doesnt even exist, we need
             need = True
         finally:
@@ -668,7 +668,7 @@ class ForceParticle(object):
                             logger.debug("Waiting for DataController to update cache with the NEXT time index")
                             timer.sleep(2)
                             pass
-            except:
+            except StandardError:
                 logger.warn("Particle failed to request data correctly")
                 raise
             finally:
@@ -743,7 +743,7 @@ class ForceParticle(object):
             elif math.isnan(u) or math.isnan(v) or math.isnan(w):
                 u, v, w = 0.0, 0.0, 0.0
 
-        except:
+        except StandardError:
             logger.error("Error in data_interp method on ForceParticle")
             raise
         finally:
@@ -789,7 +789,7 @@ class ForceParticle(object):
                             logger.debug("Waiting for DataController to get out...")
                             timer.sleep(2)
                             pass 
-            except:
+            except StandardError:
                 raise
             finally:
                 self.request_lock.release()
@@ -842,7 +842,7 @@ class ForceParticle(object):
             elif math.isnan(u) or math.isnan(v) or math.isnan(w):
                 u, v, w = 0.0, 0.0, 0.0
 
-        except:
+        except StandardError:
             logger.error("Error in data_nearest on ForceParticle")
             raise
         finally:
@@ -882,7 +882,7 @@ class ForceParticle(object):
         try:
             self.dataset = CommonDataset(self.localpath)
             self.dataset.closenc()
-        except:
+        except StandardError:
             logger.warn("No cache file: %s.  Particle exiting" % self.localpath)
             raise
 
@@ -894,7 +894,7 @@ class ForceParticle(object):
         while remote == None:
             try:
                 remote = CommonDataset(self.remotehydropath)
-            except:
+            except StandardError:
                 logger.warn("Problem opening remote dataset, trying again in 30 seconds...")
                 timer.sleep(30)
 
@@ -943,7 +943,7 @@ class ForceParticle(object):
 
             # Get the bathy value at the particles location
             bathymetry_value = self._bathymetry.get_depth(part.location)
-                
+
             # Age the particle by the modelTimestep (seconds)
             # 'Age' meaning the amount of time it has been forced.
             part.age(seconds=modelTimestep[loop_i])
@@ -952,44 +952,43 @@ class ForceParticle(object):
             for model in models:
                 movement = model.move(part, u, v, w, modelTimestep[loop_i], temperature=temp, salinity=salt, bathymetry_value=bathymetry_value)
                 newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtimes[loop_i+1])
-                logger.info("%s - moved %.3f meters (horizontally) and %.3f meters (vertically) by %s with data from %s and is now at %s" % (part.logstring(), movement['distance'], movement['vertical_distance'], model.__class__.__name__, newtimes[loop_i].isoformat(), part.location.logstring()))
                 if newloc:
-                    self.boundary_interaction(self._bathymetry, self._shoreline, self.usebathy, self.useshore, self.usesurface,
-                        particle=part, starting=part.location, ending=newloc,
+                    self.boundary_interaction(particle=part, starting=part.location, ending=newloc,
                         distance=movement['distance'], angle=movement['angle'], 
                         azimuth=movement['azimuth'], reverse_azimuth=movement['reverse_azimuth'], 
                         vertical_distance=movement['vertical_distance'], vertical_angle=movement['vertical_angle'])
+                logger.info("%s - moved %.3f meters (horizontally) and %.3f meters (vertically) by %s with data from %s and is now at %s" % (part.logstring(), movement['distance'], movement['vertical_distance'], model.__class__.__name__, newtimes[loop_i].isoformat(), part.location.logstring()))
 
-            # Each timestep, save the particles status.  This keep status fields such 
-            # as halted, settled, and dead matched up with the number of timesteps
-            part.save_status()
+            part.note = part.outputstring()
+            # Each timestep, save the particles status and environmental variables.
+            # This keep fields such as temp, salt, halted, settled, and dead matched up with the number of timesteps
+            part.save()
 
         # We won't pull data for the last entry in locations, but we need to populate it with fill data.
-        #part.fill_location_gaps()
-        part.fill_single_gap()
+        part.fill_environment_gap()
 
         remote = None
         return part
     
-    def boundary_interaction(self, bathy, shore, usebathy, useshore, usesurface,
-                             **kwargs):
+    def boundary_interaction(self, **kwargs):
         """
             Returns a list of Location4D objects
         """
+        logger = multiprocessing.get_logger()
+        logger.addHandler(NullHandler())
+
         particle = kwargs.pop('particle')
         starting = kwargs.pop('starting')
         ending = kwargs.pop('ending')
 
         # shoreline
-        if useshore:
-            intersection_point = shore.intersect(start_point=starting.point, end_point=ending.point)
+        if self.useshore:
+            intersection_point = self._shoreline.intersect(start_point=starting.point, end_point=ending.point)
             if intersection_point:
                 # Set the intersection point
                 hitpoint = Location4D(point=intersection_point['point'], time=starting.time + (ending.time - starting.time))
                 particle.location = hitpoint
-                #particle.fill_location_gaps(value='last')
-                part.fill_single_gap(value='last')
-                resulting_point = shore.react(start_point=starting,
+                resulting_point = self._shoreline.react(start_point=starting,
                                               end_point=ending,
                                               hit_point=hitpoint,
                                               feature=intersection_point['feature'],
@@ -1000,23 +999,26 @@ class ForceParticle(object):
                 ending.latitude = resulting_point.latitude
                 ending.longitude = resulting_point.longitude
                 ending.depth = resulting_point.depth
+                logger.info("%s - hit the shoreline at %s.  Setting location to %s." % (particle.logstring(), hitpoint.logstring(),  ending.logstring()))
 
         # bathymetry
-        if usebathy:
-            bintersect = bathy.intersect(start_point=starting,
-                                         end_point=ending,
-                                        )
-            if bintersect:
-                pt = bathy.react(type='hover', end_point=ending)
-                ending.latitude = pt.latitude
-                ending.longitude = pt.longitude
-                ending.depth = pt.depth
+        if self.usebathy:
+            if not particle.settled:
+                bintersect = self._bathymetry.intersect(start_point=starting, end_point=ending)
+                if bintersect:
+                    pt = self._bathymetry.react(type='hover', end_point=ending)
+                    logger.info("%s - hit the bottom at %s.  Setting depth to %dm." % (particle.logstring(), ending.logstring(), pt.depth))
+                    ending.latitude = pt.latitude
+                    ending.longitude = pt.longitude
+                    ending.depth = pt.depth
+                
 
         # sea-surface
-        if usesurface:
+        if self.usesurface:
             if ending.depth > 0:
+                logger.info("%s - drose out of the water, settin depth to 0." % particle.logstring())
                 ending.depth = 0
 
         particle.location = ending
-        #particle.fill_location_gaps()
+        return
     

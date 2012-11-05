@@ -9,14 +9,15 @@ class Taxis(BaseModel):
             data = {}
             try:
                 data = json.loads(kwargs['json'])
-            except:
+            except StandardError:
                 try:
                     data = kwargs.get('data')
-                except:
+                except StandardError:
                     pass
 
-            self.min_value = data.get('min',None)
-            self.max_value = data.get('max',None)
+            # Convert from positive down to negative down
+            self.min_value = data.get('min') * -1.
+            self.max_value = data.get('max') * -1.
             self.gradient = data.get('gradient',None)
             self.variable = data.get('variable',None)
             self.units = data.get('units',None)

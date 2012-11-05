@@ -57,7 +57,7 @@ class ParticleTest(unittest.TestCase):
             norms.append(norm)
             p.location = Location4D(latitude=38 + x, longitude=-76 + x, depth=x, time=norm)
             
-        locs = p.noramlized_locations(norms)
+        locs = p.normalized_locations(norms)
         assert locs[0] == last_real_movement
 
 class LarvaParticleTest(unittest.TestCase):

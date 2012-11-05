@@ -27,7 +27,7 @@ class MultiProcessingLogHandler(logging.Handler):
                 raise
             except EOFError:
                 break
-            except:
+            except Exception:
                 traceback.print_exc(file=sys.stderr)
                 break
 
@@ -56,7 +56,7 @@ class MultiProcessingLogHandler(logging.Handler):
             self.send(s)
         except (KeyboardInterrupt, SystemExit):
             raise
-        except:
+        except Exception:
             self.handleError(record)
 
     def close(self):

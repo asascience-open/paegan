@@ -46,7 +46,7 @@ class LifeStageTest(unittest.TestCase):
                 try:
                     modelTimestep = self.times[i+1] - self.times[i]
                     calculatedTime = self.times[i+1]
-                except:
+                except StandardError:
                     modelTimestep = self.times[i] - self.times[i-1]
                     calculatedTime = self.times[i] + modelTimestep
 
@@ -81,7 +81,7 @@ class LifeStageTest(unittest.TestCase):
                 try:
                     modelTimestep = self.times[i+1] - self.times[i]
                     calculatedTime = self.times[i+1]
-                except:
+                except StandardError:
                     modelTimestep = self.times[i] - self.times[i-1]
                     calculatedTime = self.times[i] + modelTimestep
 
@@ -116,11 +116,11 @@ class LifeStageTest(unittest.TestCase):
         assert self.lifestage.linear_a == 0.03
         assert self.lifestage.linear_b == 0.2
         assert len(self.lifestage.taxis) == 2
-        assert self.lifestage.taxis[0].min_value == 30.0
-        assert self.lifestage.taxis[0].max_value == 40.0        
+        assert self.lifestage.taxis[0].min_value == -30.0
+        assert self.lifestage.taxis[0].max_value == -40.0        
         assert len(self.lifestage.diel) == 2
-        assert self.lifestage.diel[0].min_depth == 2.0
-        assert self.lifestage.diel[0].max_depth == 4.0
+        assert self.lifestage.diel[0].min_depth == -2.0
+        assert self.lifestage.diel[0].max_depth == -4.0
         assert self.lifestage.capability.vss == 5.0
         assert self.lifestage.capability.variance == 2.0
         assert self.lifestage.capability.non_swim_turning == 'random'
@@ -139,11 +139,11 @@ class LifeStageTest(unittest.TestCase):
         assert l.linear_a == 0.03
         assert l.linear_b == 0.2
         assert len(l.taxis) == 2
-        assert l.taxis[1].min_value == 30.0
-        assert l.taxis[1].max_value == 50.0        
+        assert l.taxis[1].min_value == -30.0
+        assert l.taxis[1].max_value == -50.0        
         assert len(l.diel) == 2
-        assert l.diel[1].min_depth == 2.0
-        assert l.diel[1].max_depth == 5.0
+        assert l.diel[1].min_depth == -2.0
+        assert l.diel[1].max_depth == -5.0
         assert l.capability.vss == 5.0
         assert l.capability.variance == 2.0
         assert l.capability.non_swim_turning == 'random'

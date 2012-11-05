@@ -27,7 +27,7 @@ class AsaTransport(object):
         for i in xrange(0, len(times)):
             try:
                 modelTimestep.append(times[i+1] - times[i])
-            except:
+            except StandardError:
                 modelTimestep.append(times[i] - times[i-1])
             newtimes.append(start + timedelta(seconds=times[i]))
       

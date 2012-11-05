@@ -76,14 +76,14 @@ class Gridobj:
     def get_xunits(self):
         try:
             units = self._nc.variables[self._xname].units
-        except:
+        except StandardError:
             units = None
         return units
         
     def get_yunits(self):
         try:
             units = self._nc.variables[self._yname].units
-        except:
+        except StandardError:
             units = None
         return units
         
