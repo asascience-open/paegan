@@ -1,3 +1,42 @@
+0.9.1 - 2012-11-14
+===================
+Do as I say, not as I do.  Huge commit. (Kyle Wilcox)
+Output working with conditional variables (Kyle Wilcox)
+Add more output to shapefile and netcdf file (Kyle Wilcox)
+Particles should track U/V/W from hydro model and output into shapefile (Kyle Wilcox)
+Behavior library passes in positive down, switch to negative down. (Kyle Wilcox)
+Fix Bathymetry / Settlement.  Add a DeadLifeStage and the killing of fish. (Kyle Wilcox)
+A lifestage with just settlement does not need a capability configured. (Kyle Wilcox)
+Larva particles actually grow now.  fixes #40 (Kyle Wilcox)
+Clean up the model controller tests (Kyle Wilcox)
+Clean up the logger to use StopIteration to close the queue (Kyle Wilcox)
+dave (Kyle Wilcox)
+Catch a MemoryError when the queue is closed externally (Kyle Wilcox)
+Externalize the logging queue (Kyle Wilcox)
+Join and then close the queue. break out of loop on all errors (Kyle Wilcox)
+Reverting a bunch the old fashioned way (Kyle Wilcox)
+Close the queue after the handler (Kyle Wilcox)
+Don't process the flag (Kyle Wilcox)
+Use -1 as a flag to stop thread loop (Kyle Wilcox)
+Send a final message to break out of loop (Kyle Wilcox)
+Improve logging (Kyle Wilcox)
+this is a ridiculous debugging cycle (Kyle Wilcox)
+Close queue after handler (Kyle Wilcox)
+Close the logging queue on close (Kyle Wilcox)
+Raise an error when no particles are actually run rather than success (Kyle Wilcox)
+Remove Manager so it always shuts down (Kyle Wilcox)
+Catch more errors, log information, and please be reliable. (Kyle Wilcox)
+Add more logging to DataController (Kyle Wilcox)
+Return from a run (Kyle Wilcox)
+Remove old commented out line (Kyle Wilcox)
+random shouldn't have a parameter (Kyle Wilcox)
+Cache is now an absolute path (Kyle Wilcox)
+Move logger to beginning of run (Kyle Wilcox)
+Allow a parameter so the model run does not delete the cache file. (Kyle Wilcox)
+Move random filename to AsaRandom, add tests (Kyle Wilcox)
+Remove as much matplotlib as possible (Kyle Wilcox)
+Allow subpackages to share 'paegan' namespace (Kyle Wilcox)
+
 0.9.0 - 2012-10-01
 ===================
 Improve the model_controller logging and spawning process.  fixes #33
@@ -88,3 +127,4 @@ Fix bug with linear growth, add test for lifestage with linear growth
 Alex's mistake again
 alex's mistake
 Don't require unicode
+
