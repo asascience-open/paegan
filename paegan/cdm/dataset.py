@@ -72,18 +72,21 @@ def CommonDataset(ncfile, xname='lon', yname='lat',
     class self:
         pass
         
-    if isinstance(ncfile, str):
-        ncfile = unicode(ncfile)
-
     logger = multiprocessing.get_logger()
     logger.addHandler(NullHandler())
 
+    if isinstance(ncfile, str):
+        logger.info("Got str dataset, converting to unicode: %s" % ncfile)
+        ncfile = unicode(ncfile.strip())
+
     if isinstance(ncfile, unicode):
-        logger.info("Loading dataset: %s" % ncfile)
+        logger.info("Loading unicode dataset: %s" % ncfile)
         try:
             nc = netCDF4.Dataset(ncfile)
         except StandardError:
             raise
+    else:
+        logger.info("Loading file based dataset")
 
     self.nc = nc
     self._filename = ncfile
