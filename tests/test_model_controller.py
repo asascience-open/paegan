@@ -102,7 +102,7 @@ class ModelControllerTest(unittest.TestCase):
 
         cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_start_on_land.nc")
 
-        with raises(StandardError):
+        with raises(ModelError):
             model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
 
     def test_bad_dataset(self):
@@ -116,7 +116,7 @@ class ModelControllerTest(unittest.TestCase):
 
         cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_bad_dataset.nc")
         
-        with raises(StandardError):
+        with raises(DataControllerError):
             model.run("http://asascience.com/thisisnotadataset.nc", cache=cache_path)
 
     def test_behavior_growth_and_settlement(self):
