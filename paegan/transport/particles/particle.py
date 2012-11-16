@@ -219,7 +219,8 @@ class Particle(object):
         return LineString(map(lambda x: list(x.point.coords)[0], self.locations))
 
     def normalized_locations(self, model_timesteps):
-        return [loc for i,loc in enumerate(self.locations) if i in self.normalized_indexes(model_timesteps)]
+        inds = self.normalized_indexes(model_timesteps)
+        return [loc for i,loc in enumerate(self.locations) if i in inds]
 
     def normalized_indexes(self, model_timesteps):
         """
@@ -248,7 +249,7 @@ class Particle(object):
                 clean_locs.append(loc)
 
         if len(clean_locs) == len(model_timesteps):
-           return (ind for ind,loc in enumerate(self.locations) if loc in clean_locs)
+           return [ind for ind,loc in enumerate(self.locations) if loc in clean_locs]
         elif len(model_timesteps) < len(clean_locs):
             # We have at least one internal timestep for this particle
             # Pull out the matching location indexes
