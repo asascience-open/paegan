@@ -119,7 +119,7 @@ class Shoreline(object):
         for element in self._geoms:
             prepped_element = prep(element)
 
-            # Test if starging on land
+            # Test if starting on land
             if prepped_element.contains(spoint):
                 raise Exception('Starting point on land')
 
@@ -143,7 +143,7 @@ class Shoreline(object):
                     if ls.touches(shore_segment):
                         break
 
-                return {'point': Point(inter.x, inter.y, epoint.z), 'feature': shore_segment or None}
+                return {'point': Point(inter.x, inter.y, 0), 'feature': shore_segment or None}
         return None
 
     def react(self, **kwargs):
