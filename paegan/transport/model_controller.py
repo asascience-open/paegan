@@ -266,53 +266,54 @@ class ModelController(object):
         point_get = mgr.Value('list', [0, 0, 0])
         active = mgr.Value('bool', True)
         
-        # Create workers
-        procs = [ parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data)
-                  for i in xrange(nproc) ]
+        # Add data controller to the queue first so that it 
+        # can get the initial data and is not blocked
+        logger.info('Adding DataController as task')
+        data_controller = parallel.DataController(hydrodataset, n_run, get_data, updating,
+                                                  time_chunk, horiz_chunk, particle_get, times,
+                                                  self.start, point_get, self.reference_location,
+                                                  low_memory=low_memory,
+                                                  cache=self.cache_path)
+        tasks.put(data_controller)
+
+        data_controller_process = parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data)
+        data_controller_process.start()
+
+        logger.info('Adding %i particles as tasks' % len(self.particles))
+        forcing_particles = []
+        for part in self.particles:
+            forcing = parallel.ForceParticle(part, 
+                                        hydrodataset,
+                                        times, 
+                                        self.start,
+                                        self._models,
+                                        self.reference_location.point,
+                                        self._use_bathymetry,
+                                        self._use_shoreline,
+                                        self._use_seasurface,
+                                        get_data,
+                                        n_run,
+                                        updating,
+                                        particle_get,
+                                        point_get,
+                                        request_lock,
+                                        bathy=self.bathy_path,
+                                        cache=self.cache_path,
+                                        time_method=self.time_method)
+            forcing_particles.append(forcing)
+            tasks.put(forcing)
         
+        # Create workers for the particles.  Data contoller process already started.
+        procs = [ parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data)
+                  for i in xrange(nproc - 1) ]
         # Start workers
         logger.info('Starting %i workers' % len(procs))
         for w in procs:
             w.start()
-               
-        # Add data controller to the queue first so that it 
-        # can get the initial data and is not blocked
-        logger.info('Adding DataController as task')
-        tasks.put(parallel.DataController(
-                  hydrodataset, n_run, get_data, updating,
-                  time_chunk, horiz_chunk, particle_get, times,
-                  self.start, point_get, self.reference_location,
-                  low_memory=low_memory,
-                  cache=self.cache_path))
-               
-	    # loop over particles
-        for part in self.particles:
-            tasks.put(parallel.ForceParticle(part, 
-                                            hydrodataset,
-                                            times, 
-                                            self.start,
-                                            self._models,
-                                            self.reference_location.point,
-                                            self._use_bathymetry,
-                                            self._use_shoreline,
-                                            self._use_seasurface,
-                                            get_data,
-                                            n_run,
-                                            updating,
-                                            particle_get,
-                                            point_get,
-                                            request_lock,
-                                            bathy=self.bathy_path,
-                                            cache=self.cache_path,
-                                            time_method=self.time_method))
 
-        logger.info('Adding %i particles as tasks' % len(self.particles))
-        [tasks.put(None) for i in xrange(nproc)]
-        
         # Get results back from queue, test for failed particles
         return_particles = []
         retrieved = 0
-
         error_code = 0
 
         logger.info("Waiting for %i particle results" % len(self.particles))
@@ -348,16 +349,11 @@ class ModelController(object):
         # The results queue should be empty at this point
         assert results.empty() is True
 
-        logger.info("Clearing all tasks from task queue")
-        while True:
-            try:
-                tasks.task_done()
-            except ValueError:
-                logger.info("Queue clear")
-                break
-
         # Should be good to join on the tasks now that the queue is empty
         tasks.join()
+        data_controller_process.join()
+        for w in procs:
+            w.join()
         
         logger.info('Workers complete')
 

@@ -18,6 +18,7 @@ import random
 import math
 import traceback
 import pylab
+import Queue
 
 class Consumer(multiprocessing.Process):
     def __init__(self, task_queue, result_queue, n_run, lock, active, get_data):
@@ -35,18 +36,18 @@ class Consumer(multiprocessing.Process):
     def run(self):
         logger = multiprocessing.get_logger()
         logger.addHandler(NullHandler())
-        proc_name = self.name
 
         while True:
 
-            next_task = self.task_queue.get()
-
-            if next_task is None:
+            try:
+                next_task = self.task_queue.get(True, 20)
+            except Queue.Empty:
+                logger.info("No tasks left to complete, closing %s" % self.name)
                 break
             else:
                 answer = None
                 try:
-                    answer = next_task(proc_name, self.active)
+                    answer = next_task(self.name, self.active)
                 except Exception as detail:
                     exc_type, exc_value, exc_traceback = sys.exc_info()
                     logger.error("Disabling Error: " +\
@@ -63,12 +64,14 @@ class Consumer(multiprocessing.Process):
                     else:
                         logger.warn("Strange task raised an exception: %s" % str(next_task.__class__))
                         answer = None
-                
-                self.result_queue.put(answer)
+                finally:
+                    self.result_queue.put(answer)
 
-            self.lock.acquire()
-            self.n_run.value = self.n_run.value - 1
-            self.lock.release()
+                    self.lock.acquire()
+                    self.n_run.value = self.n_run.value - 1
+                    self.lock.release()
+
+                    self.task_queue.task_done()
             
         return
 
