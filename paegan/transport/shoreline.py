@@ -216,7 +216,7 @@ class Shoreline(object):
 
         # Throw it 100m back
         #distance_reversed = 0.01 * AsaGreatCircle.great_distance(start_point=start_point, end_point=hit_point)['distance']
-        distance_reversed = 100
+        distance_reversed = kwargs.get('reverse_distance', 100)
 
         #print "Incoming Azimuth: " + str(azimuth)
         #print "Reverse Azimuth: " + str(reverse_azimuth)
