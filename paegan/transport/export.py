@@ -1,4 +1,6 @@
 import os
+import glob
+import zipfile
 import multiprocessing
 from shapely.geometry import Point, Polygon, MultiPolygon, MultiPoint, LineString
 from paegan.logging.null_handler import NullHandler
@@ -13,6 +15,10 @@ from paegan.external import shapefile as shp
 # Trackline
 from shapely.geometry import mapping
 import json
+
+from fiona import collection
+
+from collections import OrderedDict
 
 class Export(object):
     @classmethod
@@ -37,6 +43,130 @@ class Trackline(Export):
         filepath = os.path.join(folder, "trackline.geojson")
         open(filepath, "wb").write(json.dumps(mapping(ls)))
         return filepath
+
+class GDALShapefile(Export):
+    @classmethod
+    def export(cls, folder, particles, datetimes):
+        
+        logger = multiprocessing.get_logger()
+        logger.addHandler(NullHandler())
+
+        shape_schema = {'geometry': 'Point',
+                        'properties': OrderedDict([('Particle', 'int'),
+                                        ('Date', 'str'),
+                                        ('Lat', 'float'),
+                                        ('Lon', 'float'),
+                                        ('Depth', 'float'),
+                                        ('Temp', 'float'),
+                                        ('Salt', 'float'),
+                                        ('U', 'float'),
+                                        ('V', 'float'),
+                                        ('W', 'float'),
+                                        ('Settled', 'str'),
+                                        ('Dead', 'str'),
+                                        ('Halted', 'str'),
+                                        ('Notes' , 'str')])}
+        shape_crs = {'no_defs': True, 'ellps': 'WGS84', 'datum': 'WGS84', 'proj': 'longlat'}
+
+        filepath = os.path.join(folder, "gdalshape.shp")
+
+        with collection(filepath, "w", driver='ESRI Shapefile', schema=shape_schema, crs=shape_crs) as shape:
+
+            for particle in particles:
+                normalized_locations = particle.normalized_locations(datetimes)
+                normalized_temps = particle.temps
+                normalized_salts = particle.salts
+                normalized_u = particle.u_vectors
+                normalized_v = particle.v_vectors
+                normalized_w = particle.w_vectors
+                normalized_settled = particle.settles
+                normalized_dead = particle.deads
+                normalized_halted = particle.halts
+                normalized_notes = particle.notes
+
+                if len(normalized_locations) != len(normalized_temps):
+                    logger.info("No temperature being added to shapefile.")
+                    # Create list of 'None' equal to the length of locations
+                    normalized_temps = [-9999.9] * len(normalized_locations)
+                else:
+                    # Replace any None with fill value
+                    normalized_temps = (-9999.9 if not x else x for x in normalized_temps)
+
+                if len(normalized_locations) != len(normalized_salts):
+                    logger.info("No salinity being added to shapefile.")
+                    # Create list of 'None' equal to the length of locations
+                    normalized_salts = [-9999.9] * len(normalized_locations)
+                else:
+                    # Replace any None with fill value
+                    normalized_salts = (-9999.9 if not x else x for x in normalized_salts)
+
+                if len(normalized_locations) != len(normalized_u):
+                    logger.info("No U being added to shapefile.")
+                    # Create list of 'None' equal to the length of locations
+                    normalized_u = [-9999.9] * len(normalized_locations)
+                else:
+                    # Replace any None with fill value
+                    normalized_u = (-9999.9 if not x else x for x in normalized_u)
+
+                if len(normalized_locations) != len(normalized_v):
+                    logger.info("No V being added to shapefile.")
+                    # Create list of 'None' equal to the length of locations
+                    normalized_v = [-9999.9] * len(normalized_locations)
+                else:
+                    # Replace any None with fill value
+                    normalized_v = (-9999.9 if not x else x for x in normalized_v)
+
+                if len(normalized_locations) != len(normalized_w):
+                    logger.info("No W being added to shapefile.")
+                    # Create list of 'None' equal to the length of locations
+                    normalized_w = [-9999.9] * len(normalized_locations)
+                else:
+                    # Replace any None with fill value
+                    normalized_w = (-9999.9 if not x else x for x in normalized_w)
+
+                if len(normalized_locations) != len(normalized_settled):
+                    logger.info("No Settled being added to shapefile.")
+                    # Create list of 'None' equal to the length of locations
+                    normalized_settled = [None] * len(normalized_locations) 
+
+                if len(normalized_locations) != len(normalized_dead):
+                    logger.info("No Dead being added to shapefile.")
+                    # Create list of 'None' equal to the length of locations
+                    normalized_dead = [None] * len(normalized_locations) 
+
+                if len(normalized_locations) != len(normalized_halted):
+                    logger.info("No Halted being added to shapefile.")
+                    # Create list of 'None' equal to the length of locations
+                    normalized_halted = [None] * len(normalized_locations)
+
+                if len(normalized_locations) != len(normalized_notes):
+                    logger.info("No Notes being added to shapefile.")
+                    # Create list of 'None' equal to the length of locations
+                    normalized_notes = [None] * len(normalized_locations)
+
+                for loc, temp, salt, u, v, w, settled, dead, halted, note in zip(normalized_locations, normalized_temps, normalized_salts, normalized_u, normalized_v, normalized_w, normalized_settled, normalized_dead, normalized_halted, normalized_notes):
+                    shape.write({   'geometry': mapping(loc.point),
+                                    'properties': OrderedDict([('Particle', particle.uid),
+                                                    ('Date', unicode(loc.time.isoformat())),
+                                                    ('Lat', float(loc.latitude)),
+                                                    ('Lon', float(loc.longitude)),
+                                                    ('Depth', float(loc.depth)),
+                                                    ('Temp', float(temp)),
+                                                    ('Salt', float(salt)),
+                                                    ('U', float(u)),
+                                                    ('V', float(v)),
+                                                    ('W', float(w)),
+                                                    ('Settled', unicode(settled)),
+                                                    ('Dead', unicode(dead)),
+                                                    ('Halted', unicode(halted)),
+                                                    ('Notes' , unicode(note))])})
+
+        # Zip the output
+        shpzip = zipfile.ZipFile(os.path.join(folder, "shapefile.shp.zip"), mode='w')
+        for f in glob.glob(os.path.join(folder, "gdalshape*")):
+            shpzip.write(f, os.path.basename(f))
+            os.remove(f)
+        shpzip.close()
 
 class Shapefile(Export):
     @classmethod
