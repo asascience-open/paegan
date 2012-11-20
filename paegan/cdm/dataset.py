@@ -581,6 +581,9 @@ class Dataset:
         
         
         """
+        logger = multiprocessing.get_logger()
+        logger.addHandler(NullHandler())
+
         assert var in self.nc.variables
         ncvar = self.nc.variables[var]
         names = self.get_coord_names(var)
@@ -671,6 +674,8 @@ class Dataset:
                     for i,position in enumerate(positions[name]):
                         indices[position] = xinds[i]
         
+        #logger.info("Getting data for %s with indexes: %s" % (var, str(indices)))
+
         if np.all([i.size >0 for i in indices]):
             data = self._get_data(var, indices, use_local)
         else:

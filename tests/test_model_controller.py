@@ -2,7 +2,9 @@ import os
 import shutil
 import unittest
 import random
+import json
 import numpy
+import urllib
 from pytest import raises
 from datetime import datetime, timedelta
 from paegan.transport.models.transport import Transport
@@ -14,6 +16,7 @@ from paegan.utils.asarandom import AsaRandom
 from paegan.transport.model_controller import ModelController
 from shapely.geometry import Point, Polygon
 import os
+import pytz
 import multiprocessing, logging
 from paegan.logging.multi_process_logging import MultiProcessingLogHandler, EasyLogger
 
@@ -151,9 +154,9 @@ class ModelControllerTest(unittest.TestCase):
         self.log.logger.info("Running: test_quick_settlement")
 
         # 6 days
-        num_steps = 48
+        num_steps = 68
 
-        num_particles = 2
+        num_particles = 4
 
         # Behavior
         behavior_config = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/behavior_quick_settle.json"))).read()
@@ -171,4 +174,56 @@ class ModelControllerTest(unittest.TestCase):
         output_formats = ['Shapefile','NetCDF','Trackline']
 
         cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_quick_settlement.nc")
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)
+
+    def test_timechunk_greater_than_timestep(self):
+        self.log.logger.info("**************************************")
+        self.log.logger.info("Running: test_timechunk_greater_than_timestep")
+
+        # 6 days
+        num_steps = 10
+
+        num_particles = 2
+
+        models = [self.transport]
+
+        model = ModelController(latitude=self.start_lat, longitude=self.start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=True, use_shoreline=True,
+            time_chunk=24, horiz_chunk=2)
+
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_timechunk_greater_than_timestep.nc")
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
+
+    def test_nick(self):
+        self.log.logger.info("**************************************")
+        self.log.logger.info("Running: test_nick")
+
+        # 6 days
+        num_steps = 48
+
+        num_particles = 1
+
+        time_step = 3600
+
+        behavior_config = json.loads(urllib.urlopen("http://behaviors.larvamap.asascience.com/library/50a6c4f8685179000500003b.json").read())
+        lb = LarvaBehavior(data=behavior_config[u'results'][0])
+
+        models = [Transport(horizDisp=0.01, vertDisp=0.001)]
+        models.append(lb)
+
+        start_time = datetime(2012, 5, 10, 00, tzinfo=pytz.utc)
+
+        start_lat = 60.8179
+        start_lon = -146.5545
+        #start_lat = self.start_lat
+        #start_lon = self.start_lon
+
+        model = ModelController(latitude=start_lat, longitude=start_lon, depth=0, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=True, use_shoreline=True,
+            time_chunk=24, horiz_chunk=2, time_method='nearest')
+
+        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/nick")
+        shutil.rmtree(output_path, ignore_errors=True)
+        os.makedirs(output_path)
+        output_formats = ['Shapefile','NetCDF','Trackline']
+
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_nick.nc")
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path, output_path=output_path, output_formats=output_formats)

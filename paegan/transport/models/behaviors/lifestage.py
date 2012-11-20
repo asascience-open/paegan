@@ -45,11 +45,13 @@ class LifeStage(BaseModel):
         logger.addHandler(NullHandler())
 
         temp = kwargs.get('temperature', None)
+        salt = kwargs.get('salinity', None)
+        #logger.info("Temp: %.4f, Salt: %.4f" %(temp,salt))
+
         if temp is not None and math.isnan(temp):
             temp = None
         particle.temp = temp
-
-        salt = kwargs.get('salinity', None)
+        
         if salt is not None and math.isnan(salt):
             salt = None
         particle.salt = salt

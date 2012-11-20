@@ -58,6 +58,8 @@ class Transport(BaseModel):
         logger = multiprocessing.get_logger()
         logger.addHandler(NullHandler())
 
+        #logger.info("U: %.4f, V: %.4f, W: %.4f" % (u,v,w))
+
         if u is not None and math.isnan(u):
             u = None
         particle.u_vector = u

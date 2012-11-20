@@ -12,7 +12,7 @@ class Particle(object):
         self._u = None
         self._us = []
 
-        self._v = None        
+        self._v = None
         self._vs = []
 
         self._w = None

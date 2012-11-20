@@ -187,7 +187,7 @@ class ModelController(object):
         # after a particle is forced with the final timestep's data.
         times = range(0,(self._step*self._nstep)+1,self._step)
         # Calculate a datetime object for each model timestep
-        # This method is duplicated in DataContoller and ForceParticle
+        # This method is duplicated in DataController and ForceParticle
         # using the 'times' variables above.  Will be useful in those other
         # locations for particles released at different times
         # i.e. released over a few days
@@ -249,7 +249,9 @@ class ModelController(object):
         # We need a process for each particle and one for the data controller
         nproc = min(number_of_tasks, nproc)
 
-        request_lock = mgr.Lock()
+        # When a particle requests data
+        data_request_lock = mgr.Lock()
+
         nproc_lock = mgr.Lock()
         
         # Create the task queue for all of the particles and the DataController
@@ -262,29 +264,36 @@ class ModelController(object):
         # Number of tasks
         n_run = mgr.Value('int', number_of_tasks)
         updating = mgr.Value('bool', False)
-        particle_get = mgr.Value('bool', False)
+
+        # When something is reading from cache file
+        read_lock = mgr.Lock()
+        read_count = mgr.Value('int', 0)
+
+        # When something is writing to the cache file
+        write_lock = mgr.Lock()
+
         point_get = mgr.Value('list', [0, 0, 0])
         active = mgr.Value('bool', True)
         
         # Add data controller to the queue first so that it 
         # can get the initial data and is not blocked
-        logger.info('Adding DataController as task')
-        data_controller = parallel.DataController(hydrodataset, n_run, get_data, updating,
-                                                  time_chunk, horiz_chunk, particle_get, times,
+        
+        data_controller = parallel.DataController(hydrodataset, n_run, get_data, write_lock, read_lock, read_count,
+                                                  time_chunk, horiz_chunk, times,
                                                   self.start, point_get, self.reference_location,
                                                   low_memory=low_memory,
                                                   cache=self.cache_path)
         tasks.put(data_controller)
-
-        data_controller_process = parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data)
+        # Create DataController worker
+        data_controller_process = parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data, write_lock, name="DataController")
         data_controller_process.start()
+        logger.info('Started %s' % data_controller_process.name)
 
         logger.info('Adding %i particles as tasks' % len(self.particles))
-        forcing_particles = []
         for part in self.particles:
-            forcing = parallel.ForceParticle(part, 
+            forcing = parallel.ForceParticle(part,
                                         hydrodataset,
-                                        times, 
+                                        times,
                                         self.start,
                                         self._models,
                                         self.reference_location.point,
@@ -293,23 +302,22 @@ class ModelController(object):
                                         self._use_seasurface,
                                         get_data,
                                         n_run,
-                                        updating,
-                                        particle_get,
+                                        write_lock,
+                                        read_lock,
+                                        read_count,
                                         point_get,
-                                        request_lock,
+                                        data_request_lock,
                                         bathy=self.bathy_path,
                                         cache=self.cache_path,
                                         time_method=self.time_method)
-            forcing_particles.append(forcing)
             tasks.put(forcing)
-        
-        # Create workers for the particles.  Data contoller process already started.
-        procs = [ parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data)
+
+        # Create workers for the particles.
+        procs = [ parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data, write_lock, name="ForceParticle-%d"%i)
                   for i in xrange(nproc - 1) ]
-        # Start workers
-        logger.info('Starting %i workers' % len(procs))
         for w in procs:
             w.start()
+            logger.info('Started %s' % w.name)
 
         # Get results back from queue, test for failed particles
         return_particles = []
@@ -336,6 +344,9 @@ class ModelController(object):
                 return_particles.append(tempres)
             elif tempres == "DataController":
                 logger.info("DataController finished")
+            else:
+                logger.info("Got a strange result on results queue")
+                logger.info(str(tempres))
 
             retrieved += 1
 
@@ -343,8 +354,6 @@ class ModelController(object):
         
         if len(return_particles) != len(self.particles):
             logger.warn("Some particles failed and are not included in the output")
-
-        self.particles = return_particles     
 
         # The results queue should be empty at this point
         assert results.empty() is True
@@ -356,6 +365,8 @@ class ModelController(object):
             w.join()
         
         logger.info('Workers complete')
+
+        self.particles = return_particles 
 
         # Remove Manager so it shuts down
         del mgr

@@ -84,7 +84,7 @@ class EasyLogger(object):
 
         handler = MultiProcessingLogHandler(logpath, self.queue)
         handler.setLevel(level)
-        formatter = logging.Formatter('[%(asctime)s] - %(levelname)s - %(name)s - %(processName)s - %(message)s')
+        formatter = logging.Formatter('[%(asctime)s] - %(levelname)s - %(processName)s - %(message)s')
         handler.setFormatter(formatter)
         # Add handler
         self.logger.addHandler(handler)
