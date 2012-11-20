@@ -55,7 +55,7 @@ class ModelController(object):
         self._dirty = True
         self._particles = []
         self._time_chunk = kwargs.get('time_chunk', 10)
-        self._horiz_chunk = kwargs.get('horiz_chunk', 4)
+        self._horiz_chunk = kwargs.get('horiz_chunk', 5)
         self.time_method = kwargs.get('time_method', 'interp')
 
         # The model timesteps in datetime objects
