@@ -58,6 +58,7 @@ class ModelController(object):
         self._horiz_chunk = kwargs.get('horiz_chunk', 5)
         self.time_method = kwargs.get('time_method', 'interp')
         self.shore_path = None
+        self.shoreline_path = kwargs.get("shoreline_path", None)
 
         # The model timesteps in datetime objects
         self.datetimes = []
@@ -202,8 +203,6 @@ class ModelController(object):
         remove_cache = kwargs.get("remove_cache", True)
 
         self.bathy_path = kwargs.get("bathy", None)
-
-        self.shoreline_path = kwargs.get("shoreline_path", None)
 
         self.cache_path = kwargs.get("cache", None)
         if self.cache_path is None:
