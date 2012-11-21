@@ -23,7 +23,7 @@ class Shoreline(object):
             MUST BE land polygons!!
         """
 
-        if "file" in kwargs:
+        if kwargs.get("file") is not None:
             self._file = os.path.normpath(kwargs.pop('file'))
         else:
             self._file = os.path.normpath(os.path.join(__file__,"../../resources/shoreline/global/10m_land.shp"))

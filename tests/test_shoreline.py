@@ -6,6 +6,7 @@ from paegan.utils.asagreatcircle import AsaGreatCircle
 from paegan.utils.asamath import AsaMath
 import math
 import time
+import os
 
 class ShorelineTest(unittest.TestCase):
 
@@ -14,10 +15,24 @@ class ShorelineTest(unittest.TestCase):
         p = Point(-73.745631, 40.336791)
         p2 = Point(-78.745631, 44.336791)
         p3 = Point(0, 0)
+        st = time.time()
         s = Shoreline(point=p, spatialbuffer=2)
         s.index(point=p2, spatialbuffer=2)
         s.index(point=p3, spatialbuffer=2)
+        print "Reindexing Time: " + str(time.time() - st)
         
+    def test_large_shape_reindexing(self):
+
+        p = Point(-73.745631, 40.336791)
+        p2 = Point(-78.745631, 44.336791)
+        p3 = Point(0, 0)
+        st = time.time()
+        shore_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/shoreline/alaska/AK_Land_Basemap.shp"))
+        s = Shoreline(file=shore_path, point=p, spatialbuffer=0.25)
+        s.index(point=p2, spatialbuffer=0.25)
+        s.index(point=p3, spatialbuffer=0.25)
+        print "Large Shoreline Reindexing Time: " + str(time.time() - st)
+
     def test_intersection_speed(self):
 
         # Intersects on the west coast of NovaScotia
@@ -28,8 +43,20 @@ class ShorelineTest(unittest.TestCase):
 
         st = time.time()
         intersection = s.intersect(start_point=starting, end_point=ending)['point']
-        #print "Time: " + str(time.time() - st)
+        print "Intersection Time: " + str(time.time() - st)
 
+    def test_large_shape_intersection_speed(self):
+
+        # Intersects on the west coast of NovaScotia
+
+        starting = Location4D(longitude=-146.62, latitude=60.755, depth=0).point
+        ending = Location4D(longitude=-146.60, latitude=60.74, depth=0).point
+        shore_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/shoreline/alaska/AK_Land_Basemap.shp"))
+        s = Shoreline(file=shore_path, point=starting, spatialbuffer=0.25)
+
+        st = time.time()
+        intersection = s.intersect(start_point=starting, end_point=ending)['point']
+        print "Large Shoreline Intersection Time: " + str(time.time() - st)
 
     def test_water_start_land_end_intersection(self):
         # Starts in the water and ends on land

@@ -514,8 +514,8 @@ class ForceParticle(object):
     def __init__(self, part, remotehydro, times, start_time, models, 
                  release_location_centroid, usebathy, useshore, usesurface,
                  get_data, n_run, write_lock, read_lock, read_count,
-                 point_get, data_request_lock, bathy,
-                 cache=None, time_method=None):
+                 point_get, data_request_lock, bathy=None,
+                 shoreline_path=None, cache=None, time_method=None):
         """
             This is the task/class/object/job that forces an
             individual particle and communicates with the 
@@ -542,6 +542,7 @@ class ForceParticle(object):
         self.read_count = read_count
         self.point_get = point_get
         self.data_request_lock = data_request_lock
+        self.shoreline_path = shoreline_path
 
         if time_method is None:
             time_method = 'interp'
@@ -914,7 +915,7 @@ class ForceParticle(object):
         
         self._shoreline = None  
         if self.useshore == True:
-            self._shoreline = Shoreline(point=self.release_location_centroid)
+            self._shoreline = Shoreline(file=self.shoreline_path, point=self.release_location_centroid, spatialbuffer=0.25)
             # Make sure we are not starting on land.  Raises exception if we are.
             self._shoreline.intersect(start_point=self.release_location_centroid, end_point=self.release_location_centroid)
             

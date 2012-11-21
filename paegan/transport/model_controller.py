@@ -57,6 +57,7 @@ class ModelController(object):
         self._time_chunk = kwargs.get('time_chunk', 10)
         self._horiz_chunk = kwargs.get('horiz_chunk', 5)
         self.time_method = kwargs.get('time_method', 'interp')
+        self.shore_path = None
 
         # The model timesteps in datetime objects
         self.datetimes = []
@@ -84,7 +85,7 @@ class ModelController(object):
             c = geo.centroid
             b = geo.bounds
             spatialbuffer = max(b[2] - b[0], b[3] - b[1])
-            shore_geoms = Shoreline(point=c, spatialbuffer=spatialbuffer).geoms
+            shore_geoms = Shoreline(file=self.shoreline_path, point=c, spatialbuffer=spatialbuffer).geoms
             if len(shore_geoms) > 0:
                 all_shore = cascaded_union(shore_geoms)
                 geo = geo.difference(all_shore)
@@ -195,13 +196,14 @@ class ModelController(object):
 
         time_chunk = self._time_chunk
         horiz_chunk = self._horiz_chunk
-        hydrodataset = hydrodataset
         low_memory = kwargs.get("low_memory", False)
 
         # Should we remove the cache file at the end of the run?
         remove_cache = kwargs.get("remove_cache", True)
 
         self.bathy_path = kwargs.get("bathy", None)
+
+        self.shoreline_path = kwargs.get("shoreline_path", None)
 
         self.cache_path = kwargs.get("cache", None)
         if self.cache_path is None:
@@ -308,6 +310,7 @@ class ModelController(object):
                                         point_get,
                                         data_request_lock,
                                         bathy=self.bathy_path,
+                                        shoreline_path=self.shoreline_path,
                                         cache=self.cache_path,
                                         time_method=self.time_method)
             tasks.put(forcing)
