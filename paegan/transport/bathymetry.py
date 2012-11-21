@@ -29,7 +29,7 @@ class Bathymetry():
         end_point = kwargs.pop('end_point')
         depth = self.get_depth(location=end_point)
         # Bathymetry and a particle's depth are both negative down
-        if depth > end_point.depth:
+        if depth < 0 and depth > end_point.depth:
             inter = True
         else:
             inter = False
