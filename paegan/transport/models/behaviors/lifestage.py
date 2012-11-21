@@ -48,12 +48,14 @@ class LifeStage(BaseModel):
         salt = kwargs.get('salinity', None)
         #logger.info("Temp: %.4f, Salt: %.4f" %(temp,salt))
 
-        if temp is not None and math.isnan(temp):
-            temp = None
+        # IMPORTANT:
+        # If we got no data from the model, we are using the last available value stored in the particles!
+        if (temp is None) or (temp is not None and math.isnan(temp)):
+            temp = particle.last_temp()
+        if (salt is None) or (salt is not None and math.isnan(salt)):
+            salt = particle.last_salt()
+
         particle.temp = temp
-        
-        if salt is not None and math.isnan(salt):
-            salt = None
         particle.salt = salt
 
         # Grow the particle.  Growth affects which lifestage the particle is in.

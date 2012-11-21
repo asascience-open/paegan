@@ -633,10 +633,12 @@ class ForceParticle(object):
         """
             Linear interp of model data values between time steps
         """
-        if math.isnan(sety[0]):
-            sety[0] = 0.
-        if math.isnan(sety[1]):
-            sety[1] = 0.
+        if math.isnan(sety[0]) or math.isnan(setx[0]):
+            return np.nan
+        #if math.isnan(sety[0]):
+        #    sety[0] = 0.
+        #if math.isnan(sety[1]):
+        #    sety[1] = 0.
         return sety[0] + (x - setx[0]) * ( (sety[1]-sety[0]) / (setx[1]-setx[0]) )
       
     def data_interp(self, i, timevar, currenttime):
@@ -766,17 +768,10 @@ class ForceParticle(object):
                 temp = self.linterp(timevar[i:i+2], temp, currenttime)
                 salt = self.linterp(timevar[i:i+2], salt, currenttime)
             
-            # If the final data results are nan, set velocities to zero
-            # TODO: need to validate this implementation
-            if np.isnan(u) or np.isnan(v) or np.isnan(w):
-                u, v, w = 0.0, 0.0, 0.0
-            elif math.isnan(u) or math.isnan(v) or math.isnan(w):
-                u, v, w = 0.0, 0.0, 0.0
-
-            if self.temp_name is None or np.isnan(temp) or math.isnan(temp):
-                temp = None
-            if self.salt_name is None or np.isnan(salt) or math.isnan(salt):
-                salt = None
+            if self.temp_name is None:
+                temp = np.nan
+            if self.salt_name is None:
+                salt = np.nan
 
             #logger.info(self.dataset.get_xyind_from_point('u', self.part.location, num=1))
 
@@ -851,7 +846,7 @@ class ForceParticle(object):
             v = np.mean(np.mean(self.dataset.get_values('v', timeinds=[np.asarray([i])], point=self.part.location )))
             # if there is vertical velocity inthe dataset, get it
             if 'w' in self.dataset.nc.variables:
-                w = np.mean(np.mean(self.dataset.get_values('w', timeinds=[np.asarray([i])], point=self.part.location )))
+                w = np.mean(np.mean(self.dataset.get_values('w', timeindsf=[np.asarray([i])], point=self.part.location )))
             else:
                 w = 0.0
             # If there is salt and temp in the dataset, get it
@@ -880,17 +875,10 @@ class ForceParticle(object):
                 u = uarray1.mean()
                 v = varray1.mean()             
             
-            # If the final data results are nan, set velocities to zero
-            # TODO: need to validate this implementation
-            if np.isnan(u) or np.isnan(v) or np.isnan(w):
-                u, v, w = 0.0, 0.0, 0.0
-            elif math.isnan(u) or math.isnan(v) or math.isnan(w):
-                u, v, w = 0.0, 0.0, 0.0
-
-            if self.temp_name is None or np.isnan(temp) or math.isnan(temp):
-                temp = None
-            if self.salt_name is None or np.isnan(salt) or math.isnan(salt):
-                salt = None
+            if self.temp_name is None:
+                temp = np.nan
+            if self.salt_name is None:
+                salt = np.nan
 
             #logger.info(self.dataset.get_xyind_from_point('u', self.part.location, num=1))
 

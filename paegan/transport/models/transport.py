@@ -58,19 +58,22 @@ class Transport(BaseModel):
         logger = multiprocessing.get_logger()
         logger.addHandler(NullHandler())
 
-        #logger.info("U: %.4f, V: %.4f, W: %.4f" % (u,v,w))
+        #logger.info("U: %s, V: %s, W: %s" % (str(u),str(v),str(w)))
 
-        if u is not None and math.isnan(u):
-            u = None
+        # IMPORTANT:
+        # If we got no data from the model, we are using the last available value stored in the particles!
+        if (u is None) or (u is not None and math.isnan(u)):
+            u = particle.last_u()
+        if (v is None) or (v is not None and math.isnan(v)):
+            v = particle.last_v()
+        if (w is None) or (w is not None and math.isnan(w)):
+            w = particle.last_w()
+
         particle.u_vector = u
-
-        if v is not None and math.isnan(v):
-            v = None
         particle.v_vector = v
-
-        if w is not None and math.isnan(w):
-            w = None
         particle.w_vector = w
+
+        logger.info("AFTER - U: %s, V: %s, W: %s" % (str(u),str(v),str(w)))
 
         if particle.halted:
             u,v,w = 0,0,0
