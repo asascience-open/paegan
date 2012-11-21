@@ -73,8 +73,6 @@ class Transport(BaseModel):
         particle.v_vector = v
         particle.w_vector = w
 
-        logger.info("AFTER - U: %s, V: %s, W: %s" % (str(u),str(v),str(w)))
-
         if particle.halted:
             u,v,w = 0,0,0
         else:
