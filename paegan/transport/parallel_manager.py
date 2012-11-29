@@ -501,6 +501,8 @@ class DataController(object):
             else:
                 pass        
 
+        self.dataset.closenc()
+
         return "DataController"
 
         
