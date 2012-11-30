@@ -26,6 +26,8 @@ class TimevarTest(unittest.TestCase):
         tvar = Timevar(datafile, name='ocean_time')
         assert data.shape == tvar.shape
 
+        ds.close()
+
     def test_timevar_roms_seconds_values(self):
 
         datafile = os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/ocean_avg_synoptic_seg22.nc"))
@@ -53,6 +55,8 @@ class TimevarTest(unittest.TestCase):
 
         assert (jds == tvar.dates).all()
 
+        ds.close()
+
     def test_timevar_hfradar_days_values(self):
 
         datafile = os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/marcooshfradar20120331.nc"))
@@ -75,6 +79,8 @@ class TimevarTest(unittest.TestCase):
             jds.append(dt + timedelta(days=x))
 
         assert (jds == tvar.dates).all()
+
+        ds.close()
 
     def test_timevar_ncom_hour_values_dap(self):
 
@@ -101,3 +107,5 @@ class TimevarTest(unittest.TestCase):
             jds.append(dt + timedelta(days=x))
 
         assert (jds == tvar.dates).all()
+
+        ds.close()

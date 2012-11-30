@@ -14,6 +14,7 @@ class DatasetTest(unittest.TestCase):
         assert names["zname"] == "s_rho"
         assert names["xname"] == "lon_u"
         assert names["yname"] == "lat_u"
+        pd.closenc()
 
     def ncell_init():
         url = "http://testbedapps-dev.sura.org/thredds/dodsC/in/usf/fvcom/rita/ultralite/vardrag/nowave/3d"
@@ -26,6 +27,7 @@ class DatasetTest(unittest.TestCase):
         assert names["zname"] == None
         assert names["xname"] == "lon"
         assert names["yname"] == "lat"
+        pd.closenc()
  
     def slosh_test():
         url = "http://testbedapps-dev.sura.org/thredds/dodsC/in/und/slosh/ike/egl3/swi"
@@ -43,4 +45,5 @@ class DatasetTest(unittest.TestCase):
         assert names["zname"] == None
         assert names["xname"] == "lon"
         assert names["yname"] == "lat"
+        pd.closenc()
 
