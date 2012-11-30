@@ -207,7 +207,7 @@ class DataController(object):
     def __call__(self, proc, active):
         c = 0
         
-        self.dataset = CommonDataset(self.url)
+        self.dataset = CommonDataset.open(self.url)
         self.proc = proc
         self.get_variablenames_for_model()
         self.remote = self.dataset.nc
@@ -509,7 +509,6 @@ class DataController(object):
 class ForceParticle(object):
     from paegan.transport.shoreline import Shoreline
     from paegan.transport.bathymetry import Bathymetry
-    #from paegan.cdm.dataset import CommonDataset
     def __str__(self):
         return self.part.__str__()
 
@@ -924,12 +923,12 @@ class ForceParticle(object):
         try:
             with self.read_lock:
                 self.read_count.value += 1
-            self.dataset = CommonDataset(self.localpath)
+            self.dataset = CommonDataset.open(self.localpath)
+            self.dataset.closenc()
         except StandardError:
             logger.warn("No cache file: %s.  Particle exiting" % self.localpath)
             raise
         finally:
-            self.dataset.closenc()
             with self.read_lock:
                 self.read_count.value -= 1
 
@@ -940,7 +939,7 @@ class ForceParticle(object):
         remote = None
         while remote == None:
             try:
-                remote = CommonDataset(self.remotehydropath)
+                remote = CommonDataset.open(self.remotehydropath)
                 self.get_variablenames_for_model(remote)
             except StandardError:
                 logger.warn("Problem opening remote dataset, trying again in 30 seconds...")
@@ -1019,6 +1018,9 @@ class ForceParticle(object):
 
         # We won't pull data for the last entry in locations, but we need to populate it with fill data.
         part.fill_environment_gap()
+
+        self._bathymetry.close()
+        self._shoreline.close()
 
         return part
     

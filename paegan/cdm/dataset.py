@@ -1,10 +1,10 @@
 import numpy as np
 import netCDF4, datetime
-from timevar import Timevar
-from depthvar import Depthvar
-from gridvar import Gridobj
-from variable import Coordinates as cachevar
-from variable import SubCoordinates as subs
+from paegan.cdm.timevar import Timevar
+from paegan.cdm.depthvar import Depthvar
+from paegan.cdm.gridvar import Gridobj
+from paegan.cdm.variable import Coordinates as cachevar
+from paegan.cdm.variable import SubCoordinates as subs
 
 import multiprocessing
 from paegan.logging.null_handler import NullHandler
@@ -55,93 +55,98 @@ _possibley = ["y", "Y",
            "lat_rho", "LAT_RHO",
            "lat_psi", "LAT_PSI",
           ]
-    
-def CommonDataset(ncfile, xname='lon', yname='lat',
-    zname='z', tname='time', **kwargs):
-    """
-    Initialize paegan dataset object, which uses specific
-    readers for different kinds of datasets, and returns
-    dataset objects that expose a common api.
-    
-    from cdm.dataset import CommonDataset
 
-    >> dataset = CommonDataset(ncfile)
-    >> dataset = CommonDataset(url, "lon_rho", "lat_rho", "s_rho", "ocean_time")
-    >> dataset = CommonDataset(url, dataset_type="cgrid")
-    """
-    class self:
-        pass
 
-    if isinstance(ncfile, str):
-        ncfile = unicode(ncfile.strip())
+class CommonDataset(object):
 
-    if isinstance(ncfile, unicode):
-        try:
-            nc = netCDF4.Dataset(ncfile)
-        except StandardError:
-            raise
+    @staticmethod
+    def open(ncfile, xname='lon', yname='lat', zname='z', tname='time', **kwargs):
+        """
+        Initialize paegan dataset object, which uses specific
+        readers for different kinds of datasets, and returns
+        dataset objects that expose a common api.
+        
+        from cdm.dataset import CommonDataset
 
-    self.nc = nc
-    self._filename = ncfile
-    self._datasettype = kwargs.get('dataset_type', None)
-    if kwargs.get('model', None) != None:
-        pass
-    
-    # Find the coordinate variables for testing, unknown
-    # if not found
-    #print dir(self.nc.variables)
-    keys = self.nc.variables
-    keys = set(keys)
-    posx = set(_possiblex)
-    posy = set(_possibley)
-    xmatches = list(posx.intersection(keys))
-    ymatches = list(posy.intersection(keys))
-    
-    if xname in keys and yname in keys:
-        testvary = self.nc.variables[yname]
-        testvarx = self.nc.variables[xname]
-    elif len(xmatches) > 0:
-        testvary = self.nc.variables[ymatches[0]]
-        testvarx = self.nc.variables[xmatches[0]]
-    
-    # Test the shapes of the coordinate variables to 
-    # determine the grid type
-    if self._datasettype is None:
-        if testvary.ndim > 1:
-            self._datasettype = "cgrid"
-        else:
-            if testvary.shape[0] != testvarx.shape[0]:
-                self._datasettype = "rgrid"
+        >> dataset = CommonDataset.open(ncfile)
+        >> dataset = CommonDataset.open(url, "lon_rho", "lat_rho", "s_rho", "ocean_time")
+        >> dataset = CommonDataset.open(url, dataset_type="cgrid")
+        """
+
+        logger = multiprocessing.get_logger()
+        logger.addHandler(NullHandler())
+
+        nc = None
+        filename = None
+
+        if isinstance(ncfile, str):
+            ncfile = unicode(ncfile.strip())
+
+        if isinstance(ncfile, unicode):
+            try:
+                nc = netCDF4.Dataset(ncfile)
+                filename = ncfile
+            except StandardError:
+                logger.error(ncfile)
+                raise
+        elif isinstance(ncfile, Dataset):
+            # Passed in paegan Dataset object
+            nc = ncfile.nc
+        elif isinstance(ncile, netCDF4.Dataset):
+            # Passed in a netCDF4 Dataset object
+            nc = ncfile
+
+        datasettype = kwargs.get('dataset_type', None)
+        
+        # Find the coordinate variables for testing, unknown if not found
+        keys = set(nc.variables)
+        posx = set(_possiblex)
+        posy = set(_possibley)
+        xmatches = list(posx.intersection(keys))
+        ymatches = list(posy.intersection(keys))
+        
+        if xname in keys and yname in keys:
+            testvary = nc.variables[yname]
+            testvarx = nc.variables[xname]
+        elif len(xmatches) > 0:
+            testvary = nc.variables[ymatches[0]]
+            testvarx = nc.variables[xmatches[0]]
+        
+        # Test the shapes of the coordinate variables to determine the grid type
+        if datasettype is None:
+            if testvary.ndim > 1:
+                datasettype = "cgrid"
             else:
-                self._datasettype = "ncell"
-    
-    # Return appropriate dataset subclass based on
-    # datasettype
-    if self._datasettype == 'ncell':
-        dataobj = NCellDataset(self.nc, 
-            self._filename, self._datasettype,
-            zname=zname, tname=tname, xname=xname, yname=yname)
-    elif self._datasettype == 'rgrid':
-        dataobj = RGridDataset(self.nc,
-            self._filename, self._datasettype,
-            zname=zname, tname=tname, xname=xname, yname=yname)
-    elif self._datasettype == 'cgrid':
-        dataobj = CGridDataset(self.nc,
-            self._filename, self._datasettype,
-            zname=zname, tname=tname, xname=xname, yname=yname)
-    else:
-        dataobj = None
-    return dataobj
+                if testvary.shape[0] != testvarx.shape[0]:
+                    datasettype = "rgrid"
+                else:
+                    datasettype = "ncell"
+        
+        nc.close()
+
+        # Return appropriate dataset subclass based on datasettype
+        if datasettype == 'ncell':
+            dataobj = NCellDataset(filename, datasettype,
+                zname=zname, tname=tname, xname=xname, yname=yname)
+        elif datasettype == 'rgrid':
+            dataobj = RGridDataset(filename, datasettype,
+                zname=zname, tname=tname, xname=xname, yname=yname)
+        elif datasettype == 'cgrid':
+            dataobj = CGridDataset(filename, datasettype,
+                zname=zname, tname=tname, xname=xname, yname=yname)
+        else:
+            dataobj = None
+
+        return dataobj
     
 
-class Dataset:
-    def __init__(self, nc, filename, datasettype, xname='lon', yname='lat',
+class Dataset(object):
+    def __init__(self, filename, datasettype, xname='lon', yname='lat',
         zname='z', tname='time'):
-        self.nc = nc
+        self.nc = None
         self._coordcache = dict()
         self._filename = filename
         self._datasettype = datasettype
-        self.metadata = self.nc.__dict__
         
         self._possiblet = _possiblet
         self._possiblez = _possiblez
@@ -156,7 +161,9 @@ class Dataset:
             self._possiblez.append(zname)
         if tname not in self._possiblet:
             self._possiblet.append(tname)
-            
+
+        self.opennc()
+
     def getvariableinfo(self):
         variables = {}
         for var in self.nc.variables.keys():
@@ -690,17 +697,14 @@ class Dataset:
     _lat2ind = lat2ind
     _ind2lat = ind2lat
     __get_data = _get_data
-        
-        
-        
-        
+
+
 class CGridDataset(Dataset):
     """
     CGridDataset(Dataset)
     """
-    def __new__(self, nc, filename, datasettype, xname='lon', yname='lat',
-        zname='z', tname='time'):
-        pass
+    def __init__(self, *args,**kwargs):
+        super(CGridDataset,self).__init__(*args, **kwargs)
 
     def lon2ind(self, var=None, **kwargs):
         pass
@@ -759,16 +763,13 @@ class CGridDataset(Dataset):
                        indarray[3], indarray[4], indarray[5]]
         return data
         
-        
-        
-        
+                
 class RGridDataset(Dataset):
     """
     RGridDataset(Dataset)
     """
-    def __new__(self, nc, filename, datasettype, xname='lon', yname='lat',
-        zname='z', tname='time'):
-        pass
+    def __init__(self, *args,**kwargs):
+        super(RGridDataset,self).__init__(*args, **kwargs)
         
     def lon2ind(self, var=None, **kwargs):
         pass
@@ -823,15 +824,12 @@ class RGridDataset(Dataset):
         return data
 
 
-
-
 class NCellDataset(Dataset):
     """
     NCellDataset(Dataset)
     """
-    def __new__(self, nc, filename, datasettype, xname='lon', yname='lat',
-        zname='z', tname='time'):
-        pass
+    def __init__(self, *args,**kwargs):
+        super(NGridDataset,self).__init__(*args, **kwargs)
         if None in self.nc.variables:
             self._is_topology = True
             self.topology_var_name = None

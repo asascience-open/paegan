@@ -5,7 +5,7 @@ import os
 class DatasetTest(unittest.TestCase):
     def cgrid_init():
         url = "http://testbedapps-dev.sura.org/thredds/dodsC/estuarine_hypoxia/chesroms/agg-1991.nc"
-        pd = CommonDataset(url)
+        pd = CommonDataset.open(url)
         assert pd._datasettype == 'cgrid'
         coords = pd.get_coord_dict('u')
         assert str(pd._coordcache['u']) == "[XY][Z][T]"
@@ -18,7 +18,7 @@ class DatasetTest(unittest.TestCase):
 
     def ncell_init():
         url = "http://testbedapps-dev.sura.org/thredds/dodsC/in/usf/fvcom/rita/ultralite/vardrag/nowave/3d"
-        pd = CommonDataset(url)
+        pd = CommonDataset.open(url)
         assert pd._datasettype == 'ncell'
         varname = pd.get_varname_from_stdname('sea_surface_height_above_geoid')
         assert varname == "zeta"
@@ -31,7 +31,7 @@ class DatasetTest(unittest.TestCase):
  
     def slosh_test():
         url = "http://testbedapps-dev.sura.org/thredds/dodsC/in/und/slosh/ike/egl3/swi"
-        pd = CommonDataset(url)
+        pd = CommonDataset.open(url)
         assert pd._datasettype == 'cgrid'
         grid = pd.getgridobj('eta')
         box = [i-1 for i in grid.bbox]

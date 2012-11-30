@@ -18,8 +18,11 @@ class Bathymetry():
             self._file = os.path.normpath(os.path.join(__file__,"../../resources/bathymetry/ETOPO1_Bed_g_gmt4.grd"))
         
         self._type = kwargs.pop("type", "hover")
-        self._nc = CommonDataset(self._file)
+        self._nc = CommonDataset.open(self._file)
         self._bathy_name = kwargs.pop("bathy", "z")
+
+    def close(self):
+        self._nc.closenc()
 
     def intersect(self, **kwargs):
         """

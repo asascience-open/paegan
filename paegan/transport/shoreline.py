@@ -40,6 +40,10 @@ class Shoreline(object):
         self._geoms = []
         self.index(point=point)
 
+    def close(self):
+        # Srsly. Per GDAL docs this is how we should close the dataset.
+        self._source = None
+
     def get_geoms(self):
         return self._geoms
     geoms = property(get_geoms, None)
