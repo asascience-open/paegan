@@ -8,7 +8,7 @@ except ImportError:
     import gdal
 
 def compute_probability(trajectory_files, bbox=None, 
-                        nx=None, ny=None, method='overall'):
+                        nx=None, ny=None, method='overall', parameter='location'):
     """
         This function creates a probability (stochastic) grid 
         for trajectory model data using 'overall' method (based
@@ -61,7 +61,27 @@ def compute_probability(trajectory_files, bbox=None,
             prob2 = run + prob2
         prob = prob2 / len(prob)
     return prob
-    
+
+def compute_probability_settle(trajectory_files, bbox=None, 
+                        nx=1000, ny=1000, method='overall'):
+    """
+        This function creates a probability (stochastic) grid 
+        for trajectory model data based on settlement location, 
+        normalized by run.
+        
+        probability_grid = compute_probability_settle([myfile1.nc, myfile2.nc],
+                                               bbox = [-75, 23, -60, 45],
+                                               nx = 1000, ny = 1000,
+                                               method='overall')  
+    """
+	prob = compute_probability(trajectory_files,
+                               bbox,
+                               nx, ny,
+                               method,
+                               parameter='settlement',
+                              )
+    return prob
+
 def export_probability(outputname, **kwargs):
     """
         Calculate probability and export to gis raster/grid
