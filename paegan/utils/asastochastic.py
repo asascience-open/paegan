@@ -19,6 +19,7 @@ def compute_probability(trajectory_files, bbox=None,
                                                bbox = [-75, 23, -60, 45],
                                                nx = 1000, ny = 1000,
                                                method = 'overall')  
+        stoch.compute_probability(['/media/sf_Python/trajectories.nc'],bbox=[-148,60,-146,61],nx=500,ny=500,method='overall',parameter='settlement')
     """
     xarray = np.linspace(float(bbox[0]), float(bbox[2]), int(nx)+1) 
     yarray = np.linspace(float(bbox[1]), float(bbox[3]), int(ny)+1)
@@ -26,22 +27,34 @@ def compute_probability(trajectory_files, bbox=None,
         prob = np.zeros((ny, nx))
         for runfile in trajectory_files:
             run = netCDF4.Dataset(runfile)
-			if parameter == 'location':
-		        lat = run.variables['lat'][:].flatten()
-		        lon = run.variables['lon'][:].flatten()
-		        column_i, row_i = [], []
-		        for clon, clat in zip(lon, lat):
-		            column_i.append(bisect.bisect(xarray, clon))
-		            row_i.append(bisect.bisect(yarray, clat))
-		            try:
-		                prob[row_i[-1], column_i[-1]] += 1
-		            except StandardError:
-		                pass
-			elif parameter == 'settlement':
-				pass
-			else:
-				raise(ValueError("Parameter for stochastic assessment not valid"))
-        shape = lat.shape
+            if parameter == 'location':
+                lat = run.variables['lat'][:].flatten()
+                lon = run.variables['lon'][:].flatten()
+                column_i, row_i = [], []
+                for clon, clat in zip(lon, lat):
+                    column_i.append(bisect.bisect(xarray, clon))
+                    row_i.append(bisect.bisect(yarray, clat))
+                    try:
+                        prob[row_i[-1], column_i[-1]] += 1
+                    except StandardError:
+                        pass
+            elif parameter == 'settlement':
+                for i in range(run.variables['time'].shape[0]):
+                    settle_index = np.where(run.variables['settled'][i,:]==1)
+                    if len(settle_index[0]) > 0:
+                        lat = run.variables['lat'][i, settle_index[0]].flatten()
+                        lon = run.variables['lon'][i, settle_index[0]].flatten()
+                        column_i, row_i = [], []    
+                        for clon, clat in zip(lon, lat):
+                            column_i.append(bisect.bisect(xarray, clon))
+                            row_i.append(bisect.bisect(yarray, clat))
+                            try:
+                                prob[row_i[-1], column_i[-1]] += 1
+                            except StandardError:
+                                pass
+            else:
+                raise ValueError("Parameter for stochastic assessment not valid")
+        shape = run.variables['time'].shape
         prob = prob / (shape[0] * len(trajectory_files)) # Assumes same # of particles
                                                          # for every run, may be bad
                                                          # assumtion
@@ -50,22 +63,24 @@ def compute_probability(trajectory_files, bbox=None,
         for i, runfile in enumerate(trajectory_files):
             prob.append(np.zeros((ny, nx)))
             run = netCDF4.Dataset(runfile)
-			if parameter == 'location':
+            if parameter == 'location':
 		        lat = run.variables['lat'][:].flatten()
 		        lon = run.variables['lon'][:].flatten()
-		        column_i, row_i = [], []
-		        for clon, clat in zip(lon, lat):
-		            column_i.append(bisect.bisect(xarray, clon))
-		            row_i.append(bisect.bisect(yarray, clat))
-		            try:
-		                if prob[i][row_i[-1], column_i[-1]] == 0:
-		                    prob[i][row_i[-1], column_i[-1]] = 1
-		            except StandardError:
-		                pass
-			elif parameter == 'settlement':
-				pass
-			else:
-				raise(ValueError("Parameter for stochastic assessment not valid"))
+            elif parameter == 'settlement':
+                settle_index = np.where(run.variables['settled'][-1,:]==1)[0]
+                lat = run.variables['lat'][-1, settle_index].flatten()
+                lon = run.variables['lon'][-1, settle_index].flatten()
+            else:
+                raise ValueError("Parameter for stochastic assessment not valid")
+            column_i, row_i = [], []
+            for clon, clat in zip(lon, lat):
+                column_i.append(bisect.bisect(xarray, clon))
+                row_i.append(bisect.bisect(yarray, clat))
+                try:
+	                if prob[i][row_i[-1], column_i[-1]] == 0:
+	                	prob[i][row_i[-1], column_i[-1]] = 1
+                except StandardError:
+                    pass
         prob2 = np.zeros((ny, nx))
         for run in prob:
             prob2 = run + prob2
@@ -84,7 +99,7 @@ def compute_probability_settle(trajectory_files, bbox=None,
                                                nx = 1000, ny = 1000,
                                                method='overall')  
     """
-	prob = compute_probability(trajectory_files,
+    prob = compute_probability(trajectory_files,
                                bbox,
                                nx, ny,
                                method,
