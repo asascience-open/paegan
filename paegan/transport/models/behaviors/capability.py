@@ -46,9 +46,9 @@ class Capability(object):
             else:
                 raise ValueError("Method of vss calculation not recognized, please use 'gaussian' or 'random'")
     def get_calculated_vss(self):
-        return self._calculated_vss
+        return self.calculated_vss
     def set_calculated_vss(self, cvss):
-        self._calculated_vss = float(cvss)
+        self.calculated_vss = float(cvss)
     calculated_vss = property(get_calculated_vss, set_calculated_vss)
 
     def get_vss(self):
