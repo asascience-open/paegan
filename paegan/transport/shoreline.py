@@ -14,6 +14,9 @@ from paegan.utils.asarandom import AsaRandom
 from paegan.transport.location4d import Location4D
 from shapely.prepared import prep
 
+import multiprocessing
+from paegan.logging.null_handler import NullHandler
+
 class Shoreline(object):
     def __init__(self, **kwargs):
         """
@@ -69,6 +72,9 @@ class Shoreline(object):
 
         """
 
+        logger = multiprocessing.get_logger()
+        logger.addHandler(NullHandler())
+
         point = kwargs.pop("point", None)
         spatialbuffer = kwargs.pop("spatialbuffer", self._spatialbuffer)
 
@@ -92,8 +98,8 @@ class Shoreline(object):
                     for poly in geom:
                         self._geoms.append(poly)
             except:
-                continue
-            
+                logger.warn("Could not find valid geometry in shoreline element.  Point: %s, Buffer: %s" % (str(point), str(spatialbuffer)))
+
     def intersect(self, **kwargs):
         """
             Intersect a Line or Point Collection and the Shoreline
