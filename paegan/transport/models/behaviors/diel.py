@@ -113,7 +113,7 @@ class Diel(BaseModel):
                 raise ValueError("Location4D object can not be None")
 
         elif self.pattern == self.PATTERN_SPECIFICTIME:
-            return self._time
+            return self._time.replace(year=loc4d.time.year, month=loc4d.time.month, day=loc4d.time.day)
     time = property(get_time, set_time)
 
     def move(self, particle, u, v, w, modelTimestep, **kwargs):
