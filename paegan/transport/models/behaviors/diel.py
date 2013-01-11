@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 import pytz
 import json
 from paegan.transport.models.base_model import BaseModel
+import multiprocessing
+from paegan.logging.null_handler import NullHandler
 
 class Diel(BaseModel):
 
@@ -116,6 +118,9 @@ class Diel(BaseModel):
 
     def move(self, particle, u, v, w, modelTimestep, **kwargs):
 
+        logger = multiprocessing.get_logger()
+        logger.addHandler(NullHandler())
+
         # If the particle is settled, don't move it anywhere
         if particle.settled:
             return { 'u': 0, 'v': 0, 'w': 0 }
@@ -139,9 +144,10 @@ class Diel(BaseModel):
             ______________________________________
         """
         if particle.location.depth < self.max_depth:
+            logger.info("DIEL: %s - Moving UP to desired depth from %f" % (self.logstring(), particle.location.depth))
             return { 'u': u, 'v': v, 'w': w }
 
-        """ I'm above my desired max depth, so i need to go down
+        """ I'm above my desired min depth, so i need to go down
 
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                 x                  me
@@ -150,6 +156,7 @@ class Diel(BaseModel):
             ______________________________________
         """
         if particle.location.depth > self.min_depth:
+            logger.info("DIEL: %s - Moving DOWN to desired depth from %f" % (self.logstring(), particle.location.depth))
             return { 'u': u, 'v': v, 'w': -w }
 
         """ I'm in my desired depth, so I'm just gonna chill here
@@ -162,14 +169,8 @@ class Diel(BaseModel):
         """
         return { 'u': u, 'v': v, 'w': 0 }
 
-    def __str__(self):
-        return \
-        """*** Diel  ***
-        Pattern: %s
-        Cycle: %s
-        Time: %s
-        Plus or Minus: %s
-        Min Depth: %d
-        Max Depth: %d
-        Time Delta: %d
-        """ % (self.pattern, self.cycle, self._time, self.plus_or_minus, self.min_depth, self.max_depth, self.time_delta)
+    def logstring(self):
+        if self.pattern == self.PATTERN_CYCLE:
+            return "At %s (%s%d hours) go to between %fm and %fm" % (self.cycle.upper(), self.plus_or_minus, self.time_delta, self.min_depth, self.max_depth)
+        else:
+            return "At %s (UTC) go to between %fm and %fm" % (self._time.strftime("%H:%M"), self.min_depth, self.max_depth)

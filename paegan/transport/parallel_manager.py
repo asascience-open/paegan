@@ -185,7 +185,7 @@ class DataController(object):
                 domain[inds[0]:inds[-1]+1, y:y_1, x:x_1] = np.ones((inds[-1]+1-inds[0], y_1-y, x_1-x))
         
         # Update the local variables with remote data
-        logger.info("Filling cache with: Time - %s:%s, Lat - %s:%s, Lon - %s:%s" % (str(inds[0]), str(inds[-1]+1), str(y), str(y_1), str(x), str(x_1)))
+        logger.debug("Filling cache with: Time - %s:%s, Lat - %s:%s, Lon - %s:%s" % (str(inds[0]), str(inds[-1]+1), str(y), str(y_1), str(x), str(x_1)))
         for local, remote in zip(localvars, remotevars):
             if self.low_memory:
                 for z in range(shape[1]):
@@ -239,14 +239,14 @@ class DataController(object):
             timer.sleep(2)
             # If particle asks for data, do the following
             if self.get_data.value == True:
-                logger.info("Particle asked for data!")
+                logger.debug("Particle asked for data!")
 
                 # Wait for particles to get out
                 while True:
                     self.read_lock.acquire()
-                    logger.info("Read count: %d" % self.read_count.value)
+                    logger.debug("Read count: %d" % self.read_count.value)
                     if self.read_count.value > 0:
-                        logger.info("Waiting for write lock on cache file (particles must stop reading)...")
+                        logger.debug("Waiting for write lock on cache file (particles must stop reading)...")
                         self.read_lock.release()
                         timer.sleep(4)
                     else:
@@ -437,7 +437,7 @@ class DataController(object):
                         self.read_lock.release()
                         logger.info("Done updating cache file, closing file, and releasing locks")
                 else:
-                    logger.info("Updating cache file")
+                    logger.debug("Updating cache file")
                     try:
                         # Open local cache dataset for appending
                         self.local = netCDF4.Dataset(cachepath, 'a')
@@ -615,14 +615,14 @@ class ForceParticle(object):
             #logger.info("Type of Double mean of result: %s" % type(np.mean(np.mean(cached_lookup))))
             if type(np.mean(np.mean(cached_lookup))) == np.ma.core.MaskedConstant:
                 need = True
-                logger.info("I NEED data.  Got back: %s" % cached_lookup)
+                logger.debug("I NEED data.  Got back: %s" % cached_lookup)
             else:
                 need = False
                 #logger.info("I DO NOT NEED data")
         except StandardError:
             # If the time index doesnt even exist, we need
             need = True
-            logger.info("I NEED data (no time index exists in cache)")
+            logger.debug("I NEED data (no time index exists in cache)")
         finally:
             self.dataset.closenc()
             with self.read_lock:
@@ -685,7 +685,7 @@ class ForceParticle(object):
                     # Wait until the data controller is done
                     if self.active.value == True:
                         while self.get_data.value == True:
-                            logger.info("Waiting for DataController to update cache with the CURRENT time index")
+                            logger.debug("Waiting for DataController to update cache with the CURRENT time index")
                             timer.sleep(4)
                             pass 
 
@@ -696,7 +696,7 @@ class ForceParticle(object):
                     # Wait until the data controller is done
                     if self.active.value == True:
                         while self.get_data.value == True:
-                            logger.info("Waiting for DataController to update cache with the NEXT time index")
+                            logger.debug("Waiting for DataController to update cache with the NEXT time index")
                             timer.sleep(4)
                             pass
             except StandardError:
@@ -826,7 +826,7 @@ class ForceParticle(object):
                     # Wait until the data controller is done
                     if self.active.value == True:
                         while self.get_data.value == True:
-                            logger.info("Waiting for DataController to update cache...")
+                            logger.debug("Waiting for DataController to update cache...")
                             timer.sleep(4)
                             pass
             except StandardError:
@@ -1070,7 +1070,7 @@ class ForceParticle(object):
         # sea-surface
         if self.usesurface:
             if ending.depth > 0:
-                logger.info("%s - rose out of the water, settin depth to 0." % particle.logstring())
+                #logger.info("%s - rose out of the water.  Setting depth to 0." % particle.logstring())
                 ending.depth = 0
 
         particle.location = ending

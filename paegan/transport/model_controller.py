@@ -115,24 +115,31 @@ class ModelController(object):
     particles = property(get_particles, set_particles)
 
     def __str__(self):
-        return  " *** ModelController *** " + \
-                "\nstart_geometry: " + str(self.geometry) + \
-                "\ndepth: " + str(self.depth) + \
-                "\nstart: " + str(self.start) +\
-                "\nstep: " + str(self.step) +\
-                "\nnstep: " + str(self.nstep) +\
-                "\nnpart: " + str(self.npart) +\
-                "\nmodels: " + str(self.models) +\
-                "\nuse_bathymetry: " + str(self.use_bathymetry) +\
-                "\nuse_shoreline: " + str(self.use_shoreline) + \
-                "\ntime_method: " + str(self.time_method)
+        return  """
+            *** ModelController ***
+              start_geometry: %s
+              depth: %d
+              start: %s
+              timestep (seconds): %d
+              steps: %d
+              particles: %d
+              bathymetry: %s
+              shoreline: %s
+              seasurface: %s
+              time_method: %s
+            """ % (str(self.geometry), self._depth, str(self.start), self._step, self._nstep, self._npart, self._use_bathymetry, self._use_shoreline, self._use_seasurface, self.time_method)
 
     def run(self, hydrodataset, **kwargs):
 
         logger = multiprocessing.get_logger()
         logger.addHandler(NullHandler())
+
         # Add ModelController description to logfile
         logger.info(self)
+
+        # Add the model descriptions to logfile
+        for m in self._models:
+            logger.info(m)
 
         if self.start == None:
             raise TypeError("must provide a start time to run the models")

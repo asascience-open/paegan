@@ -36,3 +36,9 @@ class LarvaBehavior(BaseModel):
             raise
         
         return lifestage.move(particle, u, v, w, modelTimestep, **kwargs)
+
+    def __str__(self):
+        return """
+            ***** Behavior *****
+              lifestages: %d
+            """ % (len(self.lifestages))

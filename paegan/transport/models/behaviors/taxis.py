@@ -54,12 +54,12 @@ class Taxis(BaseModel):
 
     def __str__(self):
         return \
-        """*** Taxis  ***
-        Min: %d
-        Max: %d
-        Gradient: %d
-        Variables: %s
-        Units: %s
+        """
+          Min: %d
+          Max: %d
+          Gradient: %d
+          Variables: %s
+          Units: %s
         """ % (self.min_value, self.max_value, self.gradient, self.variable, self.units)
 
     def move(self, particle, u, v, w, modelTimestep, **kwargs):
@@ -70,7 +70,7 @@ class Taxis(BaseModel):
 
         # If the particle is halted (but not settled), don't move it anywhere
         if particle.halted:
-            return { 'u': 0, 'v': 0, 'w': 0 }    
+            return { 'u': 0, 'v': 0, 'w': 0 }
         
         u = 0
         v = 0

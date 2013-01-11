@@ -1,5 +1,7 @@
 import json
 from random import gauss, uniform
+import multiprocessing
+from paegan.logging.null_handler import NullHandler
 
 class Capability(object):
 
@@ -45,9 +47,9 @@ class Capability(object):
             else:
                 raise ValueError("Method of vss calculation not recognized, please use 'gaussian' or 'random'")
     def get_calculated_vss(self):
-        return self.calculated_vss
+        return self._calculated_vss
     def set_calculated_vss(self, cvss):
-        self.calculated_vss = float(cvss)
+        self._calculated_vss = float(cvss)
     calculated_vss = property(get_calculated_vss, set_calculated_vss)
 
     def get_vss(self):
@@ -73,3 +75,11 @@ class Capability(object):
     def set_swim_turning(self, turning):
         self._swim_turning = turning
     swim_turning = property(get_swim_turning, set_swim_turning)
+
+    def __str__(self):
+        return """
+            vss (m/s): %s (+/- %s)
+            calculated_vss (m/s): %s
+            swim_turning: %s
+            non_swim_turning: %s
+        """ % (self.vss, self.variance, self.calculated_vss, self.swim_turning, self.non_swim_turning)

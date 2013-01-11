@@ -87,7 +87,8 @@ class Transport(BaseModel):
         return result
 
     def __str__(self):
-        return  " *** Transport *** " + \
-                "\nhorizDisp: " + str(self.horizDisp) + \
-                "\nvertDisp: " + str(self.vertDisp)
-
+        return  """
+            ***** Transport *****
+              horizDisp: %s
+              vertDisp:  %s
+            """ % (str(self.horizDisp), str(self.vertDisp)) 
