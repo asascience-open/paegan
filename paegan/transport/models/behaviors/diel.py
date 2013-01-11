@@ -129,6 +129,9 @@ class Diel(BaseModel):
         if particle.halted:
             return { 'u': 0, 'v': 0, 'w': 0 }
 
+        # How far could I move?  We don't want to overshoot our desired depth.
+        vertical_potential = w * modelTimestep
+
         """
             This only works if min is less than max.
             No checks are done here, so it should be done before
@@ -145,6 +148,14 @@ class Diel(BaseModel):
         """
         if particle.location.depth < self.max_depth:
             logger.info("DIEL: %s - Moving UP to desired depth from %f" % (self.logstring(), particle.location.depth))
+
+            # If we are going to overshoot the desired minimum depth, 
+            # calculate a new w to land in the middle of the range.
+            overshoot_distance = abs(particle.location.depth - self.min_depth)
+            if overshoot_distance < abs(vertical_potential):
+                halfway_distance = abs((self.max_depth - self.min_depth) / 2)
+                w = ((overshoot_distance - halfway_distance) / modelTimestep)
+
             return { 'u': u, 'v': v, 'w': w }
 
         """ I'm above my desired min depth, so i need to go down
@@ -157,6 +168,14 @@ class Diel(BaseModel):
         """
         if particle.location.depth > self.min_depth:
             logger.info("DIEL: %s - Moving DOWN to desired depth from %f" % (self.logstring(), particle.location.depth))
+
+            # If we are going to overshoot the desired maximum depth, 
+            # calculate a new w to land in the middle of the range.
+            overshoot_distance = abs(particle.location.depth - self.max_depth)
+            if overshoot_distance < abs(vertical_potential):
+                halfway_distance = abs((self.max_depth - self.min_depth) / 2)
+                w = ((overshoot_distance - halfway_distance) / modelTimestep)
+
             return { 'u': u, 'v': v, 'w': -w }
 
         """ I'm in my desired depth, so I'm just gonna chill here
