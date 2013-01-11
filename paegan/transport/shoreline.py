@@ -102,8 +102,6 @@ class Shoreline(object):
             Should also return a linestring buffer around the interseciton point
             so we can calculate the direction to bounce a particle.
         """
-        st = time.time()
-
         ls = None
         if "linestring" in kwargs:
             ls = kwargs.pop('linestring')
