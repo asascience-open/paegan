@@ -1,3 +1,4 @@
+from datetime import timedelta
 import numpy as np
 import pytz
 
@@ -45,13 +46,15 @@ class SunCycles(object):
             lon = kwargs.get("loc").longitude
             time = kwargs.get("loc").time
 
+        time = time.replace(hour=0, minute=0, second=0, microsecond=0)
         jd = time.timetuple().tm_yday
         
         rising_h, rising_m = cls._calc(jd=jd, lat=lat, lon=lon, stage=cls.RISING)
         setting_h, setting_m = cls._calc(jd=jd, lat=lat, lon=lon, stage=cls.SETTING)
 
-        rising = time.replace(hour=int(rising_h), minute=int(rising_m))
-        setting = time.replace(hour=int(setting_h), minute=int(setting_m))
+        # LOOK: We are adding 24 hours to the setting time.  Why?
+        rising = time + timedelta(hours=rising_h, minutes=rising_m)
+        setting = time + timedelta(hours=setting_h + 24, minutes=setting_m)
 
         return { cls.RISING : rising, cls.SETTING : setting }
 
