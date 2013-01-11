@@ -50,8 +50,8 @@ class SunCycles(object):
         rising_h, rising_m = cls._calc(jd=jd, lat=lat, lon=lon, stage=cls.RISING)
         setting_h, setting_m = cls._calc(jd=jd, lat=lat, lon=lon, stage=cls.SETTING)
 
-        rising = time.replace(hour=int(rising_h)).replace(minute=int(rising_m))
-        setting = time.replace(hour=int(setting_h)).replace(minute=int(setting_m))
+        rising = time.replace(hour=int(rising_h), minute=int(rising_m))
+        setting = time.replace(hour=int(setting_h), minute=int(setting_m))
 
         return { cls.RISING : rising, cls.SETTING : setting }
 

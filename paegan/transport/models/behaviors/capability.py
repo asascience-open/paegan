@@ -32,8 +32,7 @@ class Capability(object):
 
         Parameters:
             method:  "gaussian" (default) or "random"
-
-            "random" (vss - variance) < X < (vss + variance)
+                     "random" (vss - variance) < X < (vss + variance)
         """
         if self.variance == float(0):
             return self.vss

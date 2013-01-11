@@ -9,7 +9,7 @@ from paegan.utils.asatransport import AsaTransport
 from paegan.transport.shoreline import Shoreline
 from paegan.transport.bathymetry import Bathymetry
 from multiprocessing import Value
-import multiprocessing, logging
+import multiprocessing
 from paegan.logging.null_handler import NullHandler
 from paegan.cdm.dataset import CommonDataset
 import os, sys
@@ -910,7 +910,6 @@ class ForceParticle(object):
             
         self.proc = proc
         part = self.part
-        models = self.models
         
         if self.active.value == True:
             while self.get_data.value == True:
@@ -1001,7 +1000,7 @@ class ForceParticle(object):
             part.age(seconds=modelTimestep[loop_i])
 
             # loop over models - sort these in the order you want them to run
-            for model in models:
+            for model in self.models:
                 movement = model.move(part, u, v, w, modelTimestep[loop_i], temperature=temp, salinity=salt, bathymetry_value=bathymetry_value)
                 newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtimes[loop_i+1])
                 if newloc:

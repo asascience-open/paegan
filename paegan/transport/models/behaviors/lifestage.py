@@ -86,7 +86,7 @@ class LifeStage(BaseModel):
                 active_diel = self.diel[diel_times.index(min(diel_times))]
 
         # Run the active diel behavior and all of the taxis behaviors
-        # u, v, and w store the continuous resutls from all of the behavior models.
+        # u, v, and w store the continuous results from all of the behavior models.
         u = 0
         v = 0
         w = 0

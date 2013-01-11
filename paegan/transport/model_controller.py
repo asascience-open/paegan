@@ -47,13 +47,14 @@ class ModelController(object):
         self._use_shoreline = kwargs.pop('use_shoreline', True)
         self._use_bathymetry = kwargs.pop('use_bathymetry', True)
         self._use_seasurface = kwargs.pop('use_seasurface', True)
-        self.depth = kwargs.pop('depth', 0)
-        self.npart = kwargs.pop('npart', 1)
+        self._depth = kwargs.pop('depth', 0)
+        self._npart = kwargs.pop('npart', 1)
         self.start = kwargs.pop('start', None)
-        self.step = kwargs.pop('step', 3600)
-        self.models = kwargs.pop('models', None)
+        self._step = kwargs.pop('step', 3600)
+        self._models = kwargs.pop('models', None)
         self._dirty = True
-        self._particles = []
+
+        self.particles = []
         self._time_chunk = kwargs.get('time_chunk', 10)
         self._horiz_chunk = kwargs.get('horiz_chunk', 5)
         self.time_method = kwargs.get('time_method', 'interp')
@@ -98,62 +99,14 @@ class ModelController(object):
 
     def get_reference_location(self):
         pt = self.geometry.centroid
-        return Location4D(latitude=pt.y, longitude=pt.x, depth=self.depth, time=self.start)
+        return Location4D(latitude=pt.y, longitude=pt.x, depth=self._depth, time=self.start)
     reference_location = property(get_reference_location, None)
-
-    def set_depth(self, dep):
-        self._depth = dep
-    def get_depth(self):
-        return self._depth
-    depth = property(get_depth, set_depth)
 
     def set_start(self, sta):
         self._start = sta
     def get_start(self):
         return self._start
     start = property(get_start, set_start)
-
-    def set_step(self, ste):
-        self._step = ste
-    def get_step(self):
-        return self._step
-    step = property(get_step, set_step)
-
-    def set_nstep(self, nst):
-        self._nstep = nst
-    def get_nstep(self):
-        return self._nstep
-    nstep = property(get_nstep, set_nstep)
-
-    def set_use_shoreline(self, sho):
-        self._use_shoreline = sho
-    def get_use_shoreline(self):
-        return self._use_shoreline
-    use_shoreline = property(get_use_shoreline, set_use_shoreline)
-
-    def set_use_bathymetry(self, bat):
-        self._use_bathymetry = bat
-    def get_use_bathymetry(self):
-        return self._use_bathymetry
-    use_bathymetry = property(get_use_bathymetry, set_use_bathymetry)
-
-    def set_use_seasurface(self, sea):
-        self._use_seasurface = sea
-    def get_use_seasurface(self):
-        return self._use_seasurface
-    use_seasurface = property(get_use_seasurface, set_use_seasurface)
-
-    def set_npart(self, npa):
-        self._npart = npa
-    def get_npart(self):
-        return self._npart
-    npart = property(get_npart, set_npart)
-
-    def set_models(self, mod):
-        self._models = mod
-    def get_models(self):
-        return self._models
-    models = property(get_models, set_models)
 
     def set_particles(self, parts):
         self._particles = parts
@@ -216,7 +169,7 @@ class ModelController(object):
         if isinstance(self.geometry, Point):
             point_locations = [self.reference_location] * self._npart
         elif isinstance(self.geometry, Polygon) or isinstance(self.geometry, MultiPolygon):
-            point_locations = [Location4D(latitude=loc.y, longitude=loc.x, depth=self.depth, time=self.start) for loc in AsaTransport.fill_polygon_with_points(goal=self._npart, polygon=self.geometry)]
+            point_locations = [Location4D(latitude=loc.y, longitude=loc.x, depth=self._depth, time=self.start) for loc in AsaTransport.fill_polygon_with_points(goal=self._npart, polygon=self.geometry)]
 
         # Initialize the particles
         logger.debug('Initializing particles')

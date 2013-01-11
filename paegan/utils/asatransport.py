@@ -74,6 +74,8 @@ class AsaTransport(object):
         distance_horiz = 0
         azimuth = 0
         angle = 0
+        depth = location.depth
+
         if u is not 0 and v is not 0:
             s_and_d = AsaMath.speed_direction_from_u_v(u=u,v=v) # calculates velocity in m/s from transformed u and v
             distance_horiz = s_and_d['speed'] * timestep # calculate the horizontal distance in meters using the velocity and model timestep
@@ -82,13 +84,13 @@ class AsaTransport(object):
             # Calculation takes in azimuth (heading from North, so convert our mathematical angle to azimuth)
             azimuth = AsaMath.math_angle_to_azimuth(angle=angle)
             
-        distance_vert = 0
+        distance_vert = 0.
         if w is not None:
             # Move vertically
-            distance_vert = w * timestep # calculate the vertical distance in meters using w and model timestep
-            # We need to represent depths as positive up when transporting.
-            depth = location.depth
-            depth += distance_vert
+            # Depth is positive up, negative down.  w wil be negative if moving down, and positive if moving up
+            distance_vert = w * timestep
+            depth += distance_vert # calculate the vertical distance in meters using w (m/s) and model timestep (s)
+            
 
         if distance_horiz != 0:
             vertical_angle = math.degrees(math.atan(distance_vert / distance_horiz))
@@ -96,12 +98,15 @@ class AsaTransport(object):
         else:
             # Did we go up or down?
             vertical_angle = 0.
-            if distance_vert < 1:
+            if distance_vert < 0:
+                # Down
                 vertical_angle = 270.
-            elif distance_vert > 1:
+            elif distance_vert > 0:
+                # Up
                 vertical_angle = 90.
             gc_result = { 'latitude': location.latitude, 'longitude': location.longitude, 'reverse_azimuth': 0 }
             
+        #logger.info("Particle moving from %fm to %fm from a vertical speed of %f m/s over %s seconds" % (location.depth, depth, w, str(timestep)))            
         gc_result['azimuth'] = azimuth
         gc_result['depth'] = depth
         gc_result['distance'] = distance_horiz
