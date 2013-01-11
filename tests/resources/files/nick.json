@@ -1,0 +1,277 @@
+{
+  "results": [
+    {
+      "status": "public", 
+      "name": "Pacific Herring ", 
+      "created": 1352941427364, 
+      "geometry": "POLYGON ((-152.9362499999999727 59.1694749652649250, -144.8503124999999727 60.9243130624233302, -136.7643749999999727 59.3491767706565909, -131.1393749999999727 55.7694898281741587, -126.5690624999999727 51.3913483566569411, -135.3581249999999727 49.1447326552292836, -142.0378124999999727 52.4751104479938704, -147.6628124999999727 55.5712254979225122, -153.9909374999999727 54.1550602723616592, -160.3190624999999727 55.1716762326347876, -152.9362499999999727 59.1694749652649250))", 
+      "geo_keywords": [
+        "Pacific", 
+        "North Pacific", 
+        "PWS", 
+        "Prince William Sound"
+      ], 
+      "keywords": [
+        "Herring"
+      ], 
+      "user": "finance@research4d.org", 
+      "common_name": "Pacific Herring", 
+      "genus": "Clupea", 
+      "notes": "Pacific Herring. Created November 2012. Nick Lowry. Full version.", 
+      "species": "Pallasii", 
+      "lifestages": [
+        {
+          "settlement": null, 
+          "name": "Yolk-sac", 
+          "linear_b": null, 
+          "notes": "", 
+          "linear_a": null, 
+          "capability": {
+            "nonswim_turning": "downward", 
+            "variance": 0.0, 
+            "swim_turning": "reverse", 
+            "vss": 0.0021
+          }, 
+          "duration": 8, 
+          "diel": [
+            {
+              "plus_or_minus": null, 
+              "min": 0.0, 
+              "max": 1.0, 
+              "hours": null, 
+              "time": 1352998800000, 
+              "type": "specifictime", 
+              "cycle": null
+            }, 
+            {
+              "plus_or_minus": null, 
+              "min": 0.0, 
+              "max": 1.0, 
+              "hours": null, 
+              "time": 1352955600000, 
+              "type": "specifictime", 
+              "cycle": null
+            }
+          ], 
+          "taxis": []
+        }, 
+        {
+          "settlement": null, 
+          "name": "First feeding", 
+          "linear_b": null, 
+          "notes": "", 
+          "linear_a": null, 
+          "capability": {
+            "nonswim_turning": "downward", 
+            "variance": 0.0, 
+            "swim_turning": "reverse", 
+            "vss": 0.0079
+          }, 
+          "duration": 15, 
+          "diel": [
+            {
+              "plus_or_minus": "-", 
+              "min": 0.0, 
+              "max": 5.0, 
+              "hours": 1, 
+              "time": null, 
+              "type": "cycles", 
+              "cycle": "sunrise"
+            }, 
+            {
+              "plus_or_minus": "+", 
+              "min": 10.0, 
+              "max": 20.0, 
+              "hours": 1, 
+              "time": null, 
+              "type": "cycles", 
+              "cycle": "sunrise"
+            }, 
+            {
+              "plus_or_minus": "-", 
+              "min": 0.0, 
+              "max": 5.0, 
+              "hours": 1, 
+              "time": null, 
+              "type": "cycles", 
+              "cycle": "sunset"
+            }, 
+            {
+              "plus_or_minus": "+", 
+              "min": 0.0, 
+              "max": 150.0, 
+              "hours": 1, 
+              "time": null, 
+              "type": "cycles", 
+              "cycle": "sunset"
+            }
+          ], 
+          "taxis": []
+        }, 
+        {
+          "settlement": null, 
+          "name": "Caudal fin development", 
+          "linear_b": null, 
+          "notes": "", 
+          "linear_a": null, 
+          "capability": {
+            "nonswim_turning": "downward", 
+            "variance": 0.0, 
+            "swim_turning": "reverse", 
+            "vss": 0.0163
+          }, 
+          "duration": 15, 
+          "diel": [
+            {
+              "plus_or_minus": "-", 
+              "min": 0.0, 
+              "max": 5.0, 
+              "hours": 1, 
+              "time": null, 
+              "type": "cycles", 
+              "cycle": "sunrise"
+            }, 
+            {
+              "plus_or_minus": "+", 
+              "min": 10.0, 
+              "max": 20.0, 
+              "hours": 1, 
+              "time": null, 
+              "type": "cycles", 
+              "cycle": "sunrise"
+            }, 
+            {
+              "plus_or_minus": "-", 
+              "min": 0.0, 
+              "max": 5.0, 
+              "hours": 1, 
+              "time": null, 
+              "type": "cycles", 
+              "cycle": "sunset"
+            }, 
+            {
+              "plus_or_minus": "+", 
+              "min": 0.0, 
+              "max": 150.0, 
+              "hours": 1, 
+              "time": null, 
+              "type": "cycles", 
+              "cycle": "sunset"
+            }
+          ], 
+          "taxis": []
+        }, 
+        {
+          "settlement": null, 
+          "name": "Pelvic fin development", 
+          "linear_b": null, 
+          "notes": "", 
+          "linear_a": null, 
+          "capability": {
+            "nonswim_turning": "downward", 
+            "variance": 0.0, 
+            "swim_turning": "reverse", 
+            "vss": 0.0246
+          }, 
+          "duration": 15, 
+          "diel": [
+            {
+              "plus_or_minus": "-", 
+              "min": 0.0, 
+              "max": 5.0, 
+              "hours": 1, 
+              "time": null, 
+              "type": "cycles", 
+              "cycle": "sunrise"
+            }, 
+            {
+              "plus_or_minus": "+", 
+              "min": 10.0, 
+              "max": 20.0, 
+              "hours": 1, 
+              "time": null, 
+              "type": "cycles", 
+              "cycle": "sunrise"
+            }, 
+            {
+              "plus_or_minus": "-", 
+              "min": 0.0, 
+              "max": 5.0, 
+              "hours": 1, 
+              "time": null, 
+              "type": "cycles", 
+              "cycle": "sunset"
+            }, 
+            {
+              "plus_or_minus": "+", 
+              "min": 0.0, 
+              "max": 150.0, 
+              "hours": 1, 
+              "time": null, 
+              "type": "cycles", 
+              "cycle": "sunset"
+            }
+          ], 
+          "taxis": []
+        }, 
+        {
+          "settlement": {
+            "upper": 0.0, 
+            "lower": 500.0,
+            "type": "pelagic"
+          }, 
+          "name": "Metamorphosis", 
+          "linear_b": null, 
+          "notes": "", 
+          "linear_a": null, 
+          "capability": {
+            "nonswim_turning": "downward", 
+            "variance": 0.0, 
+            "swim_turning": "reverse", 
+            "vss": 0.033
+          }, 
+          "duration": 15, 
+          "diel": [
+            {
+              "plus_or_minus": "-", 
+              "min": 0.0, 
+              "max": 5.0, 
+              "hours": 1, 
+              "time": null, 
+              "type": "cycles", 
+              "cycle": "sunrise"
+            }, 
+            {
+              "plus_or_minus": "+", 
+              "min": 10.0, 
+              "max": 20.0, 
+              "hours": 1, 
+              "time": null, 
+              "type": "cycles", 
+              "cycle": "sunrise"
+            }, 
+            {
+              "plus_or_minus": "-", 
+              "min": 0.0, 
+              "max": 5.0, 
+              "hours": 1, 
+              "time": null, 
+              "type": "cycles", 
+              "cycle": "sunset"
+            }, 
+            {
+              "plus_or_minus": "+", 
+              "min": 0.0, 
+              "max": 150.0, 
+              "hours": 1, 
+              "time": null, 
+              "type": "cycles", 
+              "cycle": "sunset"
+            }
+          ], 
+          "taxis": []
+        }
+      ]
+    }
+  ]
+}
