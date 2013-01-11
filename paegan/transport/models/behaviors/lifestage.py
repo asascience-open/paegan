@@ -77,13 +77,21 @@ class LifeStage(BaseModel):
             growth = modelTimestepDays / self.duration
             particle.grow(growth)
 
-        # Find the closests Diel that the current particle time is AFTER, and MOVE.
         particle_time = particle.location.time
         active_diel = None
         if len(self.diel) > 0:
-            diel_times = [(d.get_time(loc4d=particle.location) - particle_time).total_seconds() for d in self.diel if d.get_time(loc4d=particle.location) > particle_time]
-            if len(diel_times) > 0:
-                active_diel = self.diel[diel_times.index(min(diel_times))]
+            # Find the closests Diel that the current particle time is AFTER, and set it to the active_diel
+            closest = None
+            closest_seconds = None
+            for ad in self.diel:
+                d_time = ad.get_time(loc4d=particle.location)
+                if d_time <= particle_time:
+                    seconds = abs((d_time - particle_time).total_seconds())
+                    if closest is None or seconds < closest_seconds:
+                        closest = ad
+                        closest_seconds = seconds
+
+            active_diel = closest
 
         # Run the active diel behavior and all of the taxis behaviors
         # u, v, and w store the continuous results from all of the behavior models.
