@@ -33,6 +33,18 @@ class ShorelineTest(unittest.TestCase):
         s.index(point=p3, spatialbuffer=0.25)
         print "Large Shoreline Reindexing Time: " + str(time.time() - st)
 
+    def test_multipart_shape_reindexing(self):
+
+        p = Point(-73.745631, 40.336791)
+        p2 = Point(-78.745631, 44.336791)
+        p3 = Point(0, 0)
+        st = time.time()
+        shore_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/shoreline/westcoast/New_Land_Clean.shp"))
+        s = Shoreline(file=shore_path, point=p, spatialbuffer=1)
+        s.index(point=p2, spatialbuffer=0.25)
+        s.index(point=p3, spatialbuffer=0.25)
+        print "Multipart Shoreline Reindexing Time: " + str(time.time() - st)
+
     def test_intersection_speed(self):
 
         # Intersects on the west coast of NovaScotia
@@ -57,6 +69,19 @@ class ShorelineTest(unittest.TestCase):
         st = time.time()
         intersection = s.intersect(start_point=starting, end_point=ending)['point']
         print "Large Shoreline Intersection Time: " + str(time.time() - st)
+
+    def test_multipart_shape_intersection_speed(self):
+
+        # Intersects on the west coast of NovaScotia
+
+        starting = Location4D(longitude=-146.62, latitude=60.755, depth=0).point
+        ending = Location4D(longitude=-146.60, latitude=60.74, depth=0).point
+        shore_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/shoreline/westcoast/New_Land_Clean.shp"))
+        s = Shoreline(file=shore_path, point=starting, spatialbuffer=1)
+
+        st = time.time()
+        intersection = s.intersect(start_point=starting, end_point=ending)['point']
+        print "Multipart Shoreline Intersection Time: " + str(time.time() - st)
 
     def test_water_start_land_end_intersection(self):
         # Starts in the water and ends on land

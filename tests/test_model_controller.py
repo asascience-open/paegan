@@ -227,7 +227,7 @@ class ModelControllerTest(unittest.TestCase):
         start_lon = -144.496213677788
         depth = -1
 
-        shoreline_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/shoreline/alaska/AK_Land_Basemap.shp"))
+        shoreline_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/shoreline/westcoast/New_Land_Clean.shp"))
 
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=True, use_shoreline=True,
             time_chunk=24, horiz_chunk=5, time_method='interp', shoreline_path=shoreline_path)
