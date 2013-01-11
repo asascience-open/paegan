@@ -54,7 +54,10 @@ class SunCycles(object):
 
         # LOOK: We are adding 24 hours to the setting time.  Why?
         rising = time + timedelta(hours=rising_h, minutes=rising_m)
-        setting = time + timedelta(hours=setting_h + 24, minutes=setting_m)
+        fudge = 0
+        if setting_h < rising_h:
+            fudge = 24
+        setting = time + timedelta(hours=setting_h + fudge, minutes=setting_m)
 
         return { cls.RISING : rising, cls.SETTING : setting }
 
@@ -139,7 +142,7 @@ class SunCycles(object):
             UTtime = UTtime - 24
 
         hour = np.floor(UTtime)
-
+     
         minute = (UTtime - hour) * 60
         if minute == 60:
             hour = hour + 1

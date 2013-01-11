@@ -15,7 +15,7 @@ class SunCycleTest(unittest.TestCase):
         # August 6th, 2012 in Rhode Island:
         # Sunrise ~= 5:46 AM 
         # Sunset  ~= 7:57 PM
-        self.dt = datetime(2012, 8, 6, 12, tzinfo=pytz.utc)
+        self.dt = datetime(2012, 8, 6, tzinfo=pytz.utc)
 
     def test_classmethod_with_location4d(self):
 
