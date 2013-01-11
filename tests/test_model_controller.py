@@ -122,6 +122,7 @@ class ModelControllerTest(unittest.TestCase):
         with raises(DataControllerError):
             model.run("http://asascience.com/thisisnotadataset.nc", cache=cache_path)
 
+    """
     def test_behavior_growth_and_settlement(self):
         self.log.logger.info("**************************************")
         self.log.logger.info("Running: test_behavior_growth_and_settlement")
@@ -150,6 +151,7 @@ class ModelControllerTest(unittest.TestCase):
 
         cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_behavior_growth_and_settlement.nc")
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", bathy=bathy_path, cache=cache_path, output_path=output_path, output_formats=output_formats)
+    """
 
     def test_quick_settlement(self):
         self.log.logger.info("**************************************")
@@ -198,33 +200,36 @@ class ModelControllerTest(unittest.TestCase):
         cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_timechunk_greater_than_timestep.nc")
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", bathy=bathy_path, cache=cache_path)
 
-    def test_nick(self):
+    
+    def test_kayak_island(self):
         self.log.logger.info("**************************************")
-        self.log.logger.info("Running: test_nick")
+        self.log.logger.info("Running: Kayak Island")
 
         # 6 days
-        num_steps = 48
+        num_steps = 1632
 
-        num_particles = 1
+        num_particles = 100
 
         time_step = 3600
 
-        behavior_config = json.loads(urllib.urlopen("http://behaviors.larvamap.asascience.com/library/50a6c4f8685179000500003b.json").read())
+        behavior_config = json.loads(urllib.urlopen("http://behaviors.larvamap.asascience.com/library/50ef1bb1cc7b61000700001d.json").read())
         lb = LarvaBehavior(data=behavior_config[u'results'][0])
+
+        #behavior_config = json.loads(open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/nick.json"))).read())
+        #lb = LarvaBehavior(data=behavior_config[u'results'][0])
 
         models = [Transport(horizDisp=0.01, vertDisp=0.001)]
         models.append(lb)
 
-        start_time = datetime(2012, 5, 10, 00, tzinfo=pytz.utc)
+        start_time = datetime(2011, 5, 2, 00, tzinfo=pytz.utc)
 
-        start_lat = 60.7522
-        start_lon = -146.6163
-        #start_lat = self.start_lat
-        #start_lon = self.start_lon
+        start_lat = 59.93517413488866
+        start_lon = -144.496213677788
+        depth = -1
 
         shoreline_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/shoreline/alaska/AK_Land_Basemap.shp"))
 
-        model = ModelController(latitude=start_lat, longitude=start_lon, depth=0, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=True, use_shoreline=True,
+        model = ModelController(latitude=start_lat, longitude=start_lon, depth=depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=True, use_shoreline=True,
             time_chunk=24, horiz_chunk=5, time_method='interp', shoreline_path=shoreline_path)
 
         output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/nick")
@@ -234,6 +239,44 @@ class ModelControllerTest(unittest.TestCase):
 
         bathy_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd"))
         
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_nick.nc")
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L1_FCST.nc", bathy=bathy_path, cache=cache_path, output_path=output_path, output_formats=output_formats)
+        
+    def test_sheep_bay(self):
+        self.log.logger.info("**************************************")
+        self.log.logger.info("Running: Kayak Island")
 
+        # 6 days
+        num_steps = 1632
+
+        num_particles = 100
+
+        time_step = 3600
+
+        behavior_config = json.loads(urllib.urlopen("http://behaviors.larvamap.asascience.com/library/50ef1bb1cc7b61000700001d.json").read())
+        lb = LarvaBehavior(data=behavior_config[u'results'][0])
+
+        models = [Transport(horizDisp=0.01, vertDisp=0.001)]
+        models.append(lb)
+
+        start_time = datetime(2011, 5, 2, 00, tzinfo=pytz.utc)
+
+        start_lat = 60.60899655733162
+        start_lon = -145.97402533055956
+        depth = -1
+
+        shoreline_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/shoreline/alaska/AK_Land_Basemap.shp"))
+
+        model = ModelController(latitude=start_lat, longitude=start_lon, depth=depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=True, use_shoreline=True,
+            time_chunk=24, horiz_chunk=5, time_method='interp', shoreline_path=shoreline_path)
+
+        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/nick")
+        shutil.rmtree(output_path, ignore_errors=True)
+        os.makedirs(output_path)
+        output_formats = ['Shapefile','NetCDF','Trackline']
+
+        bathy_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd"))
+        
         cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_nick.nc")
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", bathy=bathy_path, cache=cache_path, output_path=output_path, output_formats=output_formats)
+    
