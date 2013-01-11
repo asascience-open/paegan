@@ -84,12 +84,15 @@ class Shoreline(object):
         self._geoms = []
         # The _geoms should be only Polygons, not MultiPolygons
         for element in self._layer:
-            geom = wkb.loads(element.GetGeometryRef().ExportToWkb())
-            if isinstance(geom, Polygon):
-                self._geoms.append(geom)
-            elif isinstance(geom, MultiPolygon):
-                for poly in geom:
-                    self._geoms.append(poly)
+            try:
+                geom = wkb.loads(element.GetGeometryRef().ExportToWkb())
+                if isinstance(geom, Polygon):
+                    self._geoms.append(geom)
+                elif isinstance(geom, MultiPolygon):
+                    for poly in geom:
+                        self._geoms.append(poly)
+            except:
+                continue
             
     def intersect(self, **kwargs):
         """
