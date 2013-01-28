@@ -53,6 +53,6 @@ class Bathymetry():
     def __hover(self, **kwargs):
         end_point = kwargs.pop('end_point')
         depth = self.get_depth(location=end_point)
-        return Location4D(latitude=end_point.latitude, longitude=end_point.longitude, depth=depth + 1)
+        return Location4D(time=end_point.time, latitude=end_point.latitude, longitude=end_point.longitude, depth=(depth + 1.))
         
         

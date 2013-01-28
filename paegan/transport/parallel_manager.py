@@ -1061,7 +1061,7 @@ class ForceParticle(object):
                 bintersect = self._bathymetry.intersect(start_point=starting, end_point=ending)
                 if bintersect:
                     pt = self._bathymetry.react(type='hover', end_point=ending)
-                    logger.info("%s - hit the bottom at %s.  Setting depth to %dm." % (particle.logstring(), ending.logstring(), pt.depth))
+                    logger.info("%s - hit the bottom at %s.  Setting location to %s." % (particle.logstring(), ending.logstring(), pt.logstring()))
                     ending.latitude = pt.latitude
                     ending.longitude = pt.longitude
                     ending.depth = pt.depth
