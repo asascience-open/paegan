@@ -232,19 +232,19 @@ class ModelControllerTest(unittest.TestCase):
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=True, use_shoreline=True,
             time_chunk=24, horiz_chunk=5, time_method='interp', shoreline_path=shoreline_path)
 
-        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/nick")
+        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/kayak_island")
         shutil.rmtree(output_path, ignore_errors=True)
         os.makedirs(output_path)
         output_formats = ['Shapefile','NetCDF','Trackline']
 
         bathy_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd"))
         
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_nick.nc")
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/kayak_island.nc")
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L1_FCST.nc", bathy=bathy_path, cache=cache_path, output_path=output_path, output_formats=output_formats)
         
     def test_sheep_bay(self):
         self.log.logger.info("**************************************")
-        self.log.logger.info("Running: Kayak Island")
+        self.log.logger.info("Running: Sheep Bay")
 
         # 6 days
         num_steps = 1632
@@ -270,13 +270,13 @@ class ModelControllerTest(unittest.TestCase):
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=True, use_shoreline=True,
             time_chunk=24, horiz_chunk=5, time_method='interp', shoreline_path=shoreline_path)
 
-        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/nick")
+        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/sheep_bay")
         shutil.rmtree(output_path, ignore_errors=True)
         os.makedirs(output_path)
         output_formats = ['Shapefile','NetCDF','Trackline']
 
         bathy_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd"))
         
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_nick.nc")
+        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/sheep_bay.nc")
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", bathy=bathy_path, cache=cache_path, output_path=output_path, output_formats=output_formats)
     

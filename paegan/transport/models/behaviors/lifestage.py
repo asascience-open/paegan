@@ -87,7 +87,6 @@ class LifeStage(BaseModel):
                 d_time = ad.get_time(loc4d=particle.location)
                 if d_time <= particle_time:
                     seconds = (particle_time - d_time).total_seconds()
-                    #logger.info("%s : %s : %s" % (str(d_time), ad.logstring(), seconds))
                     if closest is None or seconds < closest_seconds:
                         closest = ad
                         closest_seconds = seconds
