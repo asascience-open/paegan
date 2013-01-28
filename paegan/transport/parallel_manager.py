@@ -1044,7 +1044,7 @@ class ForceParticle(object):
                 resulting_point = self._shoreline.react(start_point=starting,
                                               end_point=ending,
                                               hit_point=hitpoint,
-                                              reverse_distance=10,
+                                              reverse_distance=100,
                                               feature=intersection_point['feature'],
                                               distance=kwargs.get('distance'),
                                               angle=kwargs.get('angle'),
