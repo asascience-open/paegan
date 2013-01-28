@@ -157,7 +157,7 @@ class ModelControllerTest(unittest.TestCase):
         self.log.logger.info("**************************************")
         self.log.logger.info("Running: test_quick_settlement")
 
-        num_steps = 12
+        num_steps = 24
 
         num_particles = 4
 
