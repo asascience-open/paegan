@@ -54,16 +54,20 @@ class Settlement(object):
                 logger.info("Particle %d settled in %s mode" % (particle.uid, self.type))
         elif self.type.lower() == "pelagic":
             # Are we are in enough water to settle
-            if self.upper >= depth:
-                # Is the particle within the range?
-                if self.upper >= particle.location.depth >= self.lower:
-                    # Just settle the particle
-                    particle.settle()
-                    logger.info("Particle %d settled in %s mode" % (particle.uid, self.type))
-                else:
-                    logger.info("Particle did NOT settle.  Depth conditions not met.  Upper limit: %d - Lower limit: %d - Particle: %d" % (self.upper, self.lower, particle.location.depth))
+            # Ignore this bathymetry test since we would need a high resolution 
+            # dataset for this to work.
+            #if self.upper >= depth:
+
+            # Is the particle within the range?
+            if self.upper >= particle.location.depth >= self.lower:
+                # Just settle the particle
+                particle.settle()
+                logger.info("Particle %d settled in %s mode" % (particle.uid, self.type))
             else:
-                logger.info("Particle did NOT settle.  Water not deep enough.  Upper limit: %d - Bathymetry: %d" % (self.upper, depth))
+                logger.info("Particle did NOT settle.  Depth conditions not met.  Upper limit: %d - Lower limit: %d - Particle: %d" % (self.upper, self.lower, particle.location.depth))
+                
+            #else:
+            #    logger.info("Particle did NOT settle.  Water not deep enough.  Upper limit: %d - Bathymetry: %d" % (self.upper, depth))
         else:
             logger.info("Settlement type %s not recognized, not trying to settle Particle %d." % (self.type, particle.uid))
 
