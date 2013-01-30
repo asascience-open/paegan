@@ -19,6 +19,7 @@ import math
 import traceback
 import pylab
 import Queue
+import cPickle as pickle
 
 class Consumer(multiprocessing.Process):
     def __init__(self, task_queue, result_queue, n_run, nproc_lock, active, get_data, write_lock, **kwargs):
@@ -75,7 +76,7 @@ class Consumer(multiprocessing.Process):
 
 
 class DataController(object):
-    def __init__(self, url, n_run, get_data, write_lock, read_lock, read_count,
+    def __init__(self, url, common_variables, n_run, get_data, write_lock, read_lock, read_count,
                  time_chunk, horiz_chunk, times,
                  start_time, point_get, start,
                  **kwargs
@@ -101,41 +102,16 @@ class DataController(object):
         self.times = times
         self.start = start
 
-    def get_variablenames_for_model(self):
-        getname = self.dataset.get_varname_from_stdname
-        self.uname = getname('eastward_sea_water_velocity') 
-        self.vname = getname('northward_sea_water_velocity') 
-        self.wname = getname('upward_sea_water_velocity')
-        if len(self.uname) > 0:
-            self.uname = self.uname[0]
-        else:
-            self.uname = None
-        if len(self.vname) > 0:
-            self.vname = self.vname[0]
-        else:
-            self.vname = None
-        if len(self.wname) > 0:
-            self.wname = self.wname[0]
-        else:
-            self.wname = None
-
-        coords = self.dataset.get_coord_names(self.uname) 
-        self.xname = coords['xname'] 
-        self.yname = coords['yname']
-        self.zname = coords['zname']
-        self.tname = coords['tname']
-        self.temp_name = getname('sea_water_temperature') 
-        self.salt_name = getname('sea_water_salinity')
-        
-        if len(self.temp_name) > 0:
-            self.temp_name = self.temp_name[0]
-        else:
-            self.temp_name = None       
-        if len(self.salt_name) > 0:
-            self.salt_name = self.salt_name[0]
-        else:
-            self.salt_name = None
-        self.tname = None ## temporary
+        # Set common variable names
+        self.uname = common_variables.get("u", None)
+        self.vname = common_variables.get("v", None)
+        self.wname = common_variables.get("w", None)
+        self.temp_name = common_variables.get("temp", None)
+        self.salt_name = common_variables.get("salt", None)
+        self.xname = common_variables.get("x", None)
+        self.yname = common_variables.get("y", None)
+        self.zname = common_variables.get("z", None)
+        self.tname = common_variables.get("time", None)
     
     def get_remote_data(self, localvars, remotevars, inds, shape):
         """
@@ -209,7 +185,6 @@ class DataController(object):
         
         self.dataset = CommonDataset.open(self.url)
         self.proc = proc
-        self.get_variablenames_for_model()
         self.remote = self.dataset.nc
         cachepath = self.cache_path
 
@@ -512,7 +487,7 @@ class ForceParticle(object):
     def __str__(self):
         return self.part.__str__()
 
-    def __init__(self, part, remotehydro, times, start_time, models, 
+    def __init__(self, part, remotehydro, common_variables, timevar_pickle_path, times, start_time, models, 
                  release_location_centroid, usebathy, useshore, usesurface,
                  get_data, n_run, write_lock, read_lock, read_count,
                  point_get, data_request_lock, bathy=None,
@@ -526,7 +501,7 @@ class ForceParticle(object):
         assert cache != None
         self.cache_path = cache
         self.bathy = bathy
-        self.remotehydropath = remotehydro
+        self.common_variables = common_variables
         self.localpath =  self.cache_path
         self.release_location_centroid = release_location_centroid
         self.part = part
@@ -544,51 +519,22 @@ class ForceParticle(object):
         self.point_get = point_get
         self.data_request_lock = data_request_lock
         self.shoreline_path = shoreline_path
+        self.timevar_pickle_path = timevar_pickle_path
+
+        # Set common variable names
+        self.uname = common_variables.get("u", None)
+        self.vname = common_variables.get("v", None)
+        self.wname = common_variables.get("w", None)
+        self.temp_name = common_variables.get("temp", None)
+        self.salt_name = common_variables.get("salt", None)
+        self.xname = common_variables.get("x", None)
+        self.yname = common_variables.get("y", None)
+        self.zname = common_variables.get("z", None)
+        self.tname = common_variables.get("time", None)
 
         if time_method is None:
             time_method = 'interp'
         self.time_method = time_method
-        
-        
-    def get_variablenames_for_model(self, dataset):
-        # Use standard names to get variable names for required
-        # model parameters
-        getname = dataset.get_varname_from_stdname
-        self.uname = getname('eastward_sea_water_velocity') 
-        self.vname = getname('northward_sea_water_velocity') 
-        self.wname = getname('upward_sea_water_velocity')
-        if len(self.uname) > 0:
-            self.uname = self.uname[0]
-        else:
-            self.uname = None
-        if len(self.vname) > 0:
-            self.vname = self.vname[0]
-        else:
-            self.vname = None
-        if len(self.wname) > 0:
-            self.wname = self.wname[0]
-        else:
-            self.wname = None
-        
-        # Get coordinate names based on u variable
-        coords = dataset.get_coord_names(self.uname) 
-        self.xname = coords['xname'] 
-        self.yname = coords['yname']
-        self.zname = coords['zname']
-        self.tname = coords['tname']
-        # Get salt and temp names from std names
-        self.temp_name = getname('sea_water_temperature') 
-        self.salt_name = getname('sea_water_salinity')
-        
-        if len(self.temp_name) > 0:
-            self.temp_name = self.temp_name[0]
-        else:
-            self.temp_name = None       
-        if len(self.salt_name) > 0:
-            self.salt_name = self.salt_name[0]
-        else:
-            self.salt_name = None
-        self.tname = None ## temporary
         
     def need_data(self, i):
         """
@@ -786,7 +732,7 @@ class ForceParticle(object):
 
         return u, v, w, temp, salt
             
-    def data_nearest(self, i, timevar, currenttime):
+    def data_nearest(self, i, currenttime):
         """
             Method to streamline request for data from cache,
             Uses nearest time to get u,v,w,temp,salt
@@ -934,22 +880,10 @@ class ForceParticle(object):
         # Calculate datetime at every timestep
         modelTimestep, newtimes = AsaTransport.get_time_objects_from_model_timesteps(self.times, start=self.start_time)
 
-        # Get variable names for parameters required by model
-        remote = None
-        while remote == None:
-            try:
-                remote = CommonDataset.open(self.remotehydropath)
-                self.get_variablenames_for_model(remote)
-            except StandardError:
-                logger.warn("Problem opening remote dataset, trying again in 30 seconds...")
-                timer.sleep(30)
-
-        # Figure out indices corresponding to timesteps
-        timevar = remote.gettimevar(self.uname)      
-
-        # Close remote file
-        remote.closenc()
-        remote = None
+        # Load Timevar from pickle serialization
+        f = open(self.timevar_pickle_path,"rb")
+        timevar = pickle.load(f)
+        f.close()
 
         if self.time_method == 'interp':
             time_indexs = timevar.nearest_index(newtimes, select='before')
@@ -983,7 +917,7 @@ class ForceParticle(object):
                 
             # Get the variable data required by the models
             if self.time_method == 'nearest':
-                u, v, w, temp, salt = self.data_nearest(i, timevar, newtimes[loop_i])
+                u, v, w, temp, salt = self.data_nearest(i, newtimes[loop_i])
             elif self.time_method == 'interp': 
                 u, v, w, temp, salt = self.data_interp(i, timevar, newtimes[loop_i])
             else:

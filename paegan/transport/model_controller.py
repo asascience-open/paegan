@@ -9,6 +9,7 @@ from paegan.utils.asarandom import AsaRandom
 from paegan.utils.asatransport import AsaTransport
 from paegan.transport.shoreline import Shoreline
 from paegan.transport.bathymetry import Bathymetry
+from paegan.cdm.dataset import CommonDataset
 from paegan.transport.exceptions import ModelError, DataControllerError
 from shapely.geometry import Point, Polygon, MultiPolygon, LineString
 from shapely.ops import cascaded_union
@@ -18,6 +19,8 @@ import paegan.transport.parallel_manager as parallel
 import os
 import paegan.transport.export as ex
 from paegan.logging.null_handler import NullHandler
+import cPickle as pickle
+import tempfile
 
 class ModelController(object):
     """
@@ -129,6 +132,40 @@ class ModelController(object):
               time_method: %s
             """ % (str(self.geometry), self._depth, str(self.start), self._step, self._nstep, self._npart, self._use_bathymetry, self._use_shoreline, self._use_seasurface, self.time_method)
 
+    def get_common_variables_from_dataset(self, dataset):
+
+        def getname(name):
+            nm = dataset.get_varname_from_stdname(name)
+            if len(nm) > 0:
+                return nm[0]
+            else:
+                return None
+
+        uname = getname('eastward_sea_water_velocity') 
+        vname = getname('northward_sea_water_velocity') 
+        wname = getname('upward_sea_water_velocity')
+        temp_name = getname('sea_water_temperature') 
+        salt_name = getname('sea_water_salinity')
+
+        coords = dataset.get_coord_names(uname) 
+        xname = coords['xname'] 
+        yname = coords['yname']
+        zname = coords['zname']
+        tname = coords['tname']
+        tname = None ## temporary
+
+        return {
+            "u"     :   uname,
+            "v"     :   vname,
+            "w"     :   wname,
+            "temp"  :   temp_name,
+            "salt"  :   salt_name,
+            "x"     :   xname,
+            "y"     :   yname,
+            "z"     :   zname,
+            "time"  :   tname
+        }
+
     def run(self, hydrodataset, **kwargs):
 
         logger = multiprocessing.get_logger()
@@ -236,10 +273,28 @@ class ModelController(object):
         point_get = mgr.Value('list', [0, 0, 0])
         active = mgr.Value('bool', True)
         
+
+        logger.info("Retrieving variable information from dataset")
+        ds = CommonDataset.open(hydrodataset)
+        # Query the dataset for common variable names
+        # and the time variable.
+        common_variables = self.get_common_variables_from_dataset(ds)
+
+        logger.info("Pickling time variable to disk for particles")
+        timevar = ds.gettimevar(common_variables.get("u"))
+        f, timevar_pickle_path = tempfile.mkstemp()
+        os.close(f)
+        f = open(timevar_pickle_path, "wb")
+        pickle.dump(timevar, f)
+        f.close()
+
+        ds.closenc()
+
+
         # Add data controller to the queue first so that it 
         # can get the initial data and is not blocked
         
-        data_controller = parallel.DataController(hydrodataset, n_run, get_data, write_lock, read_lock, read_count,
+        data_controller = parallel.DataController(hydrodataset, common_variables, n_run, get_data, write_lock, read_lock, read_count,
                                                   time_chunk, horiz_chunk, times,
                                                   self.start, point_get, self.reference_location,
                                                   low_memory=low_memory,
@@ -254,6 +309,8 @@ class ModelController(object):
         for part in self.particles:
             forcing = parallel.ForceParticle(part,
                                         hydrodataset,
+                                        common_variables,
+                                        timevar_pickle_path,
                                         times,
                                         self.start,
                                         self._models,
@@ -332,6 +389,9 @@ class ModelController(object):
 
         # Remove Manager so it shuts down
         del mgr
+
+        # Remove pickled timevar
+        os.remove(timevar_pickle_path)
 
         # Remove the cache file
         if remove_cache is True:
