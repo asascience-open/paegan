@@ -273,22 +273,24 @@ class ModelController(object):
         point_get = mgr.Value('list', [0, 0, 0])
         active = mgr.Value('bool', True)
         
+        try:
+            ds = CommonDataset.open(hydrodataset)
+            # Query the dataset for common variable names
+            # and the time variable.
+            logger.info("Retrieving variable information from dataset")
+            common_variables = self.get_common_variables_from_dataset(ds)
 
-        logger.info("Retrieving variable information from dataset")
-        ds = CommonDataset.open(hydrodataset)
-        # Query the dataset for common variable names
-        # and the time variable.
-        common_variables = self.get_common_variables_from_dataset(ds)
-
-        logger.info("Pickling time variable to disk for particles")
-        timevar = ds.gettimevar(common_variables.get("u"))
-        f, timevar_pickle_path = tempfile.mkstemp()
-        os.close(f)
-        f = open(timevar_pickle_path, "wb")
-        pickle.dump(timevar, f)
-        f.close()
-
-        ds.closenc()
+            logger.info("Pickling time variable to disk for particles")
+            timevar = ds.gettimevar(common_variables.get("u"))
+            f, timevar_pickle_path = tempfile.mkstemp()
+            os.close(f)
+            f = open(timevar_pickle_path, "wb")
+            pickle.dump(timevar, f)
+            f.close()
+            ds.closenc()
+        except:
+            logger.warn("Failed to access remote dataset %s" % hydrodataset)
+            raise DataControllerError("Inaccessible DAP endpoint: %s" % hydrodataset)
 
 
         # Add data controller to the queue first so that it 
