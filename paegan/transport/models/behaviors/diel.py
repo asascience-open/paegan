@@ -96,22 +96,21 @@ class Diel(BaseModel):
             Based on a Location4D object and this Diel object, calculate
             the time at which this Diel migration is actually happening
         """
-        if self.pattern == self.PATTERN_CYCLE:
-            if loc4d is not None:
-                c = SunCycles.cycles(loc=loc4d)
-                if self.cycle == self.CYCLE_SUNRISE:
-                    r = c[SunCycles.RISING]
-                elif self.cycle == self.CYCLE_SUNSET:
-                    r = c[SunCycles.SETTING]
-                td = timedelta(hours=self.time_delta)
-                if self.plus_or_minus == self.HOURS_PLUS:
-                    r = r + td
-                elif self.plus_or_minus == self.HOURS_MINUS:
-                    r = r - td
-                return r
-            else:
-                raise ValueError("Location4D object can not be None")
+        if loc4d is None:
+            raise ValueError("Location4D object can not be None")
 
+        if self.pattern == self.PATTERN_CYCLE:
+            c = SunCycles.cycles(loc=loc4d)
+            if self.cycle == self.CYCLE_SUNRISE:
+                r = c[SunCycles.RISING]
+            elif self.cycle == self.CYCLE_SUNSET:
+                r = c[SunCycles.SETTING]
+            td = timedelta(hours=self.time_delta)
+            if self.plus_or_minus == self.HOURS_PLUS:
+                r = r + td
+            elif self.plus_or_minus == self.HOURS_MINUS:
+                r = r - td
+            return r
         elif self.pattern == self.PATTERN_SPECIFICTIME:
             return self._time.replace(year=loc4d.time.year, month=loc4d.time.month, day=loc4d.time.day)
     time = property(get_time, set_time)
