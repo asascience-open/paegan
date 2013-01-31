@@ -105,7 +105,7 @@ class LifeStage(BaseModel):
         try:
             vss = self.capability.calculated_vss
         except AttributeError:
-            logger.warn("No VSS found, vertical behaviors will not act upon particle")
+            logger.debug("No VSS found, vertical behaviors will not act upon particle")
             vss = 0
 
         for behave in behaviors_to_run:
