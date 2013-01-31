@@ -46,25 +46,25 @@ class Consumer(multiprocessing.Process):
                 logger.info("No tasks left to complete, closing %s" % self.name)
                 break
             else:
-                answer = None
+                answer = (None, None)
                 try:
-                    answer = next_task(self.name, self.active)
+                    answer = (1, next_task(self.name, self.active))
                 except Exception as detail:
                     exc_type, exc_value, exc_traceback = sys.exc_info()
                     logger.error("Disabling Error: " +\
                                  repr(traceback.format_exception(exc_type, exc_value,
                                               exc_traceback)))
                     if isinstance(next_task, DataController):
-                        answer = -2
+                        answer = (-2, next_task)
                         # Tell the particles that the DataController is releasing file
                         self.get_data.value = False
                         # The data controller has died, so don't process any more tasks
                         self.active.value = False
                     elif isinstance(next_task, ForceParticle):
-                        answer = -1
+                        answer = (-1, next_task)
                     else:
                         logger.warn("Strange task raised an exception: %s" % str(next_task.__class__))
-                        answer = None
+                        answer = (None, None)
                 finally:
                     self.result_queue.put(answer)
 

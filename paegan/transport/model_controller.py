@@ -347,13 +347,15 @@ class ModelController(object):
 
         logger.info("Waiting for %i particle results" % len(self.particles))
         while retrieved < number_of_tasks:
-            tempres = results.get()
-            if tempres == None:
+            # Returns a tuple of code, result
+            code, tempres = results.get()
+            if code == None:
                 logger.warn("Got an unrecognized response from a task.")
-            elif tempres == -1:
-                logger.info("A particle has FAILED!!")
-            elif tempres == -2:
-                error_code = 1
+            elif code == -1:
+                logger.info("Particle %s has FAILED!! Saving what was completed." % tempres.uid)
+                return_particles.append(tempres)
+            elif code == -2:
+                error_code = code
                 logger.info("DataController has FAILED!!  Removing cache file so the particles fail.")
                 try:
                     os.remove(self.cache_path)
@@ -413,7 +415,10 @@ class ModelController(object):
                     if isinstance(formats, list):
                         for format in formats:
                             logger.info("Exporting to: %s" % format)
-                            self.export(output_path, format=format)
+                            try:
+                                self.export(output_path, format=format)
+                            except:
+                                logger.info("Failed to export to: %s" % format)
                     else:
                         logger.warn('The output_formats parameter should be a list, not saving any output!')  
                 else:
@@ -422,7 +427,7 @@ class ModelController(object):
                 logger.warn('No output format defined, not saving any output!')
         else:
             logger.warn("Model didn't actually do anything, check the log.")
-            if error_code == 1:
+            if error_code == -2:
                 raise DataControllerError("Error in the DataController")
             else:
                 raise ModelError("Error in the model")
