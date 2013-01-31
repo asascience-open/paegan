@@ -951,12 +951,13 @@ class ForceParticle(object):
             for model in self.models:
                 movement = model.move(part, u, v, w, modelTimestep[loop_i], temperature=temp, salinity=salt, bathymetry_value=bathymetry_value)
                 newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtimes[loop_i+1])
+                logger.info("%s - moved %.3f meters (horizontally) and %.3f meters (vertically) by %s with data from %s" % (part.logstring(), movement['distance'], movement['vertical_distance'], model.__class__.__name__, newtimes[loop_i].isoformat()))
                 if newloc:
                     self.boundary_interaction(particle=part, starting=part.location, ending=newloc,
                         distance=movement['distance'], angle=movement['angle'], 
                         azimuth=movement['azimuth'], reverse_azimuth=movement['reverse_azimuth'], 
                         vertical_distance=movement['vertical_distance'], vertical_angle=movement['vertical_angle'])
-                logger.info("%s - moved %.3f meters (horizontally) and %.3f meters (vertically) by %s with data from %s and is now at %s" % (part.logstring(), movement['distance'], movement['vertical_distance'], model.__class__.__name__, newtimes[loop_i].isoformat(), part.location.logstring()))
+                logger.info("%s - was forced by %s and is now at %s" % (part.logstring(), model.__class__.__name__, part.location.logstring()))
 
             part.note = part.outputstring()
             # Each timestep, save the particles status and environmental variables.
@@ -1014,7 +1015,6 @@ class ForceParticle(object):
                     ending.longitude = pt.longitude
                     ending.depth = pt.depth
                 
-
         # sea-surface
         if self.usesurface:
             if ending.depth > 0:
