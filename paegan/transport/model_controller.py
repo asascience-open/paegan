@@ -454,8 +454,6 @@ class ModelController(object):
             ex.Trackline.export(folder=folder_path, particles=self.particles, datetimes=self.datetimes)
         elif format == "shape" or format == "shapefile" or format[-3:] == "shp":
             ex.GDALShapefile.export(folder=folder_path, particles=self.particles, datetimes=self.datetimes)
-        elif format == "slow_shape":
-            ex.Shapefile.export(folder=folder_path, particles=self.particles, datetimes=self.datetimes)
         elif format == "netcdf" or format[-2:] == "nc":
             ex.NetCDF.export(folder=folder_path, particles=self.particles, datetimes=self.datetimes, summary=str(self))
         elif format == "pickle" or format[-3:] == "pkl" or format[-6:] == "pickle":

@@ -9,9 +9,6 @@ from paegan.logging.null_handler import NullHandler
 import netCDF4
 import numpy as np
 
-# Shapefile
-from paegan.external import shapefile as shp
-
 # Trackline
 from shapely.geometry import mapping
 import json
@@ -43,7 +40,9 @@ class Trackline(Export):
         ls = LineString(track_coords)
 
         filepath = os.path.join(folder, "trackline.geojson")
-        open(filepath, "wb").write(json.dumps(mapping(ls)))
+        f = open(filepath, "wb")
+        f.write(json.dumps(mapping(ls)))
+        f.close()
         return filepath
 
 class GDALShapefile(Export):
@@ -169,103 +168,6 @@ class GDALShapefile(Export):
             shpzip.write(f, os.path.basename(f))
             os.remove(f)
         shpzip.close()
-
-class Shapefile(Export):
-    @classmethod
-    def export(cls, folder, particles, datetimes):
-        """
-            Export particle data to point type shapefile
-        """
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
-
-        # Create the shapefile writer
-        shape = shp.Writer(shp.POINT)
-        # Create the attribute fields/columns
-        shape.field('Particle')
-        shape.field('Date')
-        shape.field('Lat')
-        shape.field('Lon')
-        shape.field('Depth')
-        shape.field('Temp')
-        shape.field('Salt')
-        shape.field('U')
-        shape.field('V')
-        shape.field('W')
-        shape.field('Settled')
-        shape.field('Dead')
-        shape.field('Halted')
-        shape.field('Notes')
-        
-        # Loop through locations in particles,
-        # add as points to the shapefile
-        for particle in particles:
-            # If there was temperature and salinity in the model, and
-            # we ran behaviors, the lengths should be the same
-            normalized_locations = particle.normalized_locations(datetimes)
-            normalized_temps = particle.temps
-            normalized_salts = particle.salts
-            normalized_u = particle.u_vectors
-            normalized_v = particle.v_vectors
-            normalized_w = particle.w_vectors
-            normalized_settled = particle.settles
-            normalized_dead = particle.deads
-            normalized_halted = particle.halts
-            normalized_notes = particle.notes
-
-            if len(normalized_locations) != len(normalized_temps):
-                logger.info("No temperature being added to shapefile.")
-                # Create list of 'None' equal to the length of locations
-                normalized_temps = [None] * len(normalized_locations) 
-
-            if len(normalized_locations) != len(normalized_salts):
-                logger.info("No salinity being added to shapefile.")
-                # Create list of 'None' equal to the length of locations
-                normalized_salts = [None] * len(normalized_locations)
-
-            if len(normalized_locations) != len(normalized_u):
-                logger.info("No U being added to shapefile.")
-                # Create list of 'None' equal to the length of locations
-                normalized_u = [None] * len(normalized_locations)
-
-            if len(normalized_locations) != len(normalized_v):
-                logger.info("No V being added to shapefile.")
-                # Create list of 'None' equal to the length of locations
-                normalized_v = [None] * len(normalized_locations) 
-
-            if len(normalized_locations) != len(normalized_w):
-                logger.info("No W being added to shapefile.")
-                # Create list of 'None' equal to the length of locations
-                normalized_w = [None] * len(normalized_locations) 
-
-            if len(normalized_locations) != len(normalized_settled):
-                logger.info("No Settled being added to shapefile.")
-                # Create list of 'None' equal to the length of locations
-                normalized_settled = [None] * len(normalized_locations) 
-
-            if len(normalized_locations) != len(normalized_dead):
-                logger.info("No Dead being added to shapefile.")
-                # Create list of 'None' equal to the length of locations
-                normalized_dead = [None] * len(normalized_locations) 
-
-            if len(normalized_locations) != len(normalized_halted):
-                logger.info("No Halted being added to shapefile.")
-                # Create list of 'None' equal to the length of locations
-                normalized_halted = [None] * len(normalized_locations)
-
-            if len(normalized_locations) != len(normalized_notes):
-                logger.info("No Notes being added to shapefile.")
-                # Create list of 'None' equal to the length of locations
-                normalized_notes = [None] * len(normalized_locations) 
-
-            for loc, temp, salt, u, v, w, settled, dead, halted, note in zip(normalized_locations, normalized_temps, normalized_salts, normalized_u, normalized_v, normalized_w, normalized_settled, normalized_dead, normalized_halted, normalized_notes):
-                # Add point geometry
-                shape.point(loc.longitude, loc.latitude)
-                # Add attribute records
-                shape.record(particle.uid, loc.time.isoformat(), loc.latitude, loc.longitude, loc.depth, temp, salt, u, v, w, settled, dead, halted, note)
-        filepath = os.path.join(folder, "shape.zip")
-        # Write out shapefle to disk
-        shape.save(filepath, zipup=True)
 
 class NetCDF(Export):
     @classmethod
