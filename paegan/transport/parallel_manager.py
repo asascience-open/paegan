@@ -398,7 +398,14 @@ class DataController(object):
                         
                         # Get data from remote dataset and add
                         # to local cache  
-                        self.get_remote_data(localvars, remotevars, current_inds, shape) 
+                        while True:
+                            try:
+                                self.get_remote_data(localvars, remotevars, current_inds, shape)
+                            except:
+                                logger.info("DataController failed to get remote data.  Trying again in 30 seconds")
+                                timer.sleep(30)
+                            else:
+                                break
                         
                         c += 1
                     except StandardError:
@@ -460,7 +467,14 @@ class DataController(object):
                         
                         # Get data from remote dataset and add
                         # to local cache
-                        self.get_remote_data(localvars, remotevars, current_inds, shape)
+                        while True:
+                            try:
+                                self.get_remote_data(localvars, remotevars, current_inds, shape)
+                            except:
+                                logger.info("DataController failed to get remote data.  Trying again in 30 seconds")
+                                timer.sleep(30)
+                            else:
+                                break
                         
                         c += 1
                     except StandardError:
