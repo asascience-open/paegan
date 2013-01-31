@@ -458,3 +458,5 @@ class ModelController(object):
             ex.Shapefile.export(folder=folder_path, particles=self.particles, datetimes=self.datetimes)
         elif format == "netcdf" or format[-2:] == "nc":
             ex.NetCDF.export(folder=folder_path, particles=self.particles, datetimes=self.datetimes, summary=str(self))
+        elif format == "pickle" or format[-3:] == "pkl" or format[-6:] == "pickle":
+            ex.Pickle.export(folder=folder_path, particles=self.particles, datetimes=self.datetimes)

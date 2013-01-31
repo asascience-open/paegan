@@ -174,7 +174,7 @@ class ModelControllerTest(unittest.TestCase):
         output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/behaviors")
         shutil.rmtree(output_path, ignore_errors=True)
         os.makedirs(output_path)
-        output_formats = ['Shapefile','NetCDF','Trackline']
+        output_formats = ['Shapefile','NetCDF','Trackline','Pickle']
 
         bathy_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd"))
 

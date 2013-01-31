@@ -20,6 +20,8 @@ from fiona import collection
 
 from collections import OrderedDict
 
+import cPickle as pickle
+
 class Export(object):
     @classmethod
     def export(cls, **kwargs):
@@ -427,3 +429,21 @@ class NetCDF(Export):
 
         nc.sync()
         nc.close()
+
+class Pickle(Export):
+    @classmethod
+    def export(cls, folder, particles, datetimes):
+        """
+            Export particle and datetime data to Pickled objects.
+            This can be used to debug or to generate different output
+            in the future.
+        """
+        particle_path = os.path.join(folder,'particles.pickle')
+        f = open(particle_path, "wb")
+        pickle.dump(particles, f)
+        f.close()
+
+        datetimes_path = os.path.join(folder,'datetimes.pickle')
+        f = open(datetimes_path, "wb")
+        pickle.dump(datetimes, f)
+        f.close()
