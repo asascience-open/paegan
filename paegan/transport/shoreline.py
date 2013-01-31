@@ -3,6 +3,7 @@ import math
 import time
 import numpy as np
 from osgeo import ogr
+from gdalconst import *
 from shapely import wkb, geometry
 from shapely.geometry import LineString
 from shapely.geometry import Point, Polygon
@@ -34,7 +35,7 @@ class Shoreline(object):
         point = kwargs.pop("point", None)
         self._spatialbuffer = kwargs.pop("spatialbuffer", 1)
 
-        self._source = ogr.Open(self._file)
+        self._source = ogr.Open(self._file, GA_ReadOnly)
         if not self._source:
             raise Exception('Could not load {}'.format(self._file))
 
