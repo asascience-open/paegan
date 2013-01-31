@@ -35,19 +35,39 @@ class DielTest(unittest.TestCase):
         data = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/diel_behavior_specifictime.json"))).read()
         d = Diel(json=data)
 
+        t = datetime.utcnow().replace(tzinfo=pytz.utc)
+        loc = Location4D(time=t, latitude=35, longitude=-76)
+
         assert d.pattern == "specifictime"
         assert d.min_depth == -4.0
         assert d.max_depth == -5.0
-        assert d.time == datetime.utcfromtimestamp(1344272400000 / 1000).replace(tzinfo=pytz.utc)
+        assert d.get_time(loc4d=loc).year == t.year
+        assert d.get_time(loc4d=loc).month == t.month
+        assert d.get_time(loc4d=loc).day == t.day
+        assert d.get_time(loc4d=loc).hour == 17
+        assert d.get_time(loc4d=loc).minute == 0
+        assert d.get_time(loc4d=loc).second == 0
+        assert d.get_time(loc4d=loc).microsecond == 0
+
 
     def test_specifictime_object_from_dict(self):
         data = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/diel_behavior_specifictime.json"))).read()
         d = Diel(data=json.loads(data))
 
+        t = datetime.utcnow().replace(tzinfo=pytz.utc)
+        loc = Location4D(time=t, latitude=35, longitude=-76)
+
         assert d.pattern == "specifictime"
         assert d.min_depth == -4.0
         assert d.max_depth == -5.0
-        assert d.time == datetime.utcfromtimestamp(1344272400000 / 1000).replace(tzinfo=pytz.utc)
+        assert d.get_time(loc4d=loc).year == t.year
+        assert d.get_time(loc4d=loc).month == t.month
+        assert d.get_time(loc4d=loc).day == t.day
+        assert d.get_time(loc4d=loc).hour == 17
+        assert d.get_time(loc4d=loc).minute == 0
+        assert d.get_time(loc4d=loc).second == 0
+        assert d.get_time(loc4d=loc).microsecond == 0
+
 
     def test_cycle(self):
 
