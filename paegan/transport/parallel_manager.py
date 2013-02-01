@@ -860,7 +860,8 @@ class ForceParticle(object):
 
         self.active = active
 
-        self._bathymetry = Bathymetry(file=self.bathy)
+        if self.usebathy == True:
+            self._bathymetry = Bathymetry(file=self.bathy)
         
         self._shoreline = None  
         if self.useshore == True:
@@ -941,7 +942,10 @@ class ForceParticle(object):
             #logger.info("Temp: %.4f, Salt: %.4f" % (temp,salt))
 
             # Get the bathy value at the particles location
-            bathymetry_value = self._bathymetry.get_depth(part.location)
+            if self.usebathy == True:
+                bathymetry_value = self._bathymetry.get_depth(part.location)
+            else:
+                bathymetry_value = -999999999999999
 
             # Age the particle by the modelTimestep (seconds)
             # 'Age' meaning the amount of time it has been forced.
@@ -967,8 +971,11 @@ class ForceParticle(object):
         # We won't pull data for the last entry in locations, but we need to populate it with fill data.
         part.fill_environment_gap()
 
-        self._bathymetry.close()
-        self._shoreline.close()
+        if self.usebathy == True:
+            self._bathymetry.close()
+
+        if self.useshore == True:
+            self._shoreline.close()
 
         return part
     
