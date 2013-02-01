@@ -61,7 +61,7 @@ class Consumer(multiprocessing.Process):
                         # The data controller has died, so don't process any more tasks
                         self.active.value = False
                     elif isinstance(next_task, ForceParticle):
-                        answer = (-1, next_task)
+                        answer = (-1, next_task.part)
                     else:
                         logger.warn("Strange task raised an exception: %s" % str(next_task.__class__))
                         answer = (None, None)
