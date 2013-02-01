@@ -10,6 +10,9 @@ import os
 
 class ShorelineTest(unittest.TestCase):
 
+    def setUp(self):
+        self.shoreline_path = "/data/lm/shore"
+
     def test_reindexing(self):
 
         p = Point(-73.745631, 40.336791)
@@ -27,7 +30,7 @@ class ShorelineTest(unittest.TestCase):
         p2 = Point(-78.745631, 44.336791)
         p3 = Point(0, 0)
         st = time.time()
-        shore_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/shoreline/alaska/AK_Land_Basemap.shp"))
+        shore_path = os.path.join(self.shoreline_path, "alaska", "AK_Land_Basemap.shp")
         s = Shoreline(file=shore_path, point=p, spatialbuffer=0.25)
         s.index(point=p2, spatialbuffer=0.25)
         s.index(point=p3, spatialbuffer=0.25)
@@ -39,7 +42,7 @@ class ShorelineTest(unittest.TestCase):
         p2 = Point(-78.745631, 44.336791)
         p3 = Point(0, 0)
         st = time.time()
-        shore_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/shoreline/westcoast/New_Land_Clean.shp"))
+        shore_path = os.path.join(self.shoreline_path, "westcoast", "New_Land_Clean.shp")
         s = Shoreline(file=shore_path, point=p, spatialbuffer=1)
         s.index(point=p2, spatialbuffer=0.25)
         s.index(point=p3, spatialbuffer=0.25)
@@ -63,7 +66,7 @@ class ShorelineTest(unittest.TestCase):
 
         starting = Location4D(longitude=-146.62, latitude=60.755, depth=0).point
         ending = Location4D(longitude=-146.60, latitude=60.74, depth=0).point
-        shore_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/shoreline/alaska/AK_Land_Basemap.shp"))
+        shore_path = os.path.join(self.shoreline_path, "alaska", "AK_Land_Basemap.shp")
         s = Shoreline(file=shore_path, point=starting, spatialbuffer=0.25)
 
         st = time.time()
@@ -76,7 +79,7 @@ class ShorelineTest(unittest.TestCase):
 
         starting = Location4D(longitude=-146.62, latitude=60.755, depth=0).point
         ending = Location4D(longitude=-146.60, latitude=60.74, depth=0).point
-        shore_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/shoreline/westcoast/New_Land_Clean.shp"))
+        shore_path = os.path.join(self.shoreline_path, "westcoast", "New_Land_Clean.shp")
         s = Shoreline(file=shore_path, point=starting, spatialbuffer=1)
 
         st = time.time()

@@ -6,7 +6,7 @@ paegan.log
 
 tests/resources/files/*.nc
 
-paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd
+paegan/resources/bathymetry/*
 
 paegan/resources/shoreline/*
 !paegan/resources/shoreline/global/

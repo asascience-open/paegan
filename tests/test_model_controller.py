@@ -35,6 +35,11 @@ class ModelControllerTest(unittest.TestCase):
 
         self.log = EasyLogger('testlog.txt', logging.INFO)
 
+        self.output_path = "/data/lm/output"
+        self.cache_path = "/data/lm/cache"
+        self.bathy_file = "/data/lm/bathy/ETOPO1_Bed_g_gmt4.grd"
+        self.shoreline_path = "/data/lm/shore"
+
     def tearDown(self):
         self.log.close()
 
@@ -49,7 +54,7 @@ class ModelControllerTest(unittest.TestCase):
         model = ModelController(geometry=p, start=self.start_time, step=self.time_step, nstep=self.num_steps, npart=self.num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=10, horiz_chunk=4)
 
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_run_from_point.nc")
+        cache_path = os.path.join(self.cache_path, "test_run_from_point.nc")
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
 
     def test_run_from_polygon(self):
@@ -75,7 +80,7 @@ class ModelControllerTest(unittest.TestCase):
         model = ModelController(latitude=self.start_lat, longitude=self.start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=self.num_steps, npart=self.num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=10, horiz_chunk=4)
 
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_interp.nc")
+        cache_path = os.path.join(self.cache_path, "test_interp.nc")
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
 
     def test_nearest(self):
@@ -87,7 +92,7 @@ class ModelControllerTest(unittest.TestCase):
         model = ModelController(latitude=self.start_lat, longitude=self.start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=self.num_steps, npart=self.num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=10, horiz_chunk=4, time_method='nearest')
 
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_nearest.nc")
+        cache_path = os.path.join(self.cache_path, "test_nearest.nc")
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
 
     def test_start_on_land(self):
@@ -103,7 +108,7 @@ class ModelControllerTest(unittest.TestCase):
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=self.num_steps, npart=self.num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=10, horiz_chunk=4, time_method='nearest')
 
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_start_on_land.nc")
+        cache_path = os.path.join(self.cache_path, "test_start_on_land.nc")
 
         with raises(ModelError):
             model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
@@ -117,7 +122,7 @@ class ModelControllerTest(unittest.TestCase):
         model = ModelController(latitude=self.start_lat, longitude=self.start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=self.num_steps, npart=self.num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=10, horiz_chunk=4, time_method='nearest')
 
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_bad_dataset.nc")
+        cache_path = os.path.join(self.cache_path, "test_bad_dataset.nc")
         
         with raises(DataControllerError):
             model.run("http://asascience.com/thisisnotadataset.nc", cache=cache_path)
@@ -142,15 +147,13 @@ class ModelControllerTest(unittest.TestCase):
         model = ModelController(latitude=self.start_lat, longitude=self.start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=True, use_shoreline=True,
             time_chunk=24, horiz_chunk=4, time_method='nearest')
 
-        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/behaviors")
+        output_path = os.path.join(self.output_path, "test_behavior_growth_and_settlement")
         shutil.rmtree(output_path, ignore_errors=True)
         os.makedirs(output_path)
-        output_formats = ['Shapefile','NetCDF','Trackline']
+        output_formats = ['Shapefile','NetCDF','Trackline','Pickle']
 
-        bathy_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd"))
-
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_behavior_growth_and_settlement.nc")
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", bathy=bathy_path, cache=cache_path, output_path=output_path, output_formats=output_formats)
+        cache_path = os.path.join(self.cache_path, "test_behavior_growth_and_settlement.nc")
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", bathy=self.bathy_file, cache=cache_path, output_path=output_path, output_formats=output_formats)
     """
 
     def test_quick_settlement(self):
@@ -171,15 +174,13 @@ class ModelControllerTest(unittest.TestCase):
         model = ModelController(latitude=self.start_lat, longitude=self.start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=True, use_shoreline=True,
             time_chunk=12, horiz_chunk=2, time_method='nearest')
 
-        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/behaviors")
+        output_path = os.path.join(self.output_path, "test_quick_settlement")
         shutil.rmtree(output_path, ignore_errors=True)
         os.makedirs(output_path)
         output_formats = ['Shapefile','NetCDF','Trackline','Pickle']
 
-        bathy_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd"))
-
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_quick_settlement.nc")
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", bathy=bathy_path, cache=cache_path, output_path=output_path, output_formats=output_formats)
+        cache_path = os.path.join(self.cache_path, "test_quick_settlement.nc")
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", bathy=self.bathy_file, cache=cache_path, output_path=output_path, output_formats=output_formats)
 
     def test_timechunk_greater_than_timestep(self):
         self.log.logger.info("**************************************")
@@ -195,12 +196,10 @@ class ModelControllerTest(unittest.TestCase):
         model = ModelController(latitude=self.start_lat, longitude=self.start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=True, use_shoreline=True,
             time_chunk=24, horiz_chunk=2)
 
-        bathy_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd"))
+        cache_path = os.path.join(self.cache_path, "test_timechunk_greater_than_timestep.nc")
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", bathy=self.bathy_file, cache=cache_path)
 
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/test_timechunk_greater_than_timestep.nc")
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", bathy=bathy_path, cache=cache_path)
-
-    
+    """
     def test_kayak_island(self):
         self.log.logger.info("**************************************")
         self.log.logger.info("Running: Kayak Island")
@@ -227,20 +226,18 @@ class ModelControllerTest(unittest.TestCase):
         start_lon = -144.496213677788
         depth = -1
 
-        shoreline_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/shoreline/westcoast/New_Land_Clean.shp"))
+        shoreline_path = os.path.join(self.shoreline_path, "westcoast", "New_Land_Clean.shp")
 
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=True, use_shoreline=True,
             time_chunk=24, horiz_chunk=5, time_method='interp', shoreline_path=shoreline_path)
 
-        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/kayak_island")
+        output_path = os.path.join(self.output_path, "kayak_island")
         shutil.rmtree(output_path, ignore_errors=True)
         os.makedirs(output_path)
         output_formats = ['Shapefile','NetCDF','Trackline']
-
-        bathy_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd"))
         
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/kayak_island.nc")
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L1_FCST.nc", bathy=bathy_path, cache=cache_path, output_path=output_path, output_formats=output_formats)
+        cache_path = os.path.join(self.cache_path, "kayak_island.nc")
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L1_FCST.nc", bathy=self.bathy_file, cache=cache_path, output_path=output_path, output_formats=output_formats)
         
     def test_sheep_bay(self):
         self.log.logger.info("**************************************")
@@ -265,18 +262,16 @@ class ModelControllerTest(unittest.TestCase):
         start_lon = -145.97402533055956
         depth = -1
 
-        shoreline_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/shoreline/alaska/AK_Land_Basemap.shp"))
+        shoreline_path = os.path.join(self.shoreline_path, "westcoast", "New_Land_Clean.shp")
 
         model = ModelController(latitude=start_lat, longitude=start_lon, depth=depth, start=start_time, step=time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=True, use_shoreline=True,
             time_chunk=24, horiz_chunk=5, time_method='interp', shoreline_path=shoreline_path)
 
-        output_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_output/sheep_bay")
+        output_path = os.path.join(self.output_path, "sheep_bay")
         shutil.rmtree(output_path, ignore_errors=True)
         os.makedirs(output_path)
         output_formats = ['Shapefile','NetCDF','Trackline']
-
-        bathy_path = os.path.normpath(os.path.join(__file__,"../../paegan/resources/bathymetry/ETOPO1_Bed_g_gmt4.grd"))
         
-        cache_path = os.path.join(os.path.dirname(__file__), "..", "paegan/transport/_cache/sheep_bay.nc")
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", bathy=bathy_path, cache=cache_path, output_path=output_path, output_formats=output_formats)
-    
+        cache_path = os.path.join(self.cache_path, "sheep_bay.nc")
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", bathy=self.bathy_file, cache=cache_path, output_path=output_path, output_formats=output_formats)
+    """

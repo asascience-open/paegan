@@ -8,9 +8,13 @@ from dateutil.parser import parse
 import pytz
 
 class TimevarTest(unittest.TestCase):
+
+    def setUp(self):
+        self.data_path = "/data/lm/tests"
+
     def test_timevar_length(self):
 
-        datafile = os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/pws_L2_2012040100.nc"))
+        datafile = os.path.join(self.data_path, "pws_L2_2012040100.nc")
         # Manually extract
         ds = netCDF4.Dataset(datafile)
         data = ds.variables['time'][:]
@@ -18,7 +22,7 @@ class TimevarTest(unittest.TestCase):
         tvar = Timevar(datafile)
         assert data.shape == tvar.shape
 
-        datafile = os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/ocean_avg_synoptic_seg22.nc"))
+        datafile = os.path.join(self.data_path, "ocean_avg_synoptic_seg22.nc")
         # Manually extract
         ds = netCDF4.Dataset(datafile)
         data = ds.variables['ocean_time'][:]
@@ -30,7 +34,7 @@ class TimevarTest(unittest.TestCase):
 
     def test_timevar_roms_seconds_values(self):
 
-        datafile = os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/ocean_avg_synoptic_seg22.nc"))
+        datafile = os.path.join(self.data_path, "ocean_avg_synoptic_seg22.nc")
 
         # Manually extract
         # ocean_time:units = "seconds since 1990-01-01 00:00:00" ;
@@ -59,7 +63,7 @@ class TimevarTest(unittest.TestCase):
 
     def test_timevar_hfradar_days_values(self):
 
-        datafile = os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/marcooshfradar20120331.nc"))
+        datafile = os.path.join(self.data_path, "marcooshfradar20120331.nc")
 
         # Manually extract
         # time:units = days since 2001-01-01 00:00:00
@@ -84,7 +88,7 @@ class TimevarTest(unittest.TestCase):
 
     def test_timevar_ncom_hour_values_dap(self):
 
-        datafile = "http://edac-dap3.northerngulfinstitute.org/thredds/dodsC/US_East/ncom_relo_useast_u_2012032600/ncom_relo_useast_u_2012032600_t039.nc"
+        datafile = "http://edac-dap3.northerngulfinstitute.org/thredds/dodsC/US_East/ncom_relo_useast_u_2011080200/ncom_relo_useast_u_2011080200_t072.nc"
 
         # Manually extract
         # time:units = hour since 2000-01-01 00:00:00
