@@ -231,7 +231,7 @@ class DataController(object):
                 self.write_lock.acquire()
 
                 if c == 0:
-                    logger.info("Creating cache file")
+                    logger.debug("Creating cache file")
                     try:
                         indices = self.dataset.get_indices(self.uname, timeinds=[np.asarray([0])], point=self.start)
                         self.point_get.value = [self.inds[0], indices[-2], indices[-1]]
@@ -402,7 +402,7 @@ class DataController(object):
                             try:
                                 self.get_remote_data(localvars, remotevars, current_inds, shape)
                             except:
-                                logger.info("DataController failed to get remote data.  Trying again in 30 seconds")
+                                logger.warn("DataController failed to get remote data.  Trying again in 30 seconds")
                                 timer.sleep(30)
                             else:
                                 break
@@ -417,7 +417,7 @@ class DataController(object):
                         self.write_lock.release()
                         self.get_data.value = False
                         self.read_lock.release()
-                        logger.info("Done updating cache file, closing file, and releasing locks")
+                        logger.debug("Done updating cache file, closing file, and releasing locks")
                 else:
                     logger.debug("Updating cache file")
                     try:
@@ -471,7 +471,7 @@ class DataController(object):
                             try:
                                 self.get_remote_data(localvars, remotevars, current_inds, shape)
                             except:
-                                logger.info("DataController failed to get remote data.  Trying again in 30 seconds")
+                                logger.warn("DataController failed to get remote data.  Trying again in 30 seconds")
                                 timer.sleep(30)
                             else:
                                 break
@@ -486,7 +486,7 @@ class DataController(object):
                         self.write_lock.release()
                         self.get_data.value = False
                         self.read_lock.release()
-                        logger.info("Done updating cache file, closing file, and releasing locks")
+                        logger.debug("Done updating cache file, closing file, and releasing locks")
             else:
                 pass        
 
@@ -873,7 +873,7 @@ class ForceParticle(object):
         
         if self.active.value == True:
             while self.get_data.value == True:
-                logger.info("Waiting for DataController to start...")
+                logger.debug("Waiting for DataController to start...")
                 timer.sleep(10)
                 pass
 
@@ -951,13 +951,13 @@ class ForceParticle(object):
             for model in self.models:
                 movement = model.move(part, u, v, w, modelTimestep[loop_i], temperature=temp, salinity=salt, bathymetry_value=bathymetry_value)
                 newloc = Location4D(latitude=movement['latitude'], longitude=movement['longitude'], depth=movement['depth'], time=newtimes[loop_i+1])
-                logger.info("%s - moved %.3f meters (horizontally) and %.3f meters (vertically) by %s with data from %s" % (part.logstring(), movement['distance'], movement['vertical_distance'], model.__class__.__name__, newtimes[loop_i].isoformat()))
+                logger.debug("%s - moved %.3f meters (horizontally) and %.3f meters (vertically) by %s with data from %s" % (part.logstring(), movement['distance'], movement['vertical_distance'], model.__class__.__name__, newtimes[loop_i].isoformat()))
                 if newloc:
                     self.boundary_interaction(particle=part, starting=part.location, ending=newloc,
                         distance=movement['distance'], angle=movement['angle'], 
                         azimuth=movement['azimuth'], reverse_azimuth=movement['reverse_azimuth'], 
                         vertical_distance=movement['vertical_distance'], vertical_angle=movement['vertical_angle'])
-                logger.info("%s - was forced by %s and is now at %s" % (part.logstring(), model.__class__.__name__, part.location.logstring()))
+                logger.debug("%s - was forced by %s and is now at %s" % (part.logstring(), model.__class__.__name__, part.location.logstring()))
 
             part.note = part.outputstring()
             # Each timestep, save the particles status and environmental variables.
@@ -1002,7 +1002,7 @@ class ForceParticle(object):
                 ending.latitude = resulting_point.latitude
                 ending.longitude = resulting_point.longitude
                 ending.depth = resulting_point.depth
-                logger.info("%s - hit the shoreline at %s.  Setting location to %s." % (particle.logstring(), hitpoint.logstring(),  ending.logstring()))
+                logger.debug("%s - hit the shoreline at %s.  Setting location to %s." % (particle.logstring(), hitpoint.logstring(),  ending.logstring()))
 
         # bathymetry
         if self.usebathy:
@@ -1010,7 +1010,7 @@ class ForceParticle(object):
                 bintersect = self._bathymetry.intersect(start_point=starting, end_point=ending)
                 if bintersect:
                     pt = self._bathymetry.react(type='hover', end_point=ending)
-                    logger.info("%s - hit the bottom at %s.  Setting location to %s." % (particle.logstring(), ending.logstring(), pt.logstring()))
+                    logger.debug("%s - hit the bottom at %s.  Setting location to %s." % (particle.logstring(), ending.logstring(), pt.logstring()))
                     ending.latitude = pt.latitude
                     ending.longitude = pt.longitude
                     ending.depth = pt.depth
@@ -1018,7 +1018,7 @@ class ForceParticle(object):
         # sea-surface
         if self.usesurface:
             if ending.depth > 0:
-                #logger.info("%s - rose out of the water.  Setting depth to 0." % particle.logstring())
+                #logger.debug("%s - rose out of the water.  Setting depth to 0." % particle.logstring())
                 ending.depth = 0
 
         particle.location = ending

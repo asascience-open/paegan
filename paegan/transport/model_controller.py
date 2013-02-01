@@ -277,10 +277,10 @@ class ModelController(object):
             ds = CommonDataset.open(hydrodataset)
             # Query the dataset for common variable names
             # and the time variable.
-            logger.info("Retrieving variable information from dataset")
+            logger.debug("Retrieving variable information from dataset")
             common_variables = self.get_common_variables_from_dataset(ds)
 
-            logger.info("Pickling time variable to disk for particles")
+            logger.debug("Pickling time variable to disk for particles")
             timevar = ds.gettimevar(common_variables.get("u"))
             f, timevar_pickle_path = tempfile.mkstemp()
             os.close(f)
@@ -352,15 +352,15 @@ class ModelController(object):
             if code == None:
                 logger.warn("Got an unrecognized response from a task.")
             elif code == -1:
-                logger.info("Particle %s has FAILED!! Saving what was completed." % tempres.uid)
+                logger.warn("Particle %s has FAILED!! Saving what was completed." % tempres.uid)
                 return_particles.append(tempres)
             elif code == -2:
                 error_code = code
-                logger.info("DataController has FAILED!!  Removing cache file so the particles fail.")
+                logger.warn("DataController has FAILED!!  Removing cache file so the particles fail.")
                 try:
                     os.remove(self.cache_path)
                 except OSError:
-                    logger.info("Could not remove cache file, it probably never existed")
+                    logger.debug("Could not remove cache file, it probably never existed")
                     pass
             elif isinstance(tempres, Particle):
                 logger.info("Particle %d finished" % tempres.uid)
@@ -402,7 +402,7 @@ class ModelController(object):
             try:
                 os.remove(self.cache_path)
             except OSError:
-                logger.info("Could not remove cache file, it probably never existed")
+                logger.debug("Could not remove cache file, it probably never existed")
 
         if len(self.particles) > 0:
             # If output_formats and path specified,
@@ -418,7 +418,7 @@ class ModelController(object):
                             try:
                                 self.export(output_path, format=format)
                             except:
-                                logger.info("Failed to export to: %s" % format)
+                                logger.error("Failed to export to: %s" % format)
                     else:
                         logger.warn('The output_formats parameter should be a list, not saving any output!')  
                 else:
