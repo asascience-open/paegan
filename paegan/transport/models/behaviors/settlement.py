@@ -64,12 +64,12 @@ class Settlement(object):
                 particle.settle()
                 logger.info("Particle %d settled in %s mode" % (particle.uid, self.type))
             else:
-                logger.info("Particle did NOT settle.  Depth conditions not met.  Upper limit: %d - Lower limit: %d - Particle: %d" % (self.upper, self.lower, particle.location.depth))
+                logger.debug("Particle did NOT settle.  Depth conditions not met.  Upper limit: %d - Lower limit: %d - Particle: %d" % (self.upper, self.lower, particle.location.depth))
                 
             #else:
             #    logger.info("Particle did NOT settle.  Water not deep enough.  Upper limit: %d - Bathymetry: %d" % (self.upper, depth))
         else:
-            logger.info("Settlement type %s not recognized, not trying to settle Particle %d." % (self.type, particle.uid))
+            logger.warn("Settlement type %s not recognized, not trying to settle Particle %d." % (self.type, particle.uid))
 
         return (u,v,w)
 
@@ -85,7 +85,7 @@ class Settlement(object):
 
         bathymetry_value = kwargs.pop("bathymetry_value", None)
         if bathymetry_value is None:
-            logger.info("No bathymetry so can not attempt to settle particle")
+            logger.debug("No bathymetry so can not attempt to settle particle")
             return { 'u': 0, 'v': 0, 'w': 0 }
 
         u,v,w = self.attempt(particle, bathymetry_value)

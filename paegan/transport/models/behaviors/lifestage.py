@@ -70,7 +70,7 @@ class LifeStage(BaseModel):
                 particle.grow(growth)
                 do_duration_growth = False
             else:
-                logger.info("No temperature found for Particle %s at this location and timestep, skipping linear temperature growth and using duration growth" % particle.uid)
+                logger.debug("No temperature found for Particle %s at this location and timestep, skipping linear temperature growth and using duration growth" % particle.uid)
                 pass
                 
         if do_duration_growth is True:

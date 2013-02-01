@@ -146,7 +146,7 @@ class Diel(BaseModel):
             ______________________________________
         """
         if particle.location.depth < self.max_depth:
-            logger.info("DIEL: %s - Moving UP to desired depth from %f" % (self.logstring(), particle.location.depth))
+            logger.debug("DIEL: %s - Moving UP to desired depth from %f" % (self.logstring(), particle.location.depth))
 
             # If we are going to overshoot the desired minimum depth, 
             # calculate a new w to land in the middle of the range.
@@ -166,7 +166,7 @@ class Diel(BaseModel):
             ______________________________________
         """
         if particle.location.depth > self.min_depth:
-            logger.info("DIEL: %s - Moving DOWN to desired depth from %f" % (self.logstring(), particle.location.depth))
+            logger.debug("DIEL: %s - Moving DOWN to desired depth from %f" % (self.logstring(), particle.location.depth))
 
             # If we are going to overshoot the desired maximum depth, 
             # calculate a new w to land in the middle of the range.
