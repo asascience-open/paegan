@@ -296,6 +296,7 @@ class ModelController(object):
         # Add data controller to the queue first so that it 
         # can get the initial data and is not blocked
         
+        logger.info('Starting DataController')
         data_controller = parallel.DataController(hydrodataset, common_variables, n_run, get_data, write_lock, read_lock, read_count,
                                                   time_chunk, horiz_chunk, times,
                                                   self.start, point_get, self.reference_location,
@@ -305,8 +306,7 @@ class ModelController(object):
         # Create DataController worker
         data_controller_process = parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data, write_lock, name="DataController")
         data_controller_process.start()
-        logger.info('Started %s' % data_controller_process.name)
-
+        
         logger.info('Adding %i particles as tasks' % len(self.particles))
         for part in self.particles:
             forcing = parallel.ForceParticle(part,
@@ -352,8 +352,7 @@ class ModelController(object):
             if code == None:
                 logger.warn("Got an unrecognized response from a task.")
             elif code == -1:
-                logger.warn("Particle %s has FAILED!! Saving what was completed." % tempres.uid)
-                return_particles.append(tempres)
+                logger.warn("Particle %s has FAILED!!" % tempres.uid)
             elif code == -2:
                 error_code = code
                 logger.warn("DataController has FAILED!!  Removing cache file so the particles fail.")
@@ -389,7 +388,7 @@ class ModelController(object):
         
         logger.info('Workers complete')
 
-        self.particles = return_particles 
+        self.particles = return_particles
 
         # Remove Manager so it shuts down
         del mgr
