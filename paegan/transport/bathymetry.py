@@ -15,7 +15,7 @@ class Bathymetry():
         if kwargs.get("file", None) is not None:
             self._file = os.path.normpath(kwargs.pop('file'))
         else:
-            self._file = os.path.normpath(os.path.join(__file__,"../../resources/bathymetry/ETOPO1_Bed_g_gmt4.grd"))
+            raise ValueError("Must provide a path to the Bathymetry file")
         
         self._type = kwargs.pop("type", "hover")
         self._nc = CommonDataset.open(self._file)
