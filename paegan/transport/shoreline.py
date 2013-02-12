@@ -225,10 +225,10 @@ class Shoreline(object):
         distance = kwargs.pop('distance')
         azimuth = kwargs.pop('azimuth')
         reverse_azimuth = kwargs.pop('reverse_azimuth')
+        reverse_distance = kwargs.pop('reverse_distance', 100)
 
-        # Throw it 100m back
-        #distance_reversed = 0.01 * AsaGreatCircle.great_distance(start_point=start_point, end_point=hit_point)['distance']
-        distance_reversed = kwargs.get('reverse_distance', 100)
+        # Throw it back either the distance the particle traveled before hitting the shore, or reverse_distance.. whichever is less.
+        distance_reversed = min([reverse_distance, AsaGreatCircle.great_distance(start_point=start_point, end_point=hit_point)['distance']])
 
         #print "Incoming Azimuth: " + str(azimuth)
         #print "Reverse Azimuth: " + str(reverse_azimuth)

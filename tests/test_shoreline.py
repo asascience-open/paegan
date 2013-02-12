@@ -202,3 +202,60 @@ class ShorelineTest(unittest.TestCase):
         # Resulting longitude should be between the startpoint and the intersection point
         assert final_point.longitude < int4d.longitude
         assert final_point.longitude > starting.longitude
+
+    def test_reverse_only_go_distance_traveled(self):
+
+        s = Shoreline(type='reverse')
+
+        starting = Location4D(latitude=39.05, longitude=-75.34, depth=0)
+        ending   = Location4D(latitude=38.96, longitude=-75.315, depth=0)
+        
+        difference = AsaGreatCircle.great_distance(start_point=starting, end_point=ending)
+        angle = AsaMath.azimuth_to_math_angle(azimuth=difference['azimuth'])
+        distance = difference['distance']
+
+        intersection = s.intersect(start_point=starting.point, end_point=ending.point)
+        int4d = Location4D(point=intersection['point'])
+
+        final_point = s.react(  start_point = starting,
+                                hit_point = int4d,
+                                end_point = ending,
+                                feature = intersection['feature'],
+                                distance = distance,
+                                angle = angle,
+                                azimuth = difference['azimuth'],
+                                reverse_azimuth = difference['reverse_azimuth'],
+                                reverse_distance = 4000000)
+
+        # Resulting point should be VERY close to the starting point.
+        assert abs(final_point.latitude - starting.latitude) < 0.005
+        assert abs(final_point.longitude - starting.longitude) < 0.005
+
+
+    def test_reverse_distance_traveled(self):
+
+        s = Shoreline(type='reverse')
+
+        starting = Location4D(latitude=39.05, longitude=-75.34, depth=0)
+        ending   = Location4D(latitude=38.96, longitude=-75.315, depth=0)
+        
+        difference = AsaGreatCircle.great_distance(start_point=starting, end_point=ending)
+        angle = AsaMath.azimuth_to_math_angle(azimuth=difference['azimuth'])
+        distance = difference['distance']
+
+        intersection = s.intersect(start_point=starting.point, end_point=ending.point)
+        int4d = Location4D(point=intersection['point'])
+
+        final_point = s.react(  start_point = starting,
+                                hit_point = int4d,
+                                end_point = ending,
+                                feature = intersection['feature'],
+                                distance = distance,
+                                angle = angle,
+                                azimuth = difference['azimuth'],
+                                reverse_azimuth = difference['reverse_azimuth'],
+                                reverse_distance = 0.000001)
+
+        # Resulting point should be VERY close to the starting point.
+        assert abs(int4d.latitude - final_point.latitude) < 0.005
+        assert abs(int4d.longitude - final_point.longitude) < 0.005

@@ -994,9 +994,15 @@ class ForceParticle(object):
         if self.useshore:
             intersection_point = self._shoreline.intersect(start_point=starting.point, end_point=ending.point)
             if intersection_point:
-                # Set the intersection point
+                # Set the intersection point.
                 hitpoint = Location4D(point=intersection_point['point'], time=starting.time + (ending.time - starting.time))
                 particle.location = hitpoint
+
+                # The reverse_distance parameter passed in is compared against the distance from the particle to the shoreline
+                # inside of the .react method.  The reaction will never move the particle further than it was from shore
+                # to begin with.
+                # This avoids a situation in small estuaries where reacting to the shoreline can actually push the particle 
+                # onto shore past where the particle began.
                 resulting_point = self._shoreline.react(start_point=starting,
                                               end_point=ending,
                                               hit_point=hitpoint,
