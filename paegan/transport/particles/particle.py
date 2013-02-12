@@ -5,9 +5,11 @@ class Particle(object):
         A particle
     """
     def __init__(self, **kwargs):
-        self._locations = []
-        self._age = 0. # Age in days
         self._id = kwargs.get("id", -1)
+        self._locations = []
+
+        self._age = 0. # Age in days
+        self._ages = [0.] # Age in days   
 
         self._u = None
         self._us = []
@@ -43,6 +45,7 @@ class Particle(object):
         self.v_vectors.append(self.v_vector)
         self.w_vectors.append(self.w_vector)
         self.notes.append(self.note)
+        self.ages.append(self.get_age(units='days'))
 
         self.u_vector = None
         self.v_vector = None
@@ -59,6 +62,9 @@ class Particle(object):
 
         if len(self.locations) > len(self.halts):
             self.halts.append(self.halted)
+
+        if len(self.locations) > len(self.ages):
+            self.ages.append(self.get_age(units='days'))
 
     def fill_environment_gap(self, value=None):
 
@@ -122,6 +128,10 @@ class Particle(object):
             return self.w_vectors[-1]
         except IndexError:
             return None    
+
+    def get_ages(self):
+        return self._ages
+    ages = property(get_ages, None)
 
     def set_note(self, note):
         self._note = note

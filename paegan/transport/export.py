@@ -66,6 +66,7 @@ class GDALShapefile(Export):
                                         ('Settled', 'str'),
                                         ('Dead', 'str'),
                                         ('Halted', 'str'),
+                                        ('Age', 'float'),
                                         ('Notes' , 'str')])}
         shape_crs = {'no_defs': True, 'ellps': 'WGS84', 'datum': 'WGS84', 'proj': 'longlat'}
 
@@ -83,6 +84,7 @@ class GDALShapefile(Export):
                 normalized_settled = particle.settles
                 normalized_dead = particle.deads
                 normalized_halted = particle.halts
+                normalized_ages = particle.ages
                 normalized_notes = particle.notes
 
                 if len(normalized_locations) != len(normalized_temps):
@@ -140,12 +142,20 @@ class GDALShapefile(Export):
                     # Create list of 'None' equal to the length of locations
                     normalized_halted = [None] * len(normalized_locations)
 
+                if len(normalized_locations) != len(normalized_ages):
+                    logger.info("No W being added to shapefile.")
+                    # Create list of 'None' equal to the length of locations
+                    normalized_ages = [-9999.9] * len(normalized_locations)
+                else:
+                    # Replace any None with fill value
+                    normalized_ages = (-9999.9 if not x else round(x,3) for x in normalized_ages)
+
                 if len(normalized_locations) != len(normalized_notes):
                     logger.info("No Notes being added to shapefile.")
                     # Create list of 'None' equal to the length of locations
                     normalized_notes = [None] * len(normalized_locations)
 
-                for loc, temp, salt, u, v, w, settled, dead, halted, note in zip(normalized_locations, normalized_temps, normalized_salts, normalized_u, normalized_v, normalized_w, normalized_settled, normalized_dead, normalized_halted, normalized_notes):
+                for loc, temp, salt, u, v, w, settled, dead, halted, age, note in zip(normalized_locations, normalized_temps, normalized_salts, normalized_u, normalized_v, normalized_w, normalized_settled, normalized_dead, normalized_halted, normalized_ages, normalized_notes):
                     shape.write({   'geometry': mapping(loc.point),
                                     'properties': OrderedDict([('Particle', particle.uid),
                                                     ('Date', unicode(loc.time.isoformat())),
@@ -160,6 +170,7 @@ class GDALShapefile(Export):
                                                     ('Settled', unicode(settled)),
                                                     ('Dead', unicode(dead)),
                                                     ('Halted', unicode(halted)),
+                                                    ('Age', float(age)),
                                                     ('Notes' , unicode(note))])})
 
         # Zip the output
