@@ -61,7 +61,6 @@ class ModelController(object):
         self._time_chunk = kwargs.get('time_chunk', 10)
         self._horiz_chunk = kwargs.get('horiz_chunk', 5)
         self.time_method = kwargs.get('time_method', 'interp')
-        self.shore_path = None
         self.shoreline_path = kwargs.get("shoreline_path", None)
 
         # The model timesteps in datetime objects
