@@ -63,6 +63,8 @@ class ModelController(object):
         self.time_method = kwargs.get('time_method', 'interp')
         self.shoreline_path = kwargs.get("shoreline_path", None)
 
+        self.reverse_distance = kwargs.get("reverse_distance", 100)
+
         # The model timesteps in datetime objects
         self.datetimes = []
         
@@ -326,6 +328,7 @@ class ModelController(object):
                                         read_count,
                                         point_get,
                                         data_request_lock,
+                                        reverse_distance=self.reverse_distance,
                                         bathy=self.bathy_path,
                                         shoreline_path=self.shoreline_path,
                                         cache=self.cache_path,

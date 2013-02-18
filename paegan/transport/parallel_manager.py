@@ -504,7 +504,7 @@ class ForceParticle(object):
     def __init__(self, part, remotehydro, common_variables, timevar_pickle_path, times, start_time, models, 
                  release_location_centroid, usebathy, useshore, usesurface,
                  get_data, n_run, write_lock, read_lock, read_count,
-                 point_get, data_request_lock, bathy=None,
+                 point_get, data_request_lock, reverse_distance=None, bathy=None,
                  shoreline_path=None, cache=None, time_method=None):
         """
             This is the task/class/object/job that forces an
@@ -545,6 +545,8 @@ class ForceParticle(object):
         self.yname = common_variables.get("y", None)
         self.zname = common_variables.get("z", None)
         self.tname = common_variables.get("time", None)
+
+        self.reverse_distance = reverse_distance
 
         if time_method is None:
             time_method = 'interp'
@@ -1006,7 +1008,7 @@ class ForceParticle(object):
                 resulting_point = self._shoreline.react(start_point=starting,
                                               end_point=ending,
                                               hit_point=hitpoint,
-                                              reverse_distance=500,
+                                              reverse_distance=self.reverse_distance,
                                               feature=intersection_point['feature'],
                                               distance=kwargs.get('distance'),
                                               angle=kwargs.get('angle'),
