@@ -43,16 +43,31 @@ class Bathymetry():
 
     def react(self, **kwargs):
     
-        if self._type == 'hover':
+        react_type = kwargs.get("type", self._type)
+
+        if react_type == 'hover':
             return self.__hover(**kwargs)
-        elif self._type == 'stick':
+        elif react_type == 'stick':
             pass
+        elif react_type == 'reverse':
+            return self.__reverse(**kwargs)
         else:
             raise ValueError("Bathymetry interaction type not supported")
             
     def __hover(self, **kwargs):
+        """
+            This hovers the particle 1m above the bathymetry WHERE IT WOULD HAVE ENDED UP.
+            This is most likely wrong and we need to compute the location that it actually hit
+            the bathymetry and hover 1m above THAT point.
+        """
         end_point = kwargs.pop('end_point')
         depth = self.get_depth(location=end_point)
         return Location4D(time=end_point.time, latitude=end_point.latitude, longitude=end_point.longitude, depth=(depth + 1.))
         
-        
+    def __reverse(self, **kwargs):
+        """
+            If we hit the bathymetry, set the location to where we came from, but increase the time.
+        """
+        start_point = kwargs.pop('start_point')
+        end_point = kwargs.pop('end_point')
+        return Location4D(time=end_point.time, latitude=start_point.latitude, longitude=start_point.longitude, depth=start_point.depth)

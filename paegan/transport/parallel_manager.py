@@ -1024,7 +1024,7 @@ class ForceParticle(object):
             if not particle.settled:
                 bintersect = self._bathymetry.intersect(start_point=starting, end_point=ending)
                 if bintersect:
-                    pt = self._bathymetry.react(type='hover', end_point=ending)
+                    pt = self._bathymetry.react(type='reverse', start_point=starting, end_point=ending)
                     logger.debug("%s - hit the bottom at %s.  Setting location to %s." % (particle.logstring(), ending.logstring(), pt.logstring()))
                     ending.latitude = pt.latitude
                     ending.longitude = pt.longitude
