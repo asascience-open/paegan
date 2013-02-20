@@ -13,6 +13,7 @@ from paegan.utils.asagreatcircle import AsaGreatCircle
 from paegan.utils.asamath import AsaMath
 from paegan.utils.asarandom import AsaRandom
 from paegan.transport.location4d import Location4D
+from paegan.utils.asarandom import AsaRandom
 from shapely.prepared import prep
 
 import multiprocessing
@@ -220,21 +221,44 @@ class Shoreline(object):
             Reverse particle just off of the shore in the direction that it came in.
             Adds a slight random factor to the distance and angle it is reversed in.
         """
+
+        logger = multiprocessing.get_logger()
+        logger.addHandler(NullHandler())
+
         start_point = kwargs.pop('start_point')
         hit_point = kwargs.pop('hit_point')
         distance = kwargs.pop('distance')
         azimuth = kwargs.pop('azimuth')
         reverse_azimuth = kwargs.pop('reverse_azimuth')
-        reverse_distance = kwargs.pop('reverse_distance', None)
+        reverse_distance = kwargs.get('reverse_distance', None)
         if reverse_distance is None:
             reverse_distance = 100
 
-        # Throw it back either the distance the particle traveled before hitting the shore, or reverse_distance.. whichever is less.
-        distance_reversed = min([reverse_distance, AsaGreatCircle.great_distance(start_point=start_point, end_point=hit_point)['distance']])
+        # Randomize the reverse angle slightly (+/- 5 degrees)
+        random_azimuth = reverse_azimuth + AsaRandom.random() * 5
 
-        #print "Incoming Azimuth: " + str(azimuth)
-        #print "Reverse Azimuth: " + str(reverse_azimuth)
-        #print "Distance Reversed:" + str(distance_reversed)
+        # Nudge the hitpoint off of the shore by a tiny bit to test shoreline intersection in while loop.
+        nudged_hit_point = AsaGreatCircle.great_circle(distance=0.01, azimuth=random_azimuth, start_point=hit_point)
+        nudged_hit_location = Location4D(latitude=nudged_hit_point['latitude'], longitude=nudged_hit_point['longitude'], depth=start_point.depth)
 
-        new_point = AsaGreatCircle.great_circle(distance=distance_reversed, azimuth=reverse_azimuth, start_point=hit_point)
-        return Location4D(latitude=new_point['latitude'], longitude=new_point['longitude'], depth=start_point.depth)
+        new_point = AsaGreatCircle.great_circle(distance=reverse_distance, azimuth=random_azimuth, start_point=hit_point)
+        new_loc = Location4D(latitude=new_point['latitude'], longitude=new_point['longitude'], depth=start_point.depth)
+
+        # Keep trying to throw particle back, halfing the distance each time until it is in water.
+        # Only half it 10 times before giving up and returning the point which the particle came from.
+        count = 0
+        # Distance amount to half each iteration
+        changing_distance = reverse_distance
+        while self.intersect(start_point=nudged_hit_location.point, end_point=new_loc.point) and count < 10:
+            changing_distance /= 2
+            new_point = AsaGreatCircle.great_circle(distance=changing_distance, azimuth=random_azimuth, start_point=hit_point)
+            new_loc = Location4D(latitude=new_point['latitude'], longitude=new_point['longitude'], depth=start_point.depth)
+            count += 1
+
+        # We tried 10 times and the particle was still on shore, return the point the particle started from.
+        # No randomization.
+        if count == 10:
+            logger.warn("Could not react particle with shoreline.  Assuming particle did not move from original location")
+            new_loc = start_point
+
+        return new_loc
