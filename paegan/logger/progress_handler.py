@@ -36,7 +36,7 @@ class ProgressHandler(logging.Handler):
             return (dt, -1, unicode(record))
         elif isinstance(record, float) or isinstance(record, int):
             return (dt, record, None)
-        else
+        else:
             return (dt, None, None)
 
     def close(self):
