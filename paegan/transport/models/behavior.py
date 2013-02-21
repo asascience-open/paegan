@@ -1,8 +1,6 @@
 import json
 from paegan.transport.models.base_model import BaseModel
 from paegan.transport.models.behaviors.lifestage import LifeStage, DeadLifeStage
-import multiprocessing
-from paegan.logging.null_handler import NullHandler
 
 class LarvaBehavior(BaseModel):
 

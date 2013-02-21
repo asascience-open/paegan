@@ -16,8 +16,7 @@ from paegan.transport.location4d import Location4D
 from paegan.utils.asarandom import AsaRandom
 from shapely.prepared import prep
 
-import multiprocessing
-from paegan.logging.null_handler import NullHandler
+from paegan.logger import logger
 
 class Shoreline(object):
     def __init__(self, **kwargs):
@@ -73,9 +72,6 @@ class Shoreline(object):
             30 times the time with world land polygons.
 
         """
-
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
 
         point = kwargs.pop("point", None)
         spatialbuffer = kwargs.pop("spatialbuffer", self._spatialbuffer)
@@ -221,10 +217,6 @@ class Shoreline(object):
             Reverse particle just off of the shore in the direction that it came in.
             Adds a slight random factor to the distance and angle it is reversed in.
         """
-
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
-
         start_point = kwargs.pop('start_point')
         hit_point = kwargs.pop('hit_point')
         distance = kwargs.pop('distance')

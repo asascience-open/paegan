@@ -1,10 +1,11 @@
 import math
-import multiprocessing
-from paegan.logging.null_handler import NullHandler
+
 from paegan.utils.asamath import AsaMath
 from paegan.utils.asarandom import AsaRandom
 from paegan.utils.asatransport import AsaTransport
 from paegan.transport.models.base_model import BaseModel
+
+from paegan.logger import logger
 
 class Transport(BaseModel):
     """
@@ -55,10 +56,7 @@ class Transport(BaseModel):
                 'vertical_angle': x }
         """
 
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
-
-        #logger.info("U: %s, V: %s, W: %s" % (str(u),str(v),str(w)))
+        logger.debug("U: %s, V: %s, W: %s" % (str(u),str(v),str(w)))
 
         # IMPORTANT:
         # If we got no data from the model, we are using the last available value stored in the particles!

@@ -17,8 +17,8 @@ from paegan.transport.model_controller import ModelController
 from shapely.geometry import Point, Polygon
 import os
 import pytz
-import multiprocessing, logging
-from paegan.logging.multi_process_logging import MultiProcessingLogHandler, EasyLogger
+import logging
+from paegan.logger.easy_logger import EasyLogger
 
 
 class ModelControllerTest(unittest.TestCase):
@@ -33,7 +33,7 @@ class ModelControllerTest(unittest.TestCase):
         self.start_time = datetime(2012, 8, 1, 00)
         self.transport = Transport(horizDisp=0.05, vertDisp=0.0003)
 
-        self.log = EasyLogger('testlog.txt', logging.INFO)
+        self.log = EasyLogger('testlog.txt', level=logging.PROGRESS)
 
         self.output_path = "/data/lm/output"
         self.cache_path = "/data/lm/cache"

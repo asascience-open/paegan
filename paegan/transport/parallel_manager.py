@@ -9,8 +9,6 @@ from paegan.utils.asatransport import AsaTransport
 from paegan.transport.shoreline import Shoreline
 from paegan.transport.bathymetry import Bathymetry
 from multiprocessing import Value
-import multiprocessing
-from paegan.logging.null_handler import NullHandler
 from paegan.cdm.dataset import CommonDataset
 import os, sys
 import time as timer
@@ -20,6 +18,9 @@ import traceback
 import pylab
 import Queue
 import cPickle as pickle
+import multiprocessing
+
+from paegan.logger import logger
 
 class Consumer(multiprocessing.Process):
     def __init__(self, task_queue, result_queue, n_run, nproc_lock, active, get_data, write_lock, **kwargs):
@@ -35,8 +36,6 @@ class Consumer(multiprocessing.Process):
         self.get_data = get_data
         
     def run(self):
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
 
         while True:
 
@@ -118,9 +117,6 @@ class DataController(object):
             Method that does the updating of local netcdf cache
             with remote data
         """
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
-
         # If user specifies 'all' then entire xy domain is
         # grabbed, default is 4, specified in the model_controller
         if self.horiz_size == 'all':
@@ -187,9 +183,6 @@ class DataController(object):
         self.proc = proc
         self.remote = self.dataset.nc
         cachepath = self.cache_path
-
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
         
         # Calculate the datetimes of the model timesteps like
         # the particle objects do, so we can figure out unique
@@ -557,10 +550,8 @@ class ForceParticle(object):
             Method to test if cache contains the data that
             the particle needs
         """
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
 
-        #logger.info("Checking cache for data availability at %s." % self.part.location.logstring())
+        logger.debug("Checking cache for data availability at %s." % self.part.location.logstring())
 
         try:
             # Tell the DataController that we are going to be reading from the file
@@ -572,15 +563,15 @@ class ForceParticle(object):
             # If the point we request contains fill values, 
             # we need data
             cached_lookup = self.dataset.get_values('domain', timeinds=[np.asarray([i])], point=self.part.location)
-            #logger.info("Type of result: %s" % type(cached_lookup))
-            #logger.info("Double mean of result: %s" % np.mean(np.mean(cached_lookup)))
-            #logger.info("Type of Double mean of result: %s" % type(np.mean(np.mean(cached_lookup))))
+            logger.debug("Type of result: %s" % type(cached_lookup))
+            logger.debug("Double mean of result: %s" % np.mean(np.mean(cached_lookup)))
+            logger.debug("Type of Double mean of result: %s" % type(np.mean(np.mean(cached_lookup))))
             if type(np.mean(np.mean(cached_lookup))) == np.ma.core.MaskedConstant:
                 need = True
                 logger.debug("I NEED data.  Got back: %s" % cached_lookup)
             else:
                 need = False
-                #logger.info("I DO NOT NEED data")
+                logger.debug("I DO NOT NEED data")
         except StandardError:
             # If the time index doesnt even exist, we need
             need = True
@@ -610,9 +601,6 @@ class ForceParticle(object):
             Uses linear interpolation bewtween timesteps to
             get u,v,w,temp,salt
         """
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
-
         if self.active.value == True:
             while self.get_data.value == True:
                 logger.debug("Waiting for DataController to release cache file so I can read from it...")
@@ -753,9 +741,6 @@ class ForceParticle(object):
             Method to streamline request for data from cache,
             Uses nearest time to get u,v,w,temp,salt
         """
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
-
         if self.active.value == True:
             while self.get_data.value == True:
                 logger.debug("Waiting for DataController to release cache file so I can read from it...")
@@ -857,8 +842,6 @@ class ForceParticle(object):
 
         
     def __call__(self, proc, active):
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
 
         self.active = active
 
@@ -985,9 +968,6 @@ class ForceParticle(object):
         """
             Returns a list of Location4D objects
         """
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
-
         particle = kwargs.pop('particle')
         starting = kwargs.pop('starting')
         ending = kwargs.pop('ending')

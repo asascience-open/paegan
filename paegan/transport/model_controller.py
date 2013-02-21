@@ -18,9 +18,10 @@ import multiprocessing
 import paegan.transport.parallel_manager as parallel
 import os
 import paegan.transport.export as ex
-from paegan.logging.null_handler import NullHandler
 import cPickle as pickle
 import tempfile
+
+from paegan.logger import logger
 
 class ModelController(object):
     """
@@ -168,9 +169,6 @@ class ModelController(object):
         }
 
     def run(self, hydrodataset, **kwargs):
-
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
 
         # Add ModelController description to logfile
         logger.info(self)
@@ -351,6 +349,8 @@ class ModelController(object):
         while retrieved < number_of_tasks:
             # Returns a tuple of code, result
             code, tempres = results.get()
+            # We got one.
+            retrieved += 1
             if code == None:
                 logger.warn("Got an unrecognized response from a task.")
             elif code == -1:
@@ -366,13 +366,14 @@ class ModelController(object):
             elif isinstance(tempres, Particle):
                 logger.info("Particle %d finished" % tempres.uid)
                 return_particles.append(tempres)
+                # We mulitply by 95 here to save 5% for the exporting
+                logger.progress(((retrieved / number_of_tasks) * 95., "Particle %d finished" % tempres.uid))
             elif tempres == "DataController":
                 logger.info("DataController finished")
+                logger.progress(((retrieved / number_of_tasks) * 95., "DataController finished"))
             else:
                 logger.info("Got a strange result on results queue")
                 logger.info(str(tempres))
-
-            retrieved += 1
 
             logger.info("Retrieved %i/%i results" % (retrieved,number_of_tasks))
         
@@ -405,6 +406,8 @@ class ModelController(object):
             except OSError:
                 logger.debug("Could not remove cache file, it probably never existed")
 
+        logger.progress((96, "Exporting results"))
+
         if len(self.particles) > 0:
             # If output_formats and path specified,
             # output particle run data to disk when completed
@@ -433,6 +436,7 @@ class ModelController(object):
             else:
                 raise ModelError("Error in the model")
 
+        logger.progress((100, "Complete"))
         return
     
     def export(self, folder_path, format=None):

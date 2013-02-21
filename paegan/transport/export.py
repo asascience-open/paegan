@@ -3,7 +3,6 @@ import glob
 import zipfile
 import multiprocessing
 from shapely.geometry import Point, Polygon, MultiPolygon, MultiPoint, LineString
-from paegan.logging.null_handler import NullHandler
 
 # NetCDF
 import netCDF4
@@ -18,6 +17,8 @@ from fiona import collection
 from collections import OrderedDict
 
 import cPickle as pickle
+
+from paegan.logger import logger
 
 class Export(object):
     @classmethod
@@ -48,9 +49,6 @@ class Trackline(Export):
 class GDALShapefile(Export):
     @classmethod
     def export(cls, folder, particles, datetimes):
-        
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
 
         shape_schema = {'geometry': 'Point',
                         'properties': OrderedDict([('Particle', 'int'),
@@ -187,9 +185,6 @@ class NetCDF(Export):
             Export particle data to CF trajectory convention
             netcdf file
         """
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
-        
         time_units = 'seconds since 1990-01-01 00:00:00'
         
         # Create netcdf file, overwrite existing

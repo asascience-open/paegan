@@ -4,12 +4,9 @@ from paegan.utils.asagreatcircle import AsaGreatCircle
 from shapely.geometry import Point, Polygon, MultiPolygon
 import random
 import time
-import multiprocessing
-from paegan.logging.null_handler import NullHandler
 from datetime import timedelta
 
-logger = multiprocessing.get_logger()
-logger.addHandler(NullHandler())
+from paegan.logger import logger
 
 class AsaTransport(object):
 

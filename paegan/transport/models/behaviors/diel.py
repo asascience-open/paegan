@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 import pytz
 import json
 from paegan.transport.models.base_model import BaseModel
-import multiprocessing
-from paegan.logging.null_handler import NullHandler
+
+from paegan.logger import logger
 
 class Diel(BaseModel):
 
@@ -116,9 +116,6 @@ class Diel(BaseModel):
     time = property(get_time, set_time)
 
     def move(self, particle, u, v, w, modelTimestep, **kwargs):
-
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
 
         # If the particle is settled, don't move it anywhere
         if particle.settled:
