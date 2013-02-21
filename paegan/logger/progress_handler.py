@@ -27,7 +27,7 @@ class ProgressHandler(logging.Handler):
 
         dt = datetime.now().replace(tzinfo=pytz.utc)
 
-        if isinsatnce(record, list):
+        if isinstance(record, list):
             record = tuple(record)
 
         if isinstance(record, tuple):
