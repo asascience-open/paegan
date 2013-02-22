@@ -30,7 +30,7 @@ class EasyLogger(object):
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
-        progress_deque = collections.deque(maxlen=5)
+        progress_deque = collections.deque(maxlen=1)
         progress_handler = ProgressHandler(progress_deque)
         progress_handler.setLevel(level)
         self.logger.addHandler(progress_handler)
