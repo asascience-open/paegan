@@ -1,13 +1,19 @@
-from datetime import datetime
 import pytz
-
-from collections import deque
+import time
 import logging
+
+from datetime import datetime
+from collections import deque
+
+class OnlyProgressFilter(logging.Filter):
+    def filter(self, record):
+        return record.levelno == logging.PROGRESS
 
 class ProgressHandler(logging.Handler):
     def __init__(self, progress_deque):
         logging.Handler.__init__(self)
-        self._progress_deque = progress_deque
+        self.addFilter(OnlyProgressFilter())
+        self._progress_deque = progress_deque      
 
     def send(self, s):
         self._progress_deque.append(s)
@@ -25,17 +31,20 @@ class ProgressHandler(logging.Handler):
         # format log into tuple of:
         # (datetime, progress, message)
 
-        dt = datetime.now().replace(tzinfo=pytz.utc)
+        # Get a timezone aware datetime from time.time()
+        dt = datetime.fromtimestamp(record.created).replace(tzinfo=pytz.timezone(time.strftime("%Z",time.gmtime()))).astimezone(pytz.utc)
 
-        if isinstance(record, list):
-            record = tuple(record)
+        msg = record.msg
 
-        if isinstance(record, tuple):
-            return tuple([dt]) + record
-        elif isinstance(record, str) or isinstance(record, unicode):
-            return (dt, -1, unicode(record))
-        elif isinstance(record, float) or isinstance(record, int):
-            return (dt, record, None)
+        if isinstance(msg, list):
+            msg = tuple(msg)
+
+        if isinstance(msg, tuple):
+            return tuple([dt]) + msg
+        elif isinstance(msg, str) or isinstance(msg, unicode):
+            return (dt, -1, unicode(msg))
+        elif isinstance(msg, float) or isinstance(msg, int):
+            return (dt, msg, None)
         else:
             return (dt, None, None)
 
