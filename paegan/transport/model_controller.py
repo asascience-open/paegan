@@ -342,7 +342,7 @@ class ModelController(object):
 
         # Get results back from queue, test for failed particles
         return_particles = []
-        retrieved = 0
+        retrieved = 0.
         error_code = 0
 
         logger.info("Waiting for %i particle results" % len(self.particles))
@@ -375,7 +375,7 @@ class ModelController(object):
                 logger.info("Got a strange result on results queue")
                 logger.info(str(tempres))
 
-            logger.info("Retrieved %i/%i results" % (retrieved,number_of_tasks))
+            logger.info("Retrieved %i/%i results" % (int(retrieved),number_of_tasks))
         
         if len(return_particles) != len(self.particles):
             logger.warn("Some particles failed and are not included in the output")
