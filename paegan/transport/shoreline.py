@@ -118,6 +118,7 @@ class Shoreline(object):
             ls = LineString(list(spoint.coords) + list(epoint.coords))
         elif "single_point" in kwargs:
             spoint = kwargs.get('single_point')
+            ls = LineString(list(spoint.coords) + list(spoint.coords))
         else:
             raise TypeError( "must provide a LineString geometry object, (2) Point geometry objects, or (1) Point geometry object" )
 
