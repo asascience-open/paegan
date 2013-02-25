@@ -241,19 +241,32 @@ class Shoreline(object):
         # Randomize the reverse angle slightly (+/- 5 degrees)
         random_azimuth = reverse_azimuth + AsaRandom.random() * 5
 
-        # Nudge the hitpoint off of the shore by a tiny bit to test shoreline intersection in while loop.
-        nudged_hit_point = AsaGreatCircle.great_circle(distance=0.01, azimuth=random_azimuth, start_point=hit_point)
-        nudged_hit_location = Location4D(latitude=nudged_hit_point['latitude'], longitude=nudged_hit_point['longitude'], depth=start_point.depth)
+        count = 0
+        nudge_distance = 0.01
+        nudge_point = AsaGreatCircle.great_circle(distance=nudge_distance, azimuth=random_azimuth, start_point=hit_point)
+        nudge_loc = Location4D(latitude=nudge_point['latitude'], longitude=nudge_point['longitude'], depth=start_point.depth)
 
-        new_point = AsaGreatCircle.great_circle(distance=reverse_distance, azimuth=random_azimuth, start_point=hit_point)
-        new_loc = Location4D(latitude=new_point['latitude'], longitude=new_point['longitude'], depth=start_point.depth)
+        # Find point just offshore to do testing with.  Try 15 times (~350m).  This makes sure the start_point is in the water
+        # for the next call to intersect (next while loop).
+        while self.intersect(single_point=nudge_loc.point) and count < 16:
+            nudge_distance *= 2
+            nudge_point = AsaGreatCircle.great_circle(distance=nudge_distance, azimuth=random_azimuth, start_point=hit_point)
+            nudge_loc = Location4D(latitude=nudge_point['latitude'], longitude=nudge_point['longitude'], depth=start_point.depth)
+            count += 1
+
+        # We tried 16 times and couldn't find a point.  This should totally never happen.
+        if count == 16:
+            logger.warn("IF THIS HAPPENS... WOW.  Could not find location in water to do shoreline calculation with.  Assuming particle did not move from original location")
+            return start_point
 
         # Keep trying to throw particle back, halfing the distance each time until it is in water.
         # Only half it 10 times before giving up and returning the point which the particle came from.
         count = 0
         # Distance amount to half each iteration
         changing_distance = reverse_distance
-        while self.intersect(start_point=nudged_hit_location.point, end_point=new_loc.point) and count < 10:
+        new_point = AsaGreatCircle.great_circle(distance=reverse_distance, azimuth=random_azimuth, start_point=hit_point)
+        new_loc = Location4D(latitude=new_point['latitude'], longitude=new_point['longitude'], depth=start_point.depth)
+        while self.intersect(start_point=nudge_loc.point, end_point=new_loc.point) and count < 12:
             changing_distance /= 2
             new_point = AsaGreatCircle.great_circle(distance=changing_distance, azimuth=random_azimuth, start_point=hit_point)
             new_loc = Location4D(latitude=new_point['latitude'], longitude=new_point['longitude'], depth=start_point.depth)
@@ -261,8 +274,8 @@ class Shoreline(object):
 
         # We tried 10 times and the particle was still on shore, return the point the particle started from.
         # No randomization.
-        if count == 10:
+        if count == 12:
             logger.warn("Could not react particle with shoreline.  Assuming particle did not move from original location")
-            new_loc = start_point
+            return start_point
 
         return new_loc

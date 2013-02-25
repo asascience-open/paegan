@@ -230,7 +230,7 @@ class ShorelineTest(unittest.TestCase):
         # Should be in water
         assert s.intersect(start_point=final_point.point, end_point=final_point.point) is None
 
-    def test_reverse_10_times_then_start_point(self):
+    def test_reverse_12_times_then_start_point(self):
 
         s = Shoreline(type='reverse')
 
