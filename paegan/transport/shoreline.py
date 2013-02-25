@@ -107,16 +107,19 @@ class Shoreline(object):
             so we can calculate the direction to bounce a particle.
         """
         ls = None
+
         if "linestring" in kwargs:
             ls = kwargs.pop('linestring')
             spoint = Point(ls.coords[0])
             epoint = Point(ls.coords[-1])
         elif "start_point" and "end_point" in kwargs:
-            spoint = kwargs.pop('start_point')
-            epoint = kwargs.pop('end_point')
+            spoint = kwargs.get('start_point')
+            epoint = kwargs.get('end_point')
             ls = LineString(list(spoint.coords) + list(epoint.coords))
+        elif "single_point" in kwargs:
+            spoint = kwargs.get('single_point')
         else:
-            raise TypeError( "must provide a LineString geometry object or (2) Point geometry objects" )
+            raise TypeError( "must provide a LineString geometry object, (2) Point geometry objects, or (1) Point geometry object" )
 
         inter = False
 
@@ -130,7 +133,16 @@ class Shoreline(object):
 
             # Test if starting on land
             if prepped_element.contains(spoint):
-                raise Exception('Starting point on land')
+                if ls is None:
+                    # If we only passed in one point, return the intersection is true.
+                    return {'point': spoint, 'feature': None}
+                else:
+                    # If we are testing a linestring, raise an exception that we started on land.
+                    raise Exception('Starting point on land')
+            else:
+                # If we are just checking a single point, continue looping.
+                if ls is None:
+                    continue
 
             inter = ls.intersection(element)
             if inter:
