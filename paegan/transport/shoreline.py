@@ -118,6 +118,7 @@ class Shoreline(object):
             ls = LineString(list(spoint.coords) + list(epoint.coords))
         elif "single_point" in kwargs:
             spoint = kwargs.get('single_point')
+            epoint = None
             ls = LineString(list(spoint.coords) + list(spoint.coords))
         else:
             raise TypeError( "must provide a LineString geometry object, (2) Point geometry objects, or (1) Point geometry object" )
@@ -134,7 +135,7 @@ class Shoreline(object):
 
             # Test if starting on land
             if prepped_element.contains(spoint):
-                if ls is None:
+                if epoint is None:
                     # If we only passed in one point, return the intersection is true.
                     return {'point': spoint, 'feature': None}
                 else:
@@ -142,7 +143,7 @@ class Shoreline(object):
                     raise Exception('Starting point on land')
             else:
                 # If we are just checking a single point, continue looping.
-                if ls is None:
+                if epoint is None:
                     continue
 
             inter = ls.intersection(element)
