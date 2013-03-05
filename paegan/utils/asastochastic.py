@@ -106,6 +106,24 @@ def compute_probability_settle(trajectory_files, bbox=None,
                                parameter='settlement',
                               )
     return prob
+    
+def count_settlement(trajectory_file, bbox=None, 
+                        nx=1000, ny=1000):
+    prob = np.zeros((ny, nx))
+    run = netCDF4.Dataset(trajectory_file)
+    for i in range(run.variables['time'].shape[0]):
+        settle_index = np.where(run.variables['settled'][i,:]==1)
+        if len(settle_index[0]) > 0:
+            lat = run.variables['lat'][i, settle_index[0]].flatten()
+            lon = run.variables['lon'][i, settle_index[0]].flatten()
+            column_i = [bisect.bisect(xarray, clon) for clon in lon]
+            row_i = [bisect.bisect(yarray, clat) for clat in lat]
+            for row, col in zip(row_i, column_i):
+                try:
+                    prob[row, col] += 1
+                except StandardError:
+                    pass
+    return prob
 
 def export_probability(outputname, **kwargs):
     """
@@ -124,9 +142,10 @@ def export_probability(outputname, **kwargs):
         raise ValueError('Must supply bbox keyword argument.')
     if nx == None or ny == None:
         raise ValueError('Must supply nx and ny keyword arguments.')
-    
     prob = compute_probability(**kwargs)
-
+    export_grid(outputname, prob, bbox, nx, ny)
+    
+def export_grid(outputname, grid, bbox, nx, ny, ):
     xres = (float(bbox[2]) - float(bbox[0])) / float(nx)
     yres = (float(bbox[3]) - float(bbox[1])) / float(ny)
     tiff = gdal.GetDriverByName('GTiff')
@@ -137,5 +156,5 @@ def export_probability(outputname, **kwargs):
     srs = osr.SpatialReference()
     srs.SetWellKnownGeogCS( 'WGS84' )
     rasterout.SetProjection( srs.ExportToWkt() )
-    rasterout.GetRasterBand(1).WriteArray(prob[::-1, :])
+    rasterout.GetRasterBand(1).WriteArray(grid[::-1, :])
     
