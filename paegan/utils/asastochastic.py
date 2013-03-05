@@ -118,8 +118,8 @@ def count_settlement(trajectory_file, bbox=None,
     if len(settle_index[0]) > 0:
         lat = run.variables['lat'][-1, settle_index[0]].flatten()
         lon = run.variables['lon'][-1, settle_index[0]].flatten()
-        column_i = [bisect.bisect(xarray, clon) for clon in lon]
-        row_i = [bisect.bisect(yarray, clat) for clat in lat]
+        column_i = [bisect.bisect(xarray, clon)-1 for clon in lon]
+        row_i = [bisect.bisect(yarray, clat)-1 for clat in lat]
         for row, col in zip(row_i, column_i):
             try:
                 prob[row, col] += 1
