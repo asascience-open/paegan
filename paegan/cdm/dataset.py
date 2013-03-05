@@ -829,7 +829,7 @@ class NCellDataset(Dataset):
     NCellDataset(Dataset)
     """
     def __init__(self, *args,**kwargs):
-        super(NGridDataset,self).__init__(*args, **kwargs)
+        super(NCellDataset,self).__init__(*args, **kwargs)
         if None in self.nc.variables:
             self._is_topology = True
             self.topology_var_name = None
