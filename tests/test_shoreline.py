@@ -203,7 +203,7 @@ class ShorelineTest(unittest.TestCase):
         assert final_point.longitude < int4d.longitude
         assert final_point.longitude > starting.longitude
 
-    def test_reverse_only_go_distance_traveled(self):
+    def test_reverse_half_distance_until_in_water(self):
 
         s = Shoreline(type='reverse')
 
@@ -225,12 +225,39 @@ class ShorelineTest(unittest.TestCase):
                                 angle = angle,
                                 azimuth = difference['azimuth'],
                                 reverse_azimuth = difference['reverse_azimuth'],
-                                reverse_distance = 4000000)
+                                reverse_distance = 40000)
 
-        # Resulting point should be VERY close to the starting point.
-        assert abs(final_point.latitude - starting.latitude) < 0.005
-        assert abs(final_point.longitude - starting.longitude) < 0.005
+        # Should be in water
+        assert s.intersect(start_point=final_point.point, end_point=final_point.point) is None
 
+    def test_reverse_12_times_then_start_point(self):
+
+        s = Shoreline(type='reverse')
+
+        starting = Location4D(latitude=39.05, longitude=-75.34, depth=0)
+        ending   = Location4D(latitude=38.96, longitude=-75.315, depth=0)
+        
+        difference = AsaGreatCircle.great_distance(start_point=starting, end_point=ending)
+        angle = AsaMath.azimuth_to_math_angle(azimuth=difference['azimuth'])
+        distance = difference['distance']
+
+        intersection = s.intersect(start_point=starting.point, end_point=ending.point)
+        int4d = Location4D(point=intersection['point'])
+
+        final_point = s.react(  start_point = starting,
+                                hit_point = int4d,
+                                end_point = ending,
+                                feature = intersection['feature'],
+                                distance = distance,
+                                angle = angle,
+                                azimuth = difference['azimuth'],
+                                reverse_azimuth = difference['reverse_azimuth'],
+                                reverse_distance = 9999999999999999999999999999)
+
+        # Should be start location
+        assert final_point.longitude == starting.longitude
+        assert final_point.latitude == starting.latitude
+        assert final_point.depth == starting.depth
 
     def test_reverse_distance_traveled(self):
 
@@ -256,6 +283,6 @@ class ShorelineTest(unittest.TestCase):
                                 reverse_azimuth = difference['reverse_azimuth'],
                                 reverse_distance = 0.000001)
 
-        # Resulting point should be VERY close to the starting point.
+        # Resulting point should be VERY close to the hit point.
         assert abs(int4d.latitude - final_point.latitude) < 0.005
         assert abs(int4d.longitude - final_point.longitude) < 0.005

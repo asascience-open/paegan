@@ -6,8 +6,7 @@ from paegan.cdm.gridvar import Gridobj
 from paegan.cdm.variable import Coordinates as cachevar
 from paegan.cdm.variable import SubCoordinates as subs
 
-import multiprocessing
-from paegan.logging.null_handler import NullHandler
+from paegan.logger import logger
 
 _possiblet = ["time", "TIME", "Time",
            "t", "T",
@@ -72,9 +71,6 @@ class CommonDataset(object):
         >> dataset = CommonDataset.open(url, "lon_rho", "lat_rho", "s_rho", "ocean_time")
         >> dataset = CommonDataset.open(url, dataset_type="cgrid")
         """
-
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
 
         nc = None
         filename = None
@@ -583,9 +579,6 @@ class Dataset(object):
         
         
         """
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
-
         assert var in self.nc.variables
         ncvar = self.nc.variables[var]
         names = self.get_coord_names(var)

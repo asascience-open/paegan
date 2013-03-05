@@ -13,10 +13,10 @@ from paegan.utils.asagreatcircle import AsaGreatCircle
 from paegan.utils.asamath import AsaMath
 from paegan.utils.asarandom import AsaRandom
 from paegan.transport.location4d import Location4D
+from paegan.utils.asarandom import AsaRandom
 from shapely.prepared import prep
 
-import multiprocessing
-from paegan.logging.null_handler import NullHandler
+from paegan.logger import logger
 
 class Shoreline(object):
     def __init__(self, **kwargs):
@@ -73,9 +73,6 @@ class Shoreline(object):
 
         """
 
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
-
         point = kwargs.pop("point", None)
         spatialbuffer = kwargs.pop("spatialbuffer", self._spatialbuffer)
 
@@ -110,16 +107,21 @@ class Shoreline(object):
             so we can calculate the direction to bounce a particle.
         """
         ls = None
+
         if "linestring" in kwargs:
             ls = kwargs.pop('linestring')
             spoint = Point(ls.coords[0])
             epoint = Point(ls.coords[-1])
         elif "start_point" and "end_point" in kwargs:
-            spoint = kwargs.pop('start_point')
-            epoint = kwargs.pop('end_point')
+            spoint = kwargs.get('start_point')
+            epoint = kwargs.get('end_point')
             ls = LineString(list(spoint.coords) + list(epoint.coords))
+        elif "single_point" in kwargs:
+            spoint = kwargs.get('single_point')
+            epoint = None
+            ls = LineString(list(spoint.coords) + list(spoint.coords))
         else:
-            raise TypeError( "must provide a LineString geometry object or (2) Point geometry objects" )
+            raise TypeError( "must provide a LineString geometry object, (2) Point geometry objects, or (1) Point geometry object" )
 
         inter = False
 
@@ -133,7 +135,16 @@ class Shoreline(object):
 
             # Test if starting on land
             if prepped_element.contains(spoint):
-                raise Exception('Starting point on land')
+                if epoint is None:
+                    # If we only passed in one point, return the intersection is true.
+                    return {'point': spoint, 'feature': None}
+                else:
+                    # If we are testing a linestring, raise an exception that we started on land.
+                    raise Exception('Starting point on land')
+            else:
+                # If we are just checking a single point, continue looping.
+                if epoint is None:
+                    continue
 
             inter = ls.intersection(element)
             if inter:
@@ -225,16 +236,48 @@ class Shoreline(object):
         distance = kwargs.pop('distance')
         azimuth = kwargs.pop('azimuth')
         reverse_azimuth = kwargs.pop('reverse_azimuth')
-        reverse_distance = kwargs.pop('reverse_distance', None)
+        reverse_distance = kwargs.get('reverse_distance', None)
         if reverse_distance is None:
             reverse_distance = 100
 
-        # Throw it back either the distance the particle traveled before hitting the shore, or reverse_distance.. whichever is less.
-        distance_reversed = min([reverse_distance, AsaGreatCircle.great_distance(start_point=start_point, end_point=hit_point)['distance']])
+        # Randomize the reverse angle slightly (+/- 5 degrees)
+        random_azimuth = reverse_azimuth + AsaRandom.random() * 5
 
-        #print "Incoming Azimuth: " + str(azimuth)
-        #print "Reverse Azimuth: " + str(reverse_azimuth)
-        #print "Distance Reversed:" + str(distance_reversed)
+        count = 0
+        nudge_distance = 0.01
+        nudge_point = AsaGreatCircle.great_circle(distance=nudge_distance, azimuth=random_azimuth, start_point=hit_point)
+        nudge_loc = Location4D(latitude=nudge_point['latitude'], longitude=nudge_point['longitude'], depth=start_point.depth)
 
-        new_point = AsaGreatCircle.great_circle(distance=distance_reversed, azimuth=reverse_azimuth, start_point=hit_point)
-        return Location4D(latitude=new_point['latitude'], longitude=new_point['longitude'], depth=start_point.depth)
+        # Find point just offshore to do testing with.  Try 15 times (~350m).  This makes sure the start_point is in the water
+        # for the next call to intersect (next while loop).
+        while self.intersect(single_point=nudge_loc.point) and count < 16:
+            nudge_distance *= 2
+            nudge_point = AsaGreatCircle.great_circle(distance=nudge_distance, azimuth=random_azimuth, start_point=hit_point)
+            nudge_loc = Location4D(latitude=nudge_point['latitude'], longitude=nudge_point['longitude'], depth=start_point.depth)
+            count += 1
+
+        # We tried 16 times and couldn't find a point.  This should totally never happen.
+        if count == 16:
+            logger.warn("IF THIS HAPPENS... WOW.  Could not find location in water to do shoreline calculation with.  Assuming particle did not move from original location")
+            return start_point
+
+        # Keep trying to throw particle back, halfing the distance each time until it is in water.
+        # Only half it 10 times before giving up and returning the point which the particle came from.
+        count = 0
+        # Distance amount to half each iteration
+        changing_distance = reverse_distance
+        new_point = AsaGreatCircle.great_circle(distance=reverse_distance, azimuth=random_azimuth, start_point=hit_point)
+        new_loc = Location4D(latitude=new_point['latitude'], longitude=new_point['longitude'], depth=start_point.depth)
+        while self.intersect(start_point=nudge_loc.point, end_point=new_loc.point) and count < 12:
+            changing_distance /= 2
+            new_point = AsaGreatCircle.great_circle(distance=changing_distance, azimuth=random_azimuth, start_point=hit_point)
+            new_loc = Location4D(latitude=new_point['latitude'], longitude=new_point['longitude'], depth=start_point.depth)
+            count += 1
+
+        # We tried 10 times and the particle was still on shore, return the point the particle started from.
+        # No randomization.
+        if count == 12:
+            logger.warn("Could not react particle with shoreline.  Assuming particle did not move from original location")
+            return start_point
+
+        return new_loc

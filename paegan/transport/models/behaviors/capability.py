@@ -1,7 +1,5 @@
 import json
 from random import gauss, uniform
-import multiprocessing
-from paegan.logging.null_handler import NullHandler
 
 class Capability(object):
 

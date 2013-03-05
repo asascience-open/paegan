@@ -18,9 +18,10 @@ import multiprocessing
 import paegan.transport.parallel_manager as parallel
 import os
 import paegan.transport.export as ex
-from paegan.logging.null_handler import NullHandler
 import cPickle as pickle
 import tempfile
+
+from paegan.logger import logger
 
 class ModelController(object):
     """
@@ -169,9 +170,6 @@ class ModelController(object):
 
     def run(self, hydrodataset, **kwargs):
 
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
-
         # Add ModelController description to logfile
         logger.info(self)
 
@@ -209,7 +207,7 @@ class ModelController(object):
             temp_name = AsaRandom.filename(prefix=str(datetime.now().microsecond), suffix=".nc")
             self.cache_path = os.path.join(default_cache_dir, temp_name)
         
-        logger.debug('Setting up particle start locations')
+        logger.progress((1, "Setting up particle start locations"))
         point_locations = []
         if isinstance(self.geometry, Point):
             point_locations = [self.reference_location] * self._npart
@@ -217,7 +215,7 @@ class ModelController(object):
             point_locations = [Location4D(latitude=loc.y, longitude=loc.x, depth=self._depth, time=self.start) for loc in AsaTransport.fill_polygon_with_points(goal=self._npart, polygon=self.geometry)]
 
         # Initialize the particles
-        logger.debug('Initializing particles')
+        logger.progress((2, "Initializing particles"))
         for x in xrange(0, self._npart):
             p = LarvaParticle(id=x)
             p.location = point_locations[x]
@@ -274,6 +272,7 @@ class ModelController(object):
         point_get = mgr.Value('list', [0, 0, 0])
         active = mgr.Value('bool', True)
         
+        logger.progress((3, "Initializing and caching hydro model's grid"))
         try:
             ds = CommonDataset.open(hydrodataset)
             # Query the dataset for common variable names
@@ -297,7 +296,8 @@ class ModelController(object):
         # Add data controller to the queue first so that it 
         # can get the initial data and is not blocked
         
-        logger.info('Starting DataController')
+        logger.debug('Starting DataController')
+        logger.progress((4, "Starting processes"))
         data_controller = parallel.DataController(hydrodataset, common_variables, n_run, get_data, write_lock, read_lock, read_count,
                                                   time_chunk, horiz_chunk, times,
                                                   self.start, point_get, self.reference_location,
@@ -308,7 +308,7 @@ class ModelController(object):
         data_controller_process = parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data, write_lock, name="DataController")
         data_controller_process.start()
         
-        logger.info('Adding %i particles as tasks' % len(self.particles))
+        logger.debug('Adding %i particles as tasks' % len(self.particles))
         for part in self.particles:
             forcing = parallel.ForceParticle(part,
                                         hydrodataset,
@@ -340,17 +340,20 @@ class ModelController(object):
                   for i in xrange(nproc - 1) ]
         for w in procs:
             w.start()
-            logger.info('Started %s' % w.name)
+            logger.debug('Started %s' % w.name)
 
         # Get results back from queue, test for failed particles
         return_particles = []
-        retrieved = 0
+        retrieved = 0.
         error_code = 0
 
         logger.info("Waiting for %i particle results" % len(self.particles))
+        logger.progress((5, "Running model"))
         while retrieved < number_of_tasks:
             # Returns a tuple of code, result
             code, tempres = results.get()
+            # We got one.
+            retrieved += 1
             if code == None:
                 logger.warn("Got an unrecognized response from a task.")
             elif code == -1:
@@ -366,15 +369,16 @@ class ModelController(object):
             elif isinstance(tempres, Particle):
                 logger.info("Particle %d finished" % tempres.uid)
                 return_particles.append(tempres)
+                # We mulitply by 95 here to save 5% for the exporting
+                logger.progress((round((retrieved / number_of_tasks) * 90.,1), "Particle %d finished" % tempres.uid))
             elif tempres == "DataController":
                 logger.info("DataController finished")
+                logger.progress((round((retrieved / number_of_tasks) * 90.,1), "DataController finished"))
             else:
                 logger.info("Got a strange result on results queue")
                 logger.info(str(tempres))
 
-            retrieved += 1
-
-            logger.info("Retrieved %i/%i results" % (retrieved,number_of_tasks))
+            logger.info("Retrieved %i/%i results" % (int(retrieved),number_of_tasks))
         
         if len(return_particles) != len(self.particles):
             logger.warn("Some particles failed and are not included in the output")
@@ -405,6 +409,8 @@ class ModelController(object):
             except OSError:
                 logger.debug("Could not remove cache file, it probably never existed")
 
+        logger.progress((96, "Exporting results"))
+
         if len(self.particles) > 0:
             # If output_formats and path specified,
             # output particle run data to disk when completed
@@ -433,6 +439,7 @@ class ModelController(object):
             else:
                 raise ModelError("Error in the model")
 
+        logger.progress((99, "Model Run Complete"))
         return
     
     def export(self, folder_path, format=None):

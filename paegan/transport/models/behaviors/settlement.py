@@ -1,6 +1,6 @@
 import json
-import multiprocessing
-from paegan.logging.null_handler import NullHandler
+
+from paegan.logger import logger
 
 from paegan.transport.location4d import Location4D
 
@@ -27,8 +27,6 @@ class Settlement(object):
                 raise ValueError("A settlement must consist of a 'type' and 'upper / 'lower' bounds.")
 
     def attempt(self, particle, depth):
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
 
         # We may want to have settlement affect the u/v/w in the future
         u = 0

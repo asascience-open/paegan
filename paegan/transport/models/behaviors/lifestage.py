@@ -8,8 +8,8 @@ from paegan.transport.models.base_model import BaseModel
 from paegan.transport.location4d import Location4D
 from paegan.utils.asatransport import AsaTransport
 import operator
-import multiprocessing
-from paegan.logging.null_handler import NullHandler
+
+from paegan.logger import logger
 
 class LifeStage(BaseModel):
 
@@ -41,12 +41,10 @@ class LifeStage(BaseModel):
 
     def move(self, particle, u, v, w, modelTimestep, **kwargs):
 
-        logger = multiprocessing.get_logger()
-        logger.addHandler(NullHandler())
-
         temp = kwargs.get('temperature', None)
         salt = kwargs.get('salinity', None)
-        #logger.info("Temp: %.4f, Salt: %.4f" %(temp,salt))
+        
+        logger.debug("Temp: %.4f, Salt: %.4f" %(temp,salt))
 
         # IMPORTANT:
         # If we got no data from the model, we are using the last available value stored in the particles!
