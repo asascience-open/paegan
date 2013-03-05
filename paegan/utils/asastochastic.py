@@ -109,20 +109,22 @@ def compute_probability_settle(trajectory_files, bbox=None,
     
 def count_settlement(trajectory_file, bbox=None, 
                         nx=1000, ny=1000):
+    xarray = np.linspace(float(bbox[0]), float(bbox[2]), int(nx)+1) 
+    yarray = np.linspace(float(bbox[1]), float(bbox[3]), int(ny)+1)
     prob = np.zeros((ny, nx))
     run = netCDF4.Dataset(trajectory_file)
-    for i in range(run.variables['time'].shape[0]):
-        settle_index = np.where(run.variables['settled'][i,:]==1)
-        if len(settle_index[0]) > 0:
-            lat = run.variables['lat'][i, settle_index[0]].flatten()
-            lon = run.variables['lon'][i, settle_index[0]].flatten()
-            column_i = [bisect.bisect(xarray, clon) for clon in lon]
-            row_i = [bisect.bisect(yarray, clat) for clat in lat]
-            for row, col in zip(row_i, column_i):
-                try:
-                    prob[row, col] += 1
-                except StandardError:
-                    pass
+    #for i in range(run.variables['time'].shape[0]):
+    settle_index = np.where(run.variables['settled'][-1,:]==1)
+    if len(settle_index[0]) > 0:
+        lat = run.variables['lat'][-1, settle_index[0]].flatten()
+        lon = run.variables['lon'][-1, settle_index[0]].flatten()
+        column_i = [bisect.bisect(xarray, clon) for clon in lon]
+        row_i = [bisect.bisect(yarray, clat) for clat in lat]
+        for row, col in zip(row_i, column_i):
+            try:
+                prob[row, col] += 1
+            except StandardError:
+                pass
     return prob
 
 def export_probability(outputname, **kwargs):
