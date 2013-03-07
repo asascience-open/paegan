@@ -365,13 +365,25 @@ class ModelController(object):
                         os.remove(self.cache_path)
                     except OSError:
                         pass
+
+                new_procs = []
+                old_procs = []
                 for p in procs:
                     if not p.is_alive():
                         retrieved += 1
                         logger.warn("A forcing process was zombied with exit code %s" % p.exitcode)
                         logger.warn("The particles data has been LOST")
-                        parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data, write_lock, name=p.name).start()
+                        np = parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data, write_lock, name=p.name)
+                        new_procs.append(np)
+                        old_procs.append(p)
                         logger.warn("Started a new consumer to replace zombie process")
+
+                for p in old_procs:
+                    procs.remove(p)
+
+                for p in new_procs:
+                    procs.append(p)
+                    p.start()
                         
             else:
                 # We got one.
