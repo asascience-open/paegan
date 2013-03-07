@@ -77,7 +77,9 @@ class ModelControllerTest(unittest.TestCase):
 
         models = [self.transport]
 
-        model = ModelController(latitude=self.start_lat, longitude=self.start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=self.num_steps, npart=self.num_particles, models=models, use_bathymetry=False, use_shoreline=True,
+        num_steps = 20
+
+        model = ModelController(latitude=self.start_lat, longitude=self.start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=num_steps, npart=self.num_particles, models=models, use_bathymetry=False, use_shoreline=True,
             time_chunk=10, horiz_chunk=4)
 
         cache_path = os.path.join(self.cache_path, "test_interp.nc")

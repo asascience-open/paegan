@@ -20,6 +20,7 @@ import os
 import paegan.transport.export as ex
 import cPickle as pickle
 import tempfile
+import Queue
 
 from paegan.logger import logger
 
@@ -350,33 +351,54 @@ class ModelController(object):
         logger.info("Waiting for %i particle results" % len(self.particles))
         logger.progress((5, "Running model"))
         while retrieved < number_of_tasks:
-            # Returns a tuple of code, result
-            code, tempres = results.get()
-            # We got one.
-            retrieved += 1
-            if code == None:
-                logger.warn("Got an unrecognized response from a task.")
-            elif code == -1:
-                logger.warn("Particle %s has FAILED!!" % tempres.uid)
-            elif code == -2:
-                error_code = code
-                logger.warn("DataController has FAILED!!  Removing cache file so the particles fail.")
-                try:
-                    os.remove(self.cache_path)
-                except OSError:
-                    logger.debug("Could not remove cache file, it probably never existed")
-                    pass
-            elif isinstance(tempres, Particle):
-                logger.info("Particle %d finished" % tempres.uid)
-                return_particles.append(tempres)
-                # We mulitply by 95 here to save 5% for the exporting
-                logger.progress((round((retrieved / number_of_tasks) * 90.,1), "Particle %d finished" % tempres.uid))
-            elif tempres == "DataController":
-                logger.info("DataController finished")
-                logger.progress((round((retrieved / number_of_tasks) * 90.,1), "DataController finished"))
+            try:
+                # Returns a tuple of code, result
+                code, tempres = results.get(timeout=120)
+            except Queue.Empty:
+                # Poll the active processes to make sure they are all alive and then continue with loop
+                if not data_controller_process.is_alive():
+                    # Data controller is zombied, kill off other processes
+                    retrieved += 1
+                    error_code = -2
+                    logger.warn("DataController has FAILED!!  Removing cache file so the particles fail.")
+                    try:
+                        os.remove(self.cache_path)
+                    except OSError:
+                        pass
+                for p in procs:
+                    if not p.is_alive():
+                        retrieved += 1
+                        logger.warn("A forcing process was zombied with exit code %s" % p.exitcode)
+                        logger.warn("The particles data has been LOST")
+                        parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data, write_lock, name=p.name).start()
+                        logger.warn("Started a new consumer to replace zombie process")
+                        
             else:
-                logger.info("Got a strange result on results queue")
-                logger.info(str(tempres))
+                # We got one.
+                retrieved += 1
+                if code == None:
+                    logger.warn("Got an unrecognized response from a task.")
+                elif code == -1:
+                    logger.warn("Particle %s has FAILED!!" % tempres.uid)
+                elif code == -2:
+                    error_code = code
+                    logger.warn("DataController has FAILED!!  Removing cache file so the particles fail.")
+                    try:
+                        os.remove(self.cache_path)
+                    except OSError:
+                        logger.debug("Could not remove cache file, it probably never existed")
+                        pass
+                elif isinstance(tempres, Particle):
+                    logger.info("Particle %d finished" % tempres.uid)
+                    return_particles.append(tempres)
+                    # We mulitply by 95 here to save 5% for the exporting
+                    logger.progress((round((retrieved / number_of_tasks) * 90.,1), "Particle %d finished" % tempres.uid))
+                elif tempres == "DataController":
+                    logger.info("DataController finished")
+                    logger.progress((round((retrieved / number_of_tasks) * 90.,1), "DataController finished"))
+                else:
+                    logger.info("Got a strange result on results queue")
+                    logger.info(str(tempres))
 
             logger.info("Retrieved %i/%i results" % (int(retrieved),number_of_tasks))
         
