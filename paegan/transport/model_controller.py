@@ -412,7 +412,7 @@ class ModelController(object):
                     logger.info("Got a strange result on results queue")
                     logger.info(str(tempres))
 
-            logger.info("Retrieved %i/%i results" % (int(retrieved),number_of_tasks))
+                logger.info("Retrieved %i/%i results" % (int(retrieved),number_of_tasks))
         
         if len(return_particles) != len(self.particles):
             logger.warn("Some particles failed and are not included in the output")
