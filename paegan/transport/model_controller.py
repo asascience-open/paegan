@@ -353,14 +353,15 @@ class ModelController(object):
         while retrieved < number_of_tasks:
             try:
                 # Returns a tuple of code, result
-                code, tempres = results.get(timeout=120)
+                code, tempres = results.get(timeout=240)
             except Queue.Empty:
                 # Poll the active processes to make sure they are all alive and then continue with loop
-                if not data_controller_process.is_alive():
+                if not data_controller_process.is_alive() and data_controller_process.exitcode != 0:
                     # Data controller is zombied, kill off other processes
                     retrieved += 1
                     error_code = -2
-                    logger.warn("DataController has FAILED!!  Removing cache file so the particles fail.")
+                    logger.warn("DataController has FAILED (exitcode %s).  Removing cache file so the particles fail." % p.exitcode)
+                    logger.info("Retrieved %i/%i results" % (int(retrieved),number_of_tasks))
                     try:
                         os.remove(self.cache_path)
                     except OSError:
@@ -371,14 +372,14 @@ class ModelController(object):
                 for p in procs:
                     if not p.is_alive() and p.exitcode != 0:
                         retrieved += 1
-                        logger.warn("A forcing process was zombied with exit code %s" % p.exitcode)
-                        logger.warn("The particles data has been LOST")
+                        logger.warn("A forcing process was zombied with exitcode %s" % p.exitcode)
+                        logger.info("Retrieved %i/%i results" % (int(retrieved),number_of_tasks))
                         # Dont start another Consumer if the last process was zombied
                         if retrieved < number_of_tasks:
                             np = parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data, write_lock, name=p.name)
                             new_procs.append(np)
                             old_procs.append(p)
-                            logger.warn("Started a new consumer to replace zombie process")
+                            logger.warn("Started a new consumer (%p) to replace a zombie consumer" % p.name)
 
                 for p in old_procs:
                     procs.remove(p)
@@ -424,10 +425,16 @@ class ModelController(object):
 
         # Should be good to join on the tasks now that the queue is empty
         tasks.join()
-        data_controller_process.join()
-        for w in procs:
-            w.join()
-        
+
+        # Join all processes
+        for w in procs + [data_controller_process]:
+                # Wait 10 seconds
+                w.join(10.)
+                if w.is_alive():
+                    # Process is hanging, kill it.
+                    logger.info("Terminating %s forcefully.  This should have exited itself." % w.name)
+                    w.terminate()
+                    
         logger.info('Workers complete')
 
         self.particles = return_particles
