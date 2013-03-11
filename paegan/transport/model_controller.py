@@ -369,7 +369,7 @@ class ModelController(object):
                         np = parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data, write_lock, name=p.name)
                         new_procs.append(np)
                         old_procs.append(p)
-                        logger.warn("Started a new consumer (%p) to replace a zombie consumer" % p.name)
+                        logger.warn("Started a new consumer (%s) to replace a zombie consumer" % p.name)
 
                 for p in old_procs:
                     try:
