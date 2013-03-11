@@ -364,7 +364,16 @@ class ModelController(object):
                 old_procs = []
                 for p in procs:
                     if not p.is_alive() and p.exitcode != 0:
+                        # Do what the Consumer would do if something finished.
+                        # Add something to results queue
                         results.put((-3, "ZombieParticle"))
+                        # Decrement nproc (DataController exits when this is 0)
+                        nproc_lock.acquire()
+                        n_run.value = n_run.value - 1
+                        nproc_lock.release()
+                        # Remove task from queue (so they can be joined later on)
+                        tasks.task_done()
+
                         # Start a new Consumer.  It will exit if there are no tasks available.
                         np = parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data, write_lock, name=p.name)
                         new_procs.append(np)
@@ -398,7 +407,6 @@ class ModelController(object):
                         pass
                 elif code == -3:
                     error_code = code
-                    tasks.task_done()
                     logger.info("A zombie process was caught and task was removed from queue")
                 elif isinstance(tempres, Particle):
                     logger.info("Particle %d finished" % tempres.uid)
@@ -421,9 +429,11 @@ class ModelController(object):
         assert results.empty() is True
 
         # Should be good to join on the tasks now that the queue is empty
+        logger.info("Joining the task queue")
         tasks.join()
 
         # Join all processes
+        logger.info("Joining the processes")
         for w in procs + [data_controller_process]:
                 # Wait 10 seconds
                 w.join(10.)
