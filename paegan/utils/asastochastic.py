@@ -122,7 +122,10 @@ def count_settlement(trajectory_file, bbox=None,
         row_i = [bisect.bisect(yarray, clat)-1 for clat in lat]
         for row, col in zip(row_i, column_i):
             try:
-                prob[row, col] += 1
+                if row<0 or col<0:
+                    pass
+                else:
+                    prob[row, col] += 1
             except StandardError:
                 pass
     return prob
