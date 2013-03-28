@@ -194,7 +194,7 @@ class NetCDF(Export):
         nc.createDimension('time', None)
         nc.createDimension('particle', None)
         # Create netcdf variables
-        time = nc.createVariable('time', 'f', ('time',))
+        time = nc.createVariable('time', 'i', ('time',))
         part = nc.createVariable('particle', 'i', ('particle',))
         depth = nc.createVariable('depth', 'f', ('time','particle'))
         lat = nc.createVariable('lat', 'f', ('time','particle'))
@@ -267,7 +267,7 @@ class NetCDF(Export):
             for loc, _temp, _salt, _u, _v, _w, _settled, _dead, _halted in zip(normalized_locations, normalized_temps, normalized_salts, normalized_u, normalized_v, normalized_w, normalized_settled, normalized_dead, normalized_halted):
 
                 if j == 0:
-                    time[i] = netCDF4.date2num(loc.time, time_units)
+                    time[i] = int(round(netCDF4.date2num(loc.time, time_units)))
                 depth[i, j] = loc.depth
                 lat[i, j] = loc.latitude
                 lon[i, j] = loc.longitude
