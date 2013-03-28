@@ -23,7 +23,7 @@ import multiprocessing
 from paegan.logger import logger
 
 class Consumer(multiprocessing.Process):
-    def __init__(self, task_queue, result_queue, n_run, nproc_lock, active, get_data, write_lock, **kwargs):
+    def __init__(self, task_queue, result_queue, n_run, nproc_lock, active, get_data, **kwargs):
         """
             This is the process class that does all the handling of queued tasks
         """
@@ -75,7 +75,7 @@ class Consumer(multiprocessing.Process):
 
 
 class DataController(object):
-    def __init__(self, url, common_variables, n_run, get_data, write_lock, read_lock, read_count,
+    def __init__(self, url, common_variables, n_run, get_data, write_lock, has_write_lock, read_lock, has_read_lock, read_count,
                  time_chunk, horiz_chunk, times,
                  start_time, point_get, start,
                  **kwargs
@@ -90,7 +90,9 @@ class DataController(object):
         self.n_run = n_run
         self.get_data = get_data
         self.write_lock = write_lock
+        self.has_write_lock = has_write_lock
         self.read_lock = read_lock
+        self.has_read_lock = has_read_lock
         self.read_count = read_count
         self.inds = None#np.arange(init_size+1)
         self.time_size = time_chunk
@@ -212,16 +214,20 @@ class DataController(object):
                 # Wait for particles to get out
                 while True:
                     self.read_lock.acquire()
+                    self.has_read_lock.append(os.getpid())
+
                     logger.debug("Read count: %d" % self.read_count.value)
                     if self.read_count.value > 0:
                         logger.debug("Waiting for write lock on cache file (particles must stop reading)...")
                         self.read_lock.release()
+                        self.has_read_lock.remove(os.getpid())
                         timer.sleep(4)
                     else:
                         break;
                     
                 # Get write lock on the file.  Already have read lock.
                 self.write_lock.acquire()
+                self.has_write_lock.value = os.getpid()
 
                 if c == 0:
                     logger.debug("Creating cache file")
@@ -407,9 +413,11 @@ class DataController(object):
                     finally:
                         self.local.sync()
                         self.local.close()
+                        self.has_write_lock.value = -1
                         self.write_lock.release()
                         self.get_data.value = False
                         self.read_lock.release()
+                        self.has_read_lock.remove(os.getpid())
                         logger.debug("Done updating cache file, closing file, and releasing locks")
                 else:
                     logger.debug("Updating cache file")
@@ -476,9 +484,11 @@ class DataController(object):
                     finally:
                         self.local.sync()
                         self.local.close()
+                        self.has_write_lock.value = -1
                         self.write_lock.release()
                         self.get_data.value = False
                         self.read_lock.release()
+                        self.has_read_lock.remove(os.getpid())
                         logger.debug("Done updating cache file, closing file, and releasing locks")
             else:
                 pass        
@@ -496,8 +506,8 @@ class ForceParticle(object):
 
     def __init__(self, part, remotehydro, common_variables, timevar_pickle_path, times, start_time, models, 
                  release_location_centroid, usebathy, useshore, usesurface,
-                 get_data, n_run, write_lock, read_lock, read_count,
-                 point_get, data_request_lock, reverse_distance=None, bathy=None,
+                 get_data, n_run, read_lock, has_read_lock, read_count,
+                 point_get, data_request_lock, has_data_request_lock, reverse_distance=None, bathy=None,
                  shoreline_path=None, cache=None, time_method=None):
         """
             This is the task/class/object/job that forces an
@@ -520,11 +530,12 @@ class ForceParticle(object):
         self.usesurface = usesurface
         self.get_data = get_data
         self.n_run = n_run
-        self.write_lock = write_lock
         self.read_lock = read_lock
+        self.has_read_lock = has_read_lock
         self.read_count = read_count
         self.point_get = point_get
         self.data_request_lock = data_request_lock
+        self.has_data_request_lock = has_data_request_lock
         self.shoreline_path = shoreline_path
         self.timevar_pickle_path = timevar_pickle_path
 
@@ -557,6 +568,7 @@ class ForceParticle(object):
             # Tell the DataController that we are going to be reading from the file
             with self.read_lock:
                 self.read_count.value += 1
+                self.has_read_lock.append(os.getpid())
 
             self.dataset.opennc()
             # Test if the cache has the data we need
@@ -579,7 +591,8 @@ class ForceParticle(object):
         finally:
             self.dataset.closenc()
             with self.read_lock:
-                self.read_count.value -= 1        
+                self.read_count.value -= 1
+                self.has_read_lock.remove(os.getpid())
 
         return need # return true if need data or false if dont
         
@@ -610,6 +623,7 @@ class ForceParticle(object):
         if self.need_data(i+1):
             # Acquire lock for asking for data
             self.data_request_lock.acquire()
+            self.has_data_request_lock = os.getpid()
             try:
                 # Do I still need data?
                 if self.need_data(i+1):
@@ -617,6 +631,7 @@ class ForceParticle(object):
                     # Tell the DataController that we are going to be reading from the file
                     with self.read_lock:
                         self.read_count.value += 1
+                        self.has_read_lock.append(os.getpid())
 
                     # Open netcdf file on disk from commondataset
                     self.dataset.opennc()
@@ -626,6 +641,7 @@ class ForceParticle(object):
 
                     with self.read_lock:
                         self.read_count.value -= 1
+                        self.has_read_lock.remove(os.getpid())
                     
                     # Override the time
                     # get the current time index data
@@ -654,12 +670,14 @@ class ForceParticle(object):
                 raise
             finally:
                 # Release lock for asking for data
+                self.has_data_request_lock = -1
                 self.data_request_lock.release()
                 
 
         # Tell the DataController that we are going to be reading from the file
         with self.read_lock:
             self.read_count.value += 1
+            self.has_read_lock.append(os.getpid())
 
         try:
             # Open netcdf file on disk from commondataset
@@ -733,6 +751,7 @@ class ForceParticle(object):
             self.dataset.closenc()
             with self.read_lock:
                 self.read_count.value -= 1
+                self.has_read_lock.remove(os.getpid())
 
         return u, v, w, temp, salt
             
@@ -750,11 +769,13 @@ class ForceParticle(object):
         if self.need_data(i):
             # Acquire lock for asking for data
             self.data_request_lock.acquire()
+            self.has_data_request_lock.value = os.getpid()
             try:
                 if self.need_data(i):
 
                     with self.read_lock:
                         self.read_count.value += 1
+                        self.has_read_lock.append(os.getpid())
 
                     # Open netcdf file on disk from commondataset
                     self.dataset.opennc()
@@ -764,6 +785,7 @@ class ForceParticle(object):
 
                     with self.read_lock:
                         self.read_count.value -= 1
+                        self.has_read_lock.remove(os.getpid())
 
                     # Override the time
                     self.point_get.value = [indices[0]+1, indices[-2], indices[-1]]
@@ -779,11 +801,13 @@ class ForceParticle(object):
             except StandardError:
                 raise
             finally:
+                self.has_data_request_lock.value = -1
                 self.data_request_lock.release()
 
         # Tell the DataController that we are going to be reading from the file
         with self.read_lock:
             self.read_count.value += 1
+            self.has_read_lock.append(os.getpid())
 
         try:
             # Open netcdf file on disk from commondataset
@@ -837,6 +861,7 @@ class ForceParticle(object):
             self.dataset.closenc()
             with self.read_lock:
                 self.read_count.value -= 1
+                self.has_read_lock.remove(os.getpid())
 
         return u, v, w, temp, salt
 
@@ -868,6 +893,7 @@ class ForceParticle(object):
         try:
             with self.read_lock:
                 self.read_count.value += 1
+                self.has_read_lock.append(os.getpid())
             self.dataset = CommonDataset.open(self.localpath)
             self.dataset.closenc()
         except StandardError:
@@ -876,6 +902,7 @@ class ForceParticle(object):
         finally:
             with self.read_lock:
                 self.read_count.value -= 1
+                self.has_read_lock.remove(os.getpid())
 
         # Calculate datetime at every timestep
         modelTimestep, newtimes = AsaTransport.get_time_objects_from_model_timesteps(self.times, start=self.start_time)

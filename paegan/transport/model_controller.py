@@ -249,6 +249,8 @@ class ModelController(object):
 
         # When a particle requests data
         data_request_lock = mgr.Lock()
+        # PID of process with lock
+        has_data_request_lock = mgr.Value('int',-1)
 
         nproc_lock = mgr.Lock()
         
@@ -265,10 +267,14 @@ class ModelController(object):
 
         # When something is reading from cache file
         read_lock = mgr.Lock()
+        # list of PIDs
+        has_read_lock = mgr.list()
         read_count = mgr.Value('int', 0)
 
         # When something is writing to the cache file
         write_lock = mgr.Lock()
+        # PID of process with lock
+        has_write_lock = mgr.Value('int',-1)
 
         point_get = mgr.Value('list', [0, 0, 0])
         active = mgr.Value('bool', True)
@@ -299,14 +305,14 @@ class ModelController(object):
         
         logger.debug('Starting DataController')
         logger.progress((4, "Starting processes"))
-        data_controller = parallel.DataController(hydrodataset, common_variables, n_run, get_data, write_lock, read_lock, read_count,
+        data_controller = parallel.DataController(hydrodataset, common_variables, n_run, get_data, write_lock, has_write_lock, read_lock, has_read_lock, read_count,
                                                   time_chunk, horiz_chunk, times,
                                                   self.start, point_get, self.reference_location,
                                                   low_memory=low_memory,
                                                   cache=self.cache_path)
         tasks.put(data_controller)
         # Create DataController worker
-        data_controller_process = parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data, write_lock, name="DataController")
+        data_controller_process = parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data, name="DataController")
         data_controller_process.start()
         
         logger.debug('Adding %i particles as tasks' % len(self.particles))
@@ -324,11 +330,12 @@ class ModelController(object):
                                         self._use_seasurface,
                                         get_data,
                                         n_run,
-                                        write_lock,
                                         read_lock,
+                                        has_read_lock,
                                         read_count,
                                         point_get,
                                         data_request_lock,
+                                        has_data_request_lock,
                                         reverse_distance=self.reverse_distance,
                                         bathy=self.bathy_path,
                                         shoreline_path=self.shoreline_path,
@@ -337,7 +344,7 @@ class ModelController(object):
             tasks.put(forcing)
 
         # Create workers for the particles.
-        procs = [ parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data, write_lock, name="ForceParticle-%d"%i)
+        procs = [ parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data, name="ForceParticle-%d"%i)
                   for i in xrange(nproc - 1) ]
         for w in procs:
             w.start()
@@ -358,6 +365,7 @@ class ModelController(object):
                 # Poll the active processes to make sure they are all alive and then continue with loop
                 if not data_controller_process.is_alive() and data_controller_process.exitcode != 0:
                     # Data controller is zombied, kill off other processes.
+                    get_data.value == False
                     results.put((-2, "DataController"))
 
                 new_procs = []
@@ -375,10 +383,24 @@ class ModelController(object):
                         tasks.task_done()
 
                         # Start a new Consumer.  It will exit if there are no tasks available.
-                        np = parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data, write_lock, name=p.name)
+                        np = parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data, name=p.name)
                         new_procs.append(np)
                         old_procs.append(p)
                         logger.warn("Started a new consumer (%s) to replace a zombie consumer" % p.name)
+
+                        # Release any locks the PID had
+                        if p.pid in has_read_lock:
+                            read_lock.release()
+                            has_read_lock.remove(p.pid)
+
+                        if has_data_request_lock.value == p.pid:
+                            has_data_request_lock.value = -1
+                            data_request_lock.release()
+                            
+                        if has_write_lock.value == p.pid:
+                            has_write_lock.value = -1
+                            write_lock.release()
+                            
 
                 for p in old_procs:
                     try:
