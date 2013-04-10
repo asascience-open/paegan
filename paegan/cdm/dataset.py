@@ -116,8 +116,10 @@ class CommonDataset(object):
                 if testvary.shape[0] != testvarx.shape[0]:
                     datasettype = "rgrid"
                 else:
-                    datasettype = "ncell"
-        
+                    if nc.cdm_data_type.lower() == "grid":
+                        datasettype = "rgrid"
+                    else:
+                        datasettype = "ncell"
         nc.close()
 
         # Return appropriate dataset subclass based on datasettype
@@ -213,7 +215,7 @@ class Dataset(object):
             else:
                 bounds = ()
         else:
-            bounds = (np.min(time), np.max(time))
+            bounds = (np.min(depths), np.max(depths))
         return bounds
     
     def getbbox(self, var=None, **kwargs):
