@@ -6,6 +6,7 @@ class Depthvar(np.ndarray):
     _unit2meters['millimeters'] = 1000.0
     _unit2meters['centimeters'] = 100.0
     _unit2meters['meters'] = 1
+    _unit2meters['meters from the sea surface'] = 1
     _unit2meters['feet'] = 3.2808399
     _unit2meters['yards'] = 1.0936133
     _unit2meters['kilometers'] = 0.001
@@ -35,7 +36,7 @@ class Depthvar(np.ndarray):
             self._units = units
                
         # compatibility to CF convention v1.0/udunits names:
-        if self._units in ['m','meter']:
+        if self._units in ['m','meter','meters from the sea surface']:
             self._units='meters'
         if self._units in ['cm','centimeter']:
             self._units='centimeters'
