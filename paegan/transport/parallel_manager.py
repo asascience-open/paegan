@@ -232,12 +232,12 @@ class DataController(object):
                 if c == 0:
                     logger.debug("Creating cache file")
                     try:
-                        indices = self.dataset.get_indices(self.uname, timeinds=[np.asarray([0])], point=self.start)
-                        self.point_get.value = [self.inds[0], indices[-2], indices[-1]]
-
                         # Open local cache for writing, overwrites
                         # existing file with same name
                         self.local = netCDF4.Dataset(cachepath, 'w')
+
+                        indices = self.dataset.get_indices(self.uname, timeinds=[np.asarray([0])], point=self.start)
+                        self.point_get.value = [self.inds[0], indices[-2], indices[-1]]
                         
                         # Create dimensions for u and v variables
                         self.local.createDimension('time', None)
