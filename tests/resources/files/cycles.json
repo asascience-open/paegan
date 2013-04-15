@@ -1,0 +1,53 @@
+{
+    "capability": {
+        "nonswim_turning": "downward", 
+        "swim_turning": "reverse", 
+        "variance": 0.0, 
+        "vss": 0.0079
+    }, 
+    "diel": [
+        {
+            "cycle": "sunrise", 
+            "hours": 1, 
+            "max": 5.0, 
+            "min": 0.0, 
+            "plus_or_minus": "-", 
+            "time": null, 
+            "type": "cycles"
+        }, 
+        {
+            "cycle": "sunrise", 
+            "hours": 1, 
+            "max": 20.0, 
+            "min": 10.0, 
+            "plus_or_minus": "+", 
+            "time": null, 
+            "type": "cycles"
+        }, 
+        {
+            "cycle": "sunset", 
+            "hours": 1, 
+            "max": 5.0, 
+            "min": 0.0, 
+            "plus_or_minus": "-", 
+            "time": null, 
+            "type": "cycles"
+        }, 
+        {
+            "cycle": "sunset", 
+            "hours": 1, 
+            "max": 150.0, 
+            "min": 0.0, 
+            "plus_or_minus": "+", 
+            "time": null, 
+            "type": "cycles"
+        }
+    ], 
+    "duration": 15, 
+    "linear_a": null, 
+    "linear_b": null, 
+    "name": "First feeding", 
+    "notes": "", 
+    "settlement": null, 
+    "taxis": []
+}

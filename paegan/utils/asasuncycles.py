@@ -1,6 +1,7 @@
 from datetime import timedelta
 import numpy as np
 import pytz
+from pytz import timezone
 
 class SunCycles(object):
 
@@ -26,6 +27,10 @@ class SunCycles(object):
 
         Returns:
             { 'sunrise': datetime in UTC, 'sunset': datetime in UTC }
+
+
+        Sources:
+            http://williams.best.vwh.net/sunrise_sunset_example.htm
         """
         if "loc" not in kwargs:
             if "point" not in kwargs:
@@ -46,25 +51,46 @@ class SunCycles(object):
             lon = kwargs.get("loc").longitude
             time = kwargs.get("loc").time
 
-        time = time.replace(hour=0, minute=0, second=0, microsecond=0)
-        jd = time.timetuple().tm_yday
+        # Convert time to UTC.  Save passed in timezone to return later.
+        if time.tzinfo is None:
+            time = time.replace(tzinfo=pytz.utc)
+            original_zone = pytz.utc
+        else:
+            original_zone = time.tzinfo
+
+        local_jd = time.timetuple().tm_yday
+        utc_jd = time.astimezone(pytz.utc).timetuple().tm_yday
+
+        # We ALWAYS want to return the sunrise/sunset for the day that was passed
+        # in (with timezone accounted for), regardless of what the UTC day is.  Modify
+        # the UTC julian day here if need be.
+        comp = cmp(utc_jd, local_jd)
+        if comp == 1:
+            utc_jd -= 1
+        elif comp == -1:
+            utc_jd += 1
         
-        rising_h, rising_m = cls._calc(jd=jd, lat=lat, lon=lon, stage=cls.RISING)
-        setting_h, setting_m = cls._calc(jd=jd, lat=lat, lon=lon, stage=cls.SETTING)
+        time = time.replace(hour=0, minute=0, second=0, microsecond=0)
 
-        # LOOK: We are adding 24 hours to the setting time.  Why?
-        rising = time + timedelta(hours=rising_h, minutes=rising_m)
-        fudge = 0
-        if setting_h < rising_h:
-            fudge = 24
-        setting = time + timedelta(hours=setting_h + fudge, minutes=setting_m)
+        rising_h, rising_m = cls._calc(jd=utc_jd, lat=lat, lon=lon, stage=cls.RISING)
+        setting_h, setting_m = cls._calc(jd=utc_jd, lat=lat, lon=lon, stage=cls.SETTING)
 
-        return { cls.RISING : rising, cls.SETTING : setting }
+        # _calc returns UTC hours and minutes, so assume time is in UTC for a few lines...
+        rising = time.replace(tzinfo=pytz.utc) + timedelta(hours=rising_h, minutes=rising_m)
+        setting = time.replace(tzinfo=pytz.utc) + timedelta(hours=setting_h, minutes=setting_m)
+        # LOOK: We may be adding 24 hours to the setting time.  Why?
+        if setting < rising:
+            setting = setting + timedelta(hours=24)
+
+        rising = rising.astimezone(original_zone)
+        setting = setting.astimezone(original_zone)
+
+        return { cls.RISING : rising, cls.SETTING : setting}
 
     @classmethod
     def _calc(cls, **kwargs):
         """
-        Calculate sunrise or runset based on:
+        Calculate sunrise or sunset based on:
         Parameters:
             jd: Julian Day
             lat: latitude

@@ -18,7 +18,7 @@ class LifeStageTest(unittest.TestCase):
         start_lon = -76
         start_depth = -5
         temp_time = datetime.utcnow()
-        self.start_time = datetime(temp_time.year, temp_time.month, temp_time.day, temp_time.hour)
+        self.start_time = datetime(temp_time.year, temp_time.month, temp_time.day, temp_time.hour).replace(tzinfo=pytz.utc)
         self.loc = Location4D(latitude=start_lat, longitude=start_lon, depth=start_depth, time=self.start_time)
 
         self.particles = []
@@ -35,6 +35,36 @@ class LifeStageTest(unittest.TestCase):
         for w in xrange(0,48):
             self.temps.append(random.randint(20,40))
             self.salts.append(random.randint(10,30))
+
+    def test_diel_cycles(self):
+        data = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/cycles.json"))).read()
+        lifestage = LifeStage(json=data)
+        
+        eastern = pytz.timezone("US/Eastern")
+        
+        loc4d = self.loc
+
+        loc4d.time = self.start_time.astimezone(eastern).replace(hour=5, minute=45)
+        assert lifestage.get_active_diel(loc4d) == lifestage.diel[0]
+
+        loc4d.time = self.start_time.astimezone(eastern).replace(hour=6, minute=45)
+        assert lifestage.get_active_diel(loc4d) == lifestage.diel[0]
+
+        loc4d.time = self.start_time.astimezone(eastern).replace(hour=8, minute=30)
+        assert lifestage.get_active_diel(loc4d) == lifestage.diel[1]
+
+        loc4d.time = self.start_time.astimezone(eastern).replace(hour=19, minute=00)
+        assert lifestage.get_active_diel(loc4d) == lifestage.diel[2]
+
+        loc4d.time = self.start_time.astimezone(eastern).replace(hour=20, minute=00)
+        assert lifestage.get_active_diel(loc4d) == lifestage.diel[2]
+
+        loc4d.time = self.start_time.astimezone(eastern).replace(hour=20, minute=45)
+        assert lifestage.get_active_diel(loc4d) == lifestage.diel[3]
+
+        loc4d.time = self.start_time.astimezone(eastern).replace(hour=2, minute=45) + timedelta(hours=24)
+        assert lifestage.get_active_diel(loc4d) == lifestage.diel[3]
+
 
     def test_no_diel(self):
         data = json.loads(open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/lifestage_single.json"))).read())

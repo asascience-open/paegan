@@ -71,3 +71,39 @@ class SunCycleTest(unittest.TestCase):
         assert zset.day == 2
         assert zset.hour == 21
         assert zset.minute == 37
+
+    def test_alaskan_waters_anchorage(self):
+
+        d = SunCycles.cycles(lat=61.183333, lon=-149.883333, time=datetime(2013, 4, 15, tzinfo=timezone('US/Eastern')))
+
+        zrise = d[SunCycles.RISING].astimezone(timezone('US/Alaska'))
+        assert zrise.year == 2013
+        assert zrise.month == 4
+        assert zrise.day == 15
+        assert zrise.hour == 6
+        assert zrise.minute == 38
+
+        zset = d[SunCycles.SETTING].astimezone(timezone('US/Alaska'))
+        assert zset.year == 2013
+        assert zset.month == 4
+        assert zset.day == 15
+        assert zset.hour == 21
+        assert zset.minute == 21
+
+    def test_change_in_day_baltimore(self):
+
+        d = SunCycles.cycles(lat=39.2833, lon=-76.6167, time=datetime(2013, 4, 15, 21, 00, tzinfo=timezone('US/Eastern')))
+
+        zrise = d[SunCycles.RISING].astimezone(timezone('US/Eastern'))
+        assert zrise.year == 2013
+        assert zrise.month == 4
+        assert zrise.day == 15
+        assert zrise.hour == 6
+        assert zrise.minute == 29
+
+        zset = d[SunCycles.SETTING].astimezone(timezone('US/Eastern'))
+        assert zset.year == 2013
+        assert zset.month == 4
+        assert zset.day == 15
+        assert zset.hour == 19
+        assert zset.minute == 43
