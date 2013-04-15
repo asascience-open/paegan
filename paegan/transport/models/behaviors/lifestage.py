@@ -8,6 +8,7 @@ from paegan.transport.models.base_model import BaseModel
 from paegan.transport.location4d import Location4D
 from paegan.utils.asatransport import AsaTransport
 import operator
+from datetime import timedelta
 
 from paegan.logger import logger
 
@@ -38,6 +39,34 @@ class LifeStage(BaseModel):
             self.settlement = None
             if data.get('settlement', None) is not None:
                 self.settlement = Settlement(data=data.get('settlement'))
+
+    def get_active_diel(self, loc4d):
+        active_diel = None
+        if len(self.diel) > 0:
+            particle_time = loc4d.time
+            # Find the closests Diel that the current particle time is AFTER, and set it to the active_diel
+            closest = None
+            closest_seconds = None
+            for ad in self.diel:
+                # To handle thecase where a particle at 1:00am only looks at Diels for that
+                # day and does not act upon Diel from the previous day at, say 11pm, check
+                # both today's Diel times and the particles current days Diel times.
+                yesterday = Location4D(location=loc4d)
+                yesterday.time = yesterday.time - timedelta(days=1)
+
+                times = [ad.get_time(loc4d=loc4d), ad.get_time(loc4d=yesterday)]
+                for t in times:
+                    if t <= particle_time:
+                        seconds = (particle_time - t).total_seconds()
+                        if closest is None or seconds < closest_seconds:
+                            closest = ad
+                            closest_seconds = seconds
+
+                del yesterday
+
+            active_diel = closest
+
+        return active_diel
 
     def move(self, particle, u, v, w, modelTimestep, **kwargs):
 
@@ -75,21 +104,7 @@ class LifeStage(BaseModel):
             growth = modelTimestepDays / self.duration
             particle.grow(growth)
 
-        particle_time = particle.location.time
-        active_diel = None
-        if len(self.diel) > 0:
-            # Find the closests Diel that the current particle time is AFTER, and set it to the active_diel
-            closest = None
-            closest_seconds = None
-            for ad in self.diel:
-                d_time = ad.get_time(loc4d=particle.location)
-                if d_time <= particle_time:
-                    seconds = (particle_time - d_time).total_seconds()
-                    if closest is None or seconds < closest_seconds:
-                        closest = ad
-                        closest_seconds = seconds
-
-            active_diel = closest
+        active_diel = self.get_active_diel(particle.location)
 
         # Run the active diel behavior and all of the taxis behaviors
         # u, v, and w store the continuous results from all of the behavior models.
