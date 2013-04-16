@@ -390,16 +390,25 @@ class ModelController(object):
 
                         # Release any locks the PID had
                         if p.pid in has_read_lock:
-                            read_lock.release()
+                            try:
+                                read_lock.release()
+                            except:
+                                pass
                             has_read_lock.remove(p.pid)
 
                         if has_data_request_lock.value == p.pid:
                             has_data_request_lock.value = -1
-                            data_request_lock.release()
+                            try:
+                                data_request_lock.release()
+                            except:
+                                pass
                             
                         if has_write_lock.value == p.pid:
                             has_write_lock.value = -1
-                            write_lock.release()
+                            try:
+                                write_lock.release()
+                            except:
+                                pass
                             
 
                 for p in old_procs:
