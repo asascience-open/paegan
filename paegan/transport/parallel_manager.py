@@ -623,7 +623,7 @@ class ForceParticle(object):
         if self.need_data(i+1):
             # Acquire lock for asking for data
             self.data_request_lock.acquire()
-            self.has_data_request_lock = os.getpid()
+            self.has_data_request_lock.value = os.getpid()
             try:
                 # Do I still need data?
                 if self.need_data(i+1):
@@ -670,7 +670,7 @@ class ForceParticle(object):
                 raise
             finally:
                 # Release lock for asking for data
-                self.has_data_request_lock = -1
+                self.has_data_request_lock.value = -1
                 self.data_request_lock.release()
                 
 
