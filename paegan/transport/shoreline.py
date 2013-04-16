@@ -245,24 +245,24 @@ class Shoreline(object):
 
         count = 0
         nudge_distance = 0.01
-        nudge_point = AsaGreatCircle.great_circle(distance=nudge_distance, azimuth=random_azimuth, start_point=hit_point)
+        nudge_point = AsaGreatCircle.great_circle(distance=nudge_distance, azimuth=reverse_azimuth, start_point=hit_point)
         nudge_loc = Location4D(latitude=nudge_point['latitude'], longitude=nudge_point['longitude'], depth=start_point.depth)
 
         # Find point just offshore to do testing with.  Try 15 times (~350m).  This makes sure the start_point is in the water
         # for the next call to intersect (next while loop).
         while self.intersect(single_point=nudge_loc.point) and count < 16:
             nudge_distance *= 2
-            nudge_point = AsaGreatCircle.great_circle(distance=nudge_distance, azimuth=random_azimuth, start_point=hit_point)
+            nudge_point = AsaGreatCircle.great_circle(distance=nudge_distance, azimuth=reverse_azimuth, start_point=hit_point)
             nudge_loc = Location4D(latitude=nudge_point['latitude'], longitude=nudge_point['longitude'], depth=start_point.depth)
             count += 1
 
         # We tried 16 times and couldn't find a point.  This should totally never happen.
         if count == 16:
-            logger.warn("IF THIS HAPPENS... WOW.  Could not find location in water to do shoreline calculation with.  Assuming particle did not move from original location")
+            logger.debug("WOW. Could not find location in water to do shoreline calculation with.  Assuming particle did not move from original location")
             return start_point
 
         # Keep trying to throw particle back, halfing the distance each time until it is in water.
-        # Only half it 10 times before giving up and returning the point which the particle came from.
+        # Only half it 12 times before giving up and returning the point which the particle came from.
         count = 0
         # Distance amount to half each iteration
         changing_distance = reverse_distance
@@ -277,7 +277,7 @@ class Shoreline(object):
         # We tried 10 times and the particle was still on shore, return the point the particle started from.
         # No randomization.
         if count == 12:
-            logger.warn("Could not react particle with shoreline.  Assuming particle did not move from original location")
+            logger.debug("Could not react particle with shoreline.  Assuming particle did not move from original location")
             return start_point
 
         return new_loc
