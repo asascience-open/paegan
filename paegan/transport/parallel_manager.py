@@ -75,7 +75,7 @@ class Consumer(multiprocessing.Process):
 
 
 class DataController(object):
-    def __init__(self, url, common_variables, n_run, get_data, write_lock, has_write_lock, read_lock, has_read_lock, read_count,
+    def __init__(self, url, common_variables, n_run, get_data, write_lock, has_write_lock, read_lock, read_count,
                  time_chunk, horiz_chunk, times,
                  start_time, point_get, start,
                  **kwargs
@@ -92,7 +92,6 @@ class DataController(object):
         self.write_lock = write_lock
         self.has_write_lock = has_write_lock
         self.read_lock = read_lock
-        self.has_read_lock = has_read_lock
         self.read_count = read_count
         self.inds = None#np.arange(init_size+1)
         self.time_size = time_chunk
@@ -214,16 +213,14 @@ class DataController(object):
                 # Wait for particles to get out
                 while True:
                     self.read_lock.acquire()
-                    self.has_read_lock.append(os.getpid())
 
                     logger.debug("Read count: %d" % self.read_count.value)
                     if self.read_count.value > 0:
                         logger.debug("Waiting for write lock on cache file (particles must stop reading)...")
                         self.read_lock.release()
-                        self.has_read_lock.remove(os.getpid())
                         timer.sleep(4)
                     else:
-                        break;
+                        break
                     
                 # Get write lock on the file.  Already have read lock.
                 self.write_lock.acquire()
@@ -417,7 +414,6 @@ class DataController(object):
                         self.write_lock.release()
                         self.get_data.value = False
                         self.read_lock.release()
-                        self.has_read_lock.remove(os.getpid())
                         logger.debug("Done updating cache file, closing file, and releasing locks")
                 else:
                     logger.debug("Updating cache file")
@@ -488,7 +484,6 @@ class DataController(object):
                         self.write_lock.release()
                         self.get_data.value = False
                         self.read_lock.release()
-                        self.has_read_lock.remove(os.getpid())
                         logger.debug("Done updating cache file, closing file, and releasing locks")
             else:
                 pass        

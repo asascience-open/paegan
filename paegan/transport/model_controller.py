@@ -267,7 +267,7 @@ class ModelController(object):
 
         # When something is reading from cache file
         read_lock = mgr.Lock()
-        # list of PIDs
+        # list of PIDs that are reading
         has_read_lock = mgr.list()
         read_count = mgr.Value('int', 0)
 
@@ -305,7 +305,7 @@ class ModelController(object):
         
         logger.debug('Starting DataController')
         logger.progress((4, "Starting processes"))
-        data_controller = parallel.DataController(hydrodataset, common_variables, n_run, get_data, write_lock, has_write_lock, read_lock, has_read_lock, read_count,
+        data_controller = parallel.DataController(hydrodataset, common_variables, n_run, get_data, write_lock, has_write_lock, read_lock, read_count,
                                                   time_chunk, horiz_chunk, times,
                                                   self.start, point_get, self.reference_location,
                                                   low_memory=low_memory,
@@ -331,7 +331,6 @@ class ModelController(object):
                                         get_data,
                                         n_run,
                                         read_lock,
-                                        has_read_lock,
                                         read_count,
                                         point_get,
                                         data_request_lock,
@@ -376,9 +375,9 @@ class ModelController(object):
                         # Add something to results queue
                         results.put((-3, "ZombieParticle"))
                         # Decrement nproc (DataController exits when this is 0)
-                        nproc_lock.acquire()
-                        n_run.value = n_run.value - 1
-                        nproc_lock.release()
+                        with nproc_lock:
+                            n_run.value = n_run.value - 1
+
                         # Remove task from queue (so they can be joined later on)
                         tasks.task_done()
 
@@ -386,15 +385,12 @@ class ModelController(object):
                         np = parallel.Consumer(tasks, results, n_run, nproc_lock, active, get_data, name=p.name)
                         new_procs.append(np)
                         old_procs.append(p)
-                        logger.warn("Started a new consumer (%s) to replace a zombie consumer" % p.name)
-
+                        
                         # Release any locks the PID had
                         if p.pid in has_read_lock:
-                            try:
-                                read_lock.release()
-                            except:
-                                pass
-                            has_read_lock.remove(p.pid)
+                            with read_lock:
+                                read_count.value -= 1
+                                has_read_lock.remove(p.pid)
 
                         if has_data_request_lock.value == p.pid:
                             has_data_request_lock.value = -1
@@ -419,6 +415,7 @@ class ModelController(object):
 
                 for p in new_procs:
                     procs.append(p)
+                    logger.warn("Started a new consumer (%s) to replace a zombie consumer" % p.name)
                     p.start()
                 
             else:
