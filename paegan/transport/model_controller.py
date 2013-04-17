@@ -331,6 +331,7 @@ class ModelController(object):
                                         get_data,
                                         n_run,
                                         read_lock,
+                                        has_read_lock,
                                         read_count,
                                         point_get,
                                         data_request_lock,
