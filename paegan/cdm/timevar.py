@@ -7,8 +7,15 @@
 import numpy as np
 import netCDF4, datetime
 from dateutil.parser import parse
-import pylab
 import bisect
+
+timevar_units = 'milliseconds since 1970-01-01'
+
+def date2num(python_datetime):
+    return netCDF4.date2num(python_datetime, timevar_units, 'proleptic_gregorian')
+    
+def num2date(indatenum, inunits):
+    return netCDF4.num2date(indatenum, inunits, 'proleptic_gregorian')
 
 class Timevar(np.ndarray):
     
@@ -34,7 +41,7 @@ class Timevar(np.ndarray):
         if self._nc.variables[name].ndim > 1:
             _str_data = self._nc.variables[name][:,:]
             if units == None:
-                units = 'seconds since 1990-01-01'
+                units = timevar_units#'seconds since 1990-01-01'
             dates = [parse(_str_data[i, :].tostring()) for i in range(len(_str_data[:,0]))]
             data = netCDF4.date2num(dates, units)
         else:
@@ -71,17 +78,17 @@ class Timevar(np.ndarray):
         return self.seconds[1] - self.seconds[0]
     
     def nearest_index(self, dateo, select='nearest'):
-        to = pylab.date2num(dateo)
+        to = date2num(dateo)
         if select == 'nearest':
             try:
-                return [np.where(abs(self.jd-t) == min(abs(self.jd-t)))[0][0] for t in to]
+                return [np.where(abs(self.datenum-t) == min(abs(self.datenum-t)))[0][0] for t in to]
             except TypeError:
-                return [np.where(abs(self.jd-to) == min(abs(self.jd-to)))[0][0]]
+                return [np.where(abs(self.datenum-to) == min(abs(self.datenum-to)))[0][0]]
         elif select == 'before':
             try: 
-                return np.asarray([bisect.bisect(self.jd, t)-1 for t in to])
+                return np.asarray([bisect.bisect(self.datenum, t)-1 for t in to])
             except TypeError:
-                return np.asarray([bisect.bisect(self.jd, to)-1])
+                return np.asarray([bisect.bisect(self.datenum, to)-1])
     
     def nearest(self, dateo):
         """
@@ -93,7 +100,7 @@ class Timevar(np.ndarray):
         #    res=self.jd[self.nearest_index(dateo)][0]
         #else:
         #    res=self.jd[self.nearest_index(dateo)][1]
-        return pylab.num2date(self.jd[self.nearest_index(dateo)][0])
+        return self.dates[self.nearest_index(dateo)][0]
     
     def get_seconds(self):
         fac = self._unit2sec[self._units] * self._sec2unit['seconds']
@@ -111,13 +118,17 @@ class Timevar(np.ndarray):
         fac = self._unit2sec[self._units] * self._sec2unit['days']
         return np.asarray(self,dtype='float64')*fac
     
-    def get_jd(self):
-        return (pylab.date2num(self.origin)+self.days)
+    #def get_jd(self):
+    #    return (pylab.date2num(self.origin)+self.days)
 
     def get_dates(self):
-        return np.asarray(pylab.num2date(self.jd))
+        return num2date(self, self._units + " since " + self.origin.strftime('%Y-%m-%dT%H:%M:%S'))
+    
+    def get_datenum(self):
+        return date2num(self.dates)
         
-    jd = property(get_jd, None, doc="Julian day, for plotting in pylab")
+    #jd = property(get_jd, None, doc="Julian day, for plotting in pylab")
+    datenum = property(get_datenum, None, doc="datenum in seconds since 1970-01-01")
     seconds = property(get_seconds, None, doc="seconds")
     minutes = property(get_minutes, None, doc="minutes")
     hours = property(get_hours, None, doc="hours")

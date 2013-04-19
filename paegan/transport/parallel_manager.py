@@ -10,14 +10,13 @@ from paegan.transport.shoreline import Shoreline
 from paegan.transport.bathymetry import Bathymetry
 from multiprocessing import Value
 from paegan.cdm.dataset import CommonDataset
+from paegan.cdm.timevar import date2num, num2date
 import os, sys
 import time as timer
 import random
 import math
 import traceback
-import pylab
 import Queue
-import cPickle as pickle
 import multiprocessing
 
 from paegan.logger import logger
@@ -664,8 +663,8 @@ class ForceParticle(object):
                 v = [varray1.mean(), varray2.mean()]             
             
             # Linear interp of data between timesteps
-            currenttime = pylab.date2num(currenttime)
-            timevar = timevar.jd
+            currenttime = date2num(currenttime)
+            timevar = timevar.datenum
             u = self.linterp(timevar[i:i+2], u, currenttime)
             v = self.linterp(timevar[i:i+2], v, currenttime)
             w = self.linterp(timevar[i:i+2], w, currenttime)
