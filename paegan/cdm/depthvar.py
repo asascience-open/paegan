@@ -2,24 +2,26 @@ import numpy as np
 import netCDF4
 
 class Depthvar(np.ndarray):
-    _unit2meters={}
-    _unit2meters['millimeters'] = 1000.0
-    _unit2meters['centimeters'] = 100.0
-    _unit2meters['meters'] = 1
-    _unit2meters['meters from the sea surface'] = 1
-    _unit2meters['feet'] = 3.2808399
-    _unit2meters['yards'] = 1.0936133
-    _unit2meters['kilometers'] = 0.001
-    _unit2meters['miles'] = 0.000621371192
 
+    # How many meter in the unit
+    _unit2meters={}
+    _unit2meters['millimeters'] = 0.001
+    _unit2meters['centimeters'] = 0.01
+    _unit2meters['meters'] = 1
+    _unit2meters['feet'] = 0.3048
+    _unit2meters['yards'] = 0.9144
+    _unit2meters['kilometers'] = 1000
+    _unit2meters['miles'] = 1609.34
+
+    # How many units in the meter
     _meters2unit={}
-    _meters2unit['millimeters'] = 1.0/1000.0
-    _meters2unit['centimeters'] = 1.0/100.0
+    _meters2unit['millimeters'] = 1000
+    _meters2unit['centimeters'] = 100
     _meters2unit['meters'] = 1
-    _meters2unit['feet'] = 0.3048
-    _meters2unit['yards'] = 0.9144
-    _meters2unit['kilometers'] = 1000.0
-    _meters2unit['miles'] = 1609.344
+    _meters2unit['feet'] = 3.2084
+    _meters2unit['yards'] = 1.09361
+    _meters2unit['kilometers'] = 0.001
+    _meters2unit['miles'] = 0.000621371
 
     def __new__(self, ncfile, name, units=None, **kwargs):
         if type(ncfile) is str:
