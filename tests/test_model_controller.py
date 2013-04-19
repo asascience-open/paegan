@@ -77,13 +77,18 @@ class ModelControllerTest(unittest.TestCase):
 
         models = [self.transport]
 
-        num_steps = 20
+        num_steps = 100
 
-        model = ModelController(latitude=self.start_lat, longitude=self.start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=num_steps, npart=self.num_particles, models=models, use_bathymetry=False, use_shoreline=True,
-            time_chunk=10, horiz_chunk=4)
+        output_path = os.path.join(self.output_path, "test_interp")
+        shutil.rmtree(output_path, ignore_errors=True)
+        os.makedirs(output_path)
+        output_formats = ['Shapefile','NetCDF','Trackline']
+
+        model = ModelController(latitude=self.start_lat, longitude=self.start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=num_steps, npart=self.num_particles, models=models, use_bathymetry=True, use_shoreline=True,
+            time_chunk=10, horiz_chunk=0)
 
         cache_path = os.path.join(self.cache_path, "test_interp.nc")
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", bathy=self.bathy_file, cache=cache_path, output_path=output_path, output_formats=output_formats)
 
     def test_nearest(self):
         self.log.logger.info("**************************************")
@@ -91,11 +96,18 @@ class ModelControllerTest(unittest.TestCase):
 
         models = [self.transport]
         
-        model = ModelController(latitude=self.start_lat, longitude=self.start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=self.num_steps, npart=self.num_particles, models=models, use_bathymetry=False, use_shoreline=True,
-            time_chunk=10, horiz_chunk=4, time_method='nearest')
+        num_steps = 100
+
+        output_path = os.path.join(self.output_path, "test_nearest")
+        shutil.rmtree(output_path, ignore_errors=True)
+        os.makedirs(output_path)
+        output_formats = ['Shapefile','NetCDF','Trackline']
+
+        model = ModelController(latitude=self.start_lat, longitude=self.start_lon, depth=self.start_depth, start=self.start_time, step=self.time_step, nstep=self.num_steps, npart=self.num_particles, models=models, use_bathymetry=True, use_shoreline=True,
+            time_chunk=10, horiz_chunk=0, time_method='nearest')
 
         cache_path = os.path.join(self.cache_path, "test_nearest.nc")
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", cache=cache_path)
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", bathy=self.bathy_file, cache=cache_path, output_path=output_path, output_formats=output_formats)
 
     def test_start_on_land(self):
         self.log.logger.info("**************************************")
@@ -179,10 +191,10 @@ class ModelControllerTest(unittest.TestCase):
         output_path = os.path.join(self.output_path, "test_quick_settlement")
         shutil.rmtree(output_path, ignore_errors=True)
         os.makedirs(output_path)
-        output_formats = ['Shapefile','NetCDF','Trackline','Pickle']
+        output_formats = ['Shapefile','NetCDF','Trackline']
 
         cache_path = os.path.join(self.cache_path, "test_quick_settlement.nc")
-        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", bathy=self.bathy_file, cache=cache_path, output_path=output_path, output_formats=output_formats)
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_DAS.nc", bathy=self.bathy_file, cache=cache_path, output_path=output_path, output_formats=output_formats)
 
     def test_timechunk_greater_than_timestep(self):
         self.log.logger.info("**************************************")
