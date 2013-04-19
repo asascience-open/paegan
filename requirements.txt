@@ -4,6 +4,5 @@ netCDF4==1.0.2
 Shapely==1.2.17
 GDAL==1.9.1
 pytz==2012h
-matplotlib==1.1.0
 python-dateutil==2.1
 Fiona

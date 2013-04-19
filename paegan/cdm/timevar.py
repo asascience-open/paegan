@@ -117,9 +117,6 @@ class Timevar(np.ndarray):
     def get_days(self):
         fac = self._unit2sec[self._units] * self._sec2unit['days']
         return np.asarray(self,dtype='float64')*fac
-    
-    #def get_jd(self):
-    #    return (pylab.date2num(self.origin)+self.days)
 
     def get_dates(self):
         return num2date(self, self._units + " since " + self.origin.strftime('%Y-%m-%dT%H:%M:%S'))
@@ -127,7 +124,6 @@ class Timevar(np.ndarray):
     def get_datenum(self):
         return date2num(self.dates)
         
-    #jd = property(get_jd, None, doc="Julian day, for plotting in pylab")
     datenum = property(get_datenum, None, doc="datenum in seconds since 1970-01-01")
     seconds = property(get_seconds, None, doc="seconds")
     minutes = property(get_minutes, None, doc="minutes")
