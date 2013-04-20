@@ -18,6 +18,7 @@ import math
 import traceback
 import Queue
 import multiprocessing
+import cPickle as pickle
 
 from paegan.logger import logger
 
