@@ -27,12 +27,12 @@
         "swim_turning": "reverse", 
         "vss": 0.0021
       }, 
-      "duration": 5, 
+      "duration": 6, 
       "diel": [
         {
           "type": "cycles", 
           "min": 0.0, 
-          "max": 20.0, 
+          "max": 2.0, 
           "hours": 2, 
           "time": null, 
           "plus_or_minus": "-", 
@@ -49,8 +49,8 @@
         }, 
         {
           "type": "cycles", 
-          "min": 1.0, 
-          "max": 20.0, 
+          "min": 0.0, 
+          "max": 2.0, 
           "hours": 2, 
           "time": null, 
           "plus_or_minus": "-", 
@@ -84,12 +84,12 @@
         "swim_turning": "reverse", 
         "vss": 0.0021
       }, 
-      "duration": 2, 
+      "duration": 1, 
       "diel": [
         {
           "plus_or_minus": "-", 
           "min": 0.0, 
-          "max": 20.0, 
+          "max": 2.0, 
           "hours": 2, 
           "time": null, 
           "type": "cycles", 
@@ -106,8 +106,8 @@
         }, 
         {
           "plus_or_minus": "-", 
-          "min": 1.0, 
-          "max": 20.0, 
+          "min": 0.0, 
+          "max": 2.0, 
           "hours": 2, 
           "time": null, 
           "type": "cycles", 
