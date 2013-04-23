@@ -289,3 +289,31 @@ class ModelControllerTest(unittest.TestCase):
         cache_path = os.path.join(self.cache_path, "sheep_bay.nc")
         model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_L2_FCST.nc", bathy=self.bathy_file, cache=cache_path, output_path=output_path, output_formats=output_formats)
     """
+
+    def test_diel_migration(self):
+        self.log.logger.info("**************************************")
+        self.log.logger.info("Running: test_diel_migration")
+
+        num_steps = 360
+
+        num_particles = 4
+
+        start_time = datetime(2013,4,1,0)
+
+        # Behavior
+        behavior_config = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/diel_suncycles.json"))).read()
+        lb = LarvaBehavior(json=behavior_config)
+
+        models = [self.transport]
+        models.append(lb)
+
+        model = ModelController(latitude=60.68, longitude=-146.42, depth=self.start_depth, start=start_time, step=self.time_step, nstep=num_steps, npart=num_particles, models=models, use_bathymetry=True, use_shoreline=True,
+            time_chunk=24, horiz_chunk=2, time_method='nearest')
+
+        output_path = os.path.join(self.output_path, "test_diel_migration")
+        shutil.rmtree(output_path, ignore_errors=True)
+        os.makedirs(output_path)
+        output_formats = ['Shapefile','NetCDF','Trackline']
+
+        cache_path = os.path.join(self.cache_path, "test_diel_migration.nc")
+        model.run("http://thredds.axiomalaska.com/thredds/dodsC/PWS_DAS.nc", bathy=self.bathy_file, cache=cache_path, output_path=output_path, output_formats=output_formats)
