@@ -54,7 +54,7 @@ class Consumer(multiprocessing.Process):
                                  repr(traceback.format_exception(exc_type, exc_value,
                                               exc_traceback)))
                     if isinstance(next_task, DataController):
-                        answer = (-2, next_task)
+                        answer = (-2, "DataController")
                         # Tell the particles that the DataController is releasing file
                         self.get_data.value = False
                         # The data controller has died, so don't process any more tasks
