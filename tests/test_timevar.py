@@ -39,7 +39,7 @@ class TimevarTest(unittest.TestCase):
         # Manually extract
         # ocean_time:units = "seconds since 1990-01-01 00:00:00" ;
         # ocean_time:calendar = "gregorian" ;
-        dt = datetime(1990,1,1,tzinfo=pytz.utc)
+        dt = datetime(1990,1,1)
         ds = netCDF4.Dataset(datafile)
         data = ds.variables['ocean_time'][:]
         # Convert to days
@@ -67,7 +67,7 @@ class TimevarTest(unittest.TestCase):
 
         # Manually extract
         # time:units = days since 2001-01-01 00:00:00
-        dt = datetime(2001,1,1,tzinfo=pytz.utc)
+        dt = datetime(2001,1,1)
         ds = netCDF4.Dataset(datafile)
         data = ds.variables['time'][:]
 
@@ -92,7 +92,7 @@ class TimevarTest(unittest.TestCase):
 
         # Manually extract
         # time:units = hour since 2000-01-01 00:00:00
-        dt = datetime(2000,1,1,tzinfo=pytz.utc)
+        dt = datetime(2000,1,1)
         ds = netCDF4.Dataset(datafile)
         data = ds.variables['time'][:]
         # Convert to days
