@@ -294,11 +294,11 @@ class ModelControllerTest(unittest.TestCase):
         self.log.logger.info("**************************************")
         self.log.logger.info("Running: test_diel_migration")
 
-        num_steps = 360
+        num_steps = 168
 
         num_particles = 4
 
-        start_time = datetime(2013,4,1,0)
+        start_time = datetime(2013,4,1,0, tzinfo=pytz.utc)
 
         # Behavior
         behavior_config = open(os.path.normpath(os.path.join(os.path.dirname(__file__),"./resources/files/diel_suncycles.json"))).read()
