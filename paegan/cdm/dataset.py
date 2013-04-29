@@ -200,6 +200,7 @@ class Dataset(object):
         assert var in self.nc.variables
         time = self.gettimevar(var)
         if "units" in kwargs:
+            u = kwargs.get("units")
             bounds = (netCDF4.num2date(np.min(time),units=u),
                       netCDF4.num2date(np.max(time),units=u))
         else:
