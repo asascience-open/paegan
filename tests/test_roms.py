@@ -120,7 +120,7 @@ class RomsTest(unittest.TestCase):
 
         assert left_rho == uv_rho[101,101]
         # Why does the right point now work!!!?!?!?!?!?!?
-        # assert right_rho == uv_rho[101,102]
+        #assert right_rho == uv_rho[101,102]
 
 if __name__ == '__main__':
     unittest.main()

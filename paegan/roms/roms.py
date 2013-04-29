@@ -20,8 +20,69 @@ import netCDF4
 #       coordinate dimension: t,z,y,x
 #
 #       When Averaging U and V into the RHO grid:
-#       * We lose the first and last column of rho, U and V
-#       * We lose the first and last row of rho, U and V
+#       * We lose the first and last column of rho and V
+#       * We lose the first and last row of rho and U
+
+def shrink(a, b):
+    """
+    Ripped from Octant: https://code.google.com/p/octant
+
+    Return array shrunk to fit a specified shape by triming or averaging.
+    
+    a = shrink(array, shape)
+    
+    array is an numpy ndarray, and shape is a tuple (e.g., from
+    array.shape). a is the input array shrunk such that its maximum
+    dimensions are given by shape. If shape has more dimensions than
+    array, the last dimensions of shape are fit.
+    
+    as, bs = shrink(a, b)
+    
+    If the second argument is also an array, both a and b are shrunk to
+    the dimensions of each other. The input arrays must have the same
+    number of dimensions, and the resulting arrays will have the same
+    shape.
+    
+    Example
+    -------
+    
+    >>> shrink(rand(10, 10), (5, 9, 18)).shape
+    (9, 10)
+    >>> map(shape, shrink(rand(10, 10, 10), rand(5, 9, 18)))        
+    [(5, 9, 10), (5, 9, 10)]   
+       
+    """
+
+    if isinstance(b, np.ndarray):
+        if not len(a.shape) == len(b.shape):
+            raise Exception, \
+                  'input arrays must have the same number of dimensions'
+        a = shrink(a,b.shape)
+        b = shrink(b,a.shape)
+        return (a, b)
+
+    if isinstance(b, int):
+        b = (b,)
+        
+    if len(a.shape) == 1:                # 1D array is a special case
+        dim = b[-1]                      
+        while a.shape[0] > dim:          # only shrink a
+            if (dim - a.shape[0]) >= 2:  # trim off edges evenly
+                a = a[1:-1]
+            else:                        # or average adjacent cells
+                a = 0.5*(a[1:] + a[:-1])
+    else:
+        for dim_idx in range(-(len(a.shape)),0):
+            dim = b[dim_idx]
+            a = a.swapaxes(0,dim_idx)        # put working dim first
+            while a.shape[0] > dim:          # only shrink a
+                if (a.shape[0] - dim) >= 2:  # trim off edges evenly
+                    a = a[1:-1,:]
+                if (a.shape[0] - dim) == 1:  # or average adjacent cells
+                    a = 0.5*(a[1:,:] + a[:-1,:])
+            a = a.swapaxes(0,dim_idx)        # swap working dim back
+        
+    return a
 
 def uv_to_rho(file):
     nc = netCDF4.Dataset(file)
@@ -37,7 +98,7 @@ def uv_to_rho(file):
     # Store shape for use below
     [rho_y,rho_x] = lat_rho.shape
 
-    # U ]
+    # U
     u_data = nc.variables['u'][0,0,:,:]
 
     # V
@@ -51,27 +112,40 @@ def uv_to_rho(file):
     # And fill it with with nan values
     U[:] = np.nan
 
-    # Fill rho points with averages (if we can do the calculation)
-    # Thread]
-    #t1 = AverageAdjacents(u_data)
-    #t2 = AverageAdjacents(v_data, True)
-    #t1.start(); t2.start()
-    #t1.join();  t2.join()
-    #u_avg = t1.data
-    #v_avg = t2.data
+    vfunc = np.vectorize(complex)
 
-    # Don't thread
-    u_avg = average_adjacents(u_data)
-    v_avg = average_adjacents(v_data,True)
-
+    # THREE IDENTICAL METHODS
     # Fill in RHO cells per diagram above.  Skip first row and first
     # column of RHOs and leave them as numpy.nan values.  Also skip the 
     # last row and column.
-    vfunc = np.vectorize(complex)
+
+    #1.) 
+    # Fill rho points with averages (if we can do the calculation)
+    # Thread]
+    t1 = AverageAdjacents(u_data)
+    t2 = AverageAdjacents(v_data, True)
+    t1.start(); t2.start()
+    t1.join();  t2.join()
+    u_avg = t1.data
+    v_avg = t2.data
+    complexed = vfunc(u_avg[1:-1,:],v_avg[:,1:-1])
+
+    # 2.) 
+    # Don't thread
+    #u_avg = average_adjacents(u_data)
+    #v_avg = average_adjacents(v_data,True)
+    #complexed = vfunc(u_avg[1:-1,:],v_avg[:,1:-1])
+
+    # 3.)
+    # Use Octant method
+    #data_U = (rho_y-2,rho_x-2)
+    #u_avg = shrink(u_data, data_U)
+    #v_avg = shrink(v_data, data_U)
+    #complexed = vfunc(u_avg,v_avg)
+    
     # Only pull the U and V values that can contribute to the averaging (see diagram).
     # This means we lost the first and last row and the first and last column of both
-    # U and V.
-    complexed = vfunc(u_avg[1:-1,:],v_avg[:,1:-1])
+    # U and V.   
     U[1:rho_y-1, 1:rho_x-1] = complexed
  
     # We need the rotated point, so rotate by the "angle"
@@ -168,8 +242,6 @@ class AverageAdjacents(threading.Thread):
         threading.Thread.__init__(self)
         self.by_column = by_column
         self.data = data
-    def data():
-        return self.out
     def run(self):
         if self.by_column:
             # Easier to transpose, sum by row, and transpose back.
