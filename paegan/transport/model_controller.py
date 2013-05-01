@@ -21,6 +21,7 @@ import paegan.transport.export as ex
 import cPickle as pickle
 import tempfile
 import Queue
+import pytz
 
 from paegan.logger import logger
 
@@ -54,7 +55,16 @@ class ModelController(object):
         self._use_seasurface = kwargs.pop('use_seasurface', True)
         self._depth = kwargs.pop('depth', 0)
         self._npart = kwargs.pop('npart', 1)
-        self.start = kwargs.pop('start', None)
+
+        self.start = kwargs.pop('start')
+        if self.start == None:
+            raise TypeError("must provide a start time to run the model")
+
+        # Always convert to UTC
+        if self.start.tzinfo is None:
+            self.start = self.start.replace(tzinfo=pytz.utc)
+        self.start = self.start.astimezone(pytz.utc)
+
         self._step = kwargs.pop('step', 3600)
         self._models = kwargs.pop('models', None)
         self._dirty = True
@@ -177,9 +187,6 @@ class ModelController(object):
         # Add the model descriptions to logfile
         for m in self._models:
             logger.info(m)
-
-        if self.start == None:
-            raise TypeError("must provide a start time to run the models")
 
         # Calculate the model timesteps
         # We need times = len(self._nstep) + 1 since data is stored one timestep

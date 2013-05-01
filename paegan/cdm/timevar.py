@@ -8,14 +8,16 @@ import numpy as np
 import netCDF4, datetime
 from dateutil.parser import parse
 import bisect
+import pytz
 
-timevar_units = 'milliseconds since 1970-01-01'
+# Same basedate as matplotlib: http://matplotlib.org/api/dates_api.html#matplotlib.dates.num2date
+timevar_units = 'days since 0001-01-01 00:00:00'
 
 def date2num(python_datetime):
     return netCDF4.date2num(python_datetime, timevar_units, 'proleptic_gregorian')
     
-def num2date(indatenum, inunits):
-    return netCDF4.num2date(indatenum, inunits, 'proleptic_gregorian')
+def num2date(indatenum, inunits, tzinfo=None):
+    return np.vectorize(lambda x: x.replace(tzinfo=tzinfo))(netCDF4.num2date(indatenum, inunits, 'proleptic_gregorian'))
 
 class Timevar(np.ndarray):
     
@@ -33,7 +35,7 @@ class Timevar(np.ndarray):
     _sec2unit['hours'] = 1.0/3600.0
     _sec2unit['days'] = 1.0/(24.0*3600.0)
 
-    def __new__(self, ncfile, name='time', units=None, **kwargs):
+    def __new__(self, ncfile, name='time', units=None, tzinfo=None, **kwargs):
         if type(ncfile) is str:
             ncfile = netCDF4.Dataset(ncfile)
         self._nc = ncfile
@@ -41,7 +43,7 @@ class Timevar(np.ndarray):
         if self._nc.variables[name].ndim > 1:
             _str_data = self._nc.variables[name][:,:]
             if units == None:
-                units = timevar_units#'seconds since 1990-01-01'
+                units = timevar_units
             dates = [parse(_str_data[i, :].tostring()) for i in range(len(_str_data[:,0]))]
             data = netCDF4.date2num(dates, units)
         else:
@@ -54,6 +56,12 @@ class Timevar(np.ndarray):
                 self._units = units
         else:
             self._units = units
+
+        if tzinfo == None:
+            self._tzinfo = pytz.utc
+        else:
+            self._tzinfo = tzinfo
+
         
         units_split=self._units.split(' ',2)
         assert len(units_split) == 3 and units_split[1] == 'since', \
@@ -119,7 +127,7 @@ class Timevar(np.ndarray):
         return np.asarray(self,dtype='float64')*fac
 
     def get_dates(self):
-        return num2date(self, self._units + " since " + self.origin.strftime('%Y-%m-%dT%H:%M:%S'))
+        return num2date(self, self._units + " since " + self.origin.strftime('%Y-%m-%dT%H:%M:%S'), tzinfo=self._tzinfo)
     
     def get_datenum(self):
         return date2num(self.dates)

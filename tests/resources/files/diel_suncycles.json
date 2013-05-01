@@ -1,0 +1,129 @@
+{
+  "status": "public", 
+  "name": "Testing Diel", 
+  "created": 1366720136432, 
+  "geometry": null, 
+  "geo_keywords": [
+    ""
+  ], 
+  "keywords": [
+    ""
+  ], 
+  "user": "wilcox.kyle@gmail.com", 
+  "common_name": "Mel", 
+  "genus": "Melanious", 
+  "notes": "", 
+  "species": "Geronious", 
+  "lifestages": [
+    {
+      "settlement": null, 
+      "name": "TestDiel", 
+      "linear_b": null, 
+      "notes": "", 
+      "linear_a": null, 
+      "capability": {
+        "nonswim_turning": "downward", 
+        "variance": 0.0, 
+        "swim_turning": "reverse", 
+        "vss": 0.0021
+      }, 
+      "duration": 6, 
+      "diel": [
+        {
+          "type": "cycles", 
+          "min": 0.0, 
+          "max": 2.0, 
+          "hours": 2, 
+          "time": null, 
+          "plus_or_minus": "-", 
+          "cycle": "sunrise"
+        }, 
+        {
+          "type": "cycles", 
+          "min": 20.0, 
+          "max": 40.0, 
+          "hours": 2, 
+          "time": null, 
+          "plus_or_minus": "+", 
+          "cycle": "sunrise"
+        }, 
+        {
+          "type": "cycles", 
+          "min": 0.0, 
+          "max": 2.0, 
+          "hours": 2, 
+          "time": null, 
+          "plus_or_minus": "-", 
+          "cycle": "sunset"
+        }, 
+        {
+          "type": "cycles", 
+          "min": 20.0, 
+          "max": 40.0, 
+          "hours": 2, 
+          "time": null, 
+          "plus_or_minus": "+", 
+          "cycle": "sunset"
+        }
+      ], 
+      "taxis": []
+    }, 
+    {
+      "settlement": {
+        "upper": 20.0, 
+        "lower": 100.0, 
+        "type": "pelagic"
+      }, 
+      "name": "TestDiel (settlement)", 
+      "linear_b": null, 
+      "notes": "", 
+      "linear_a": null, 
+      "capability": {
+        "nonswim_turning": "downward", 
+        "variance": 0.0, 
+        "swim_turning": "reverse", 
+        "vss": 0.0021
+      }, 
+      "duration": 1, 
+      "diel": [
+        {
+          "plus_or_minus": "-", 
+          "min": 0.0, 
+          "max": 2.0, 
+          "hours": 2, 
+          "time": null, 
+          "type": "cycles", 
+          "cycle": "sunrise"
+        }, 
+        {
+          "plus_or_minus": "+", 
+          "min": 20.0, 
+          "max": 40.0, 
+          "hours": 2, 
+          "time": null, 
+          "type": "cycles", 
+          "cycle": "sunrise"
+        }, 
+        {
+          "plus_or_minus": "-", 
+          "min": 0.0, 
+          "max": 2.0, 
+          "hours": 2, 
+          "time": null, 
+          "type": "cycles", 
+          "cycle": "sunset"
+        }, 
+        {
+          "plus_or_minus": "+", 
+          "min": 20.0, 
+          "max": 40.0, 
+          "hours": 2, 
+          "time": null, 
+          "type": "cycles", 
+          "cycle": "sunset"
+        }
+      ], 
+      "taxis": []
+    }
+  ]
+}
