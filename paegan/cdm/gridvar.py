@@ -71,7 +71,7 @@ class Gridobj:
             test_x = self._xarray[1,1]
         else:
             test_x = self._xarray[1]
-        if test_x >= self.xmin and test_x <= self.xmax:
+        if (test_x >= self.xmin) & (test_x <= self.xmax):
             bbox = self.xmin, self.ymin, self.xmax, self.ymax
         else:
             bbox = self.xmax, self.ymin, self.xmin, self.ymax
