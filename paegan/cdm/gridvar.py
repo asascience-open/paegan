@@ -67,8 +67,16 @@ class Gridobj:
         return np.min(np.min(self._yarray))
     
     def get_bbox(self):
-        self.bbox = self.xmin, self.ymin, self.xmax, self.ymax
-        return self.xmin, self.ymin, self.xmax, self.ymax
+        if self._ndim == 2:
+            test_x = self._xarray[1,1]
+        else:
+            test_x = self._xarray[1]
+        if test_x >= self.xmin and test_x <= self.xmax:
+            bbox = self.xmin, self.ymin, self.xmax, self.ymax
+        else:
+            bbox = self.xmax, self.ymin, self.xmin, self.ymax
+        self.bbox = bbox
+        return bbox
             
     def get_projectedbool(self):
         return self._projected
