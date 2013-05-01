@@ -68,9 +68,9 @@ class Gridobj:
     
     def get_bbox(self):
         if self._ndim == 2:
-            bbox = np.min(self._xarray[:,0]), self.ymin, np.min(self._xarray[:,-1]), self.ymax
+            bbox = np.min(self._xarray[:,0]), self.ymin, np.max(self._xarray[:,-1]), self.ymax
         else:
-            bbox = self._xarray[0], self.ymin, self._xarray[1], self.ymax
+            bbox = self._xarray[0], self.ymin, self._xarray[-1], self.ymax
         self.bbox = bbox
         return bbox
             
