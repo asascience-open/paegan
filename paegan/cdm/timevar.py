@@ -89,9 +89,9 @@ class Timevar(np.ndarray):
         to = date2num(dateo)
         if select == 'nearest':
             try:
-                return [np.where(abs(self.datenum-t) == min(abs(self.datenum-t)))[0][0] for t in to]
+                return [np.where(abs(self.datenum-t) == np.nanmin(abs(self.datenum-t)))[0][0] for t in to]
             except TypeError:
-                return [np.where(abs(self.datenum-to) == min(abs(self.datenum-to)))[0][0]]
+                return [np.where(abs(self.datenum-to) == np.nanmin(abs(self.datenum-to)))[0][0]]
         elif select == 'before':
             try: 
                 return np.asarray([bisect.bisect(self.datenum, t)-1 for t in to])

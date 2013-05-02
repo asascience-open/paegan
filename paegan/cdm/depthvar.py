@@ -56,7 +56,7 @@ class Depthvar(np.ndarray):
         return data.view(self)
     
     def nearest_index(self, depth):
-        return np.where(abs(self.meters-depth) == min(abs(self.meters-depth)))[0]
+        return np.where(abs(self.meters-depth) == np.nanmin(abs(self.meters-depth)))[0]
     
     def nearest(self, depth):
         """

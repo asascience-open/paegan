@@ -55,20 +55,20 @@ class Gridobj:
         pass
     
     def get_xmax(self):
-        return np.max(np.max(self._xarray))
+        return np.nanmax(np.nanmax(self._xarray))
         
     def get_ymax(self):
-        return np.max(np.max(self._yarray))
+        return np.nanmax(np.nanmax(self._yarray))
         
     def get_xmin(self):
-        return np.min(np.min(self._xarray))
+        return np.nanmin(np.nanmin(self._xarray))
         
     def get_ymin(self):
-        return np.min(np.min(self._yarray))
+        return np.nanmin(np.nanmin(self._yarray))
     
     def get_bbox(self):
         if self._ndim == 2:
-            bbox = np.min(self._xarray[:,0]), self.ymin, np.max(self._xarray[:,-1]), self.ymax
+            bbox = np.nanmin(self._xarray[:,0]), self.ymin, np.nanmax(self._xarray[:,-1]), self.ymax
         else:
             bbox = self._xarray[0], self.ymin, self._xarray[-1], self.ymax
         self.bbox = bbox
@@ -109,14 +109,14 @@ class Gridobj:
                 distance = AsaGreatCircle.great_distance(
                     start_lats=self._yarray, start_lons=self._xarray,
                     end_lats=point.latitude, end_lons=point.longitude)["distance"]
-                inds = np.where(distance == np.min(distance))
+                inds = np.where(distance == np.nanmin(distance))
                 xinds, yinds = inds, inds
         else:
             if self._ndim == 2:
                 distance = AsaGreatCircle.great_distance(
                     start_lats=self._yarray, start_lons=self._xarray,
                     end_lats=point.latitude, end_lons=point.longitude)["distance"]
-                yinds, xinds = np.where(distance == np.min(distance))
+                yinds, xinds = np.where(distance == np.nanmin(distance))
             else:
                 #if self._xmesh == None and self._ymesh == None:
                 #    self._xmesh, self._ymesh = np.meshgrid(self._xarray, self._yarray)
@@ -126,8 +126,8 @@ class Gridobj:
                     lat_cutoff = np.sort(minlat)[num-1]
                     lon_cutoff = np.sort(minlon)[num-1]
                 elif num == 1:
-                    lat_cutoff = np.min(np.abs(self._yarray - point.latitude))
-                    lon_cutoff = np.min(np.abs(self._xarray - point.longitude))
+                    lat_cutoff = np.nanmin(np.abs(self._yarray - point.latitude))
+                    lon_cutoff = np.nanmin(np.abs(self._xarray - point.longitude))
                 yinds = np.where(np.abs(self._yarray - point.latitude) <= lat_cutoff)
                 xinds = np.where(np.abs(self._xarray - point.longitude) <= lon_cutoff)
 
