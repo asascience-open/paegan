@@ -161,10 +161,16 @@ class Dataset(object):
             self._possiblet.append(tname)
 
         self.opennc()
-
+        self._current_variables = list(self.nc.variables.keys())
+        
+    """
+    
+        Methods that return data or info or something
+        
+    """
     def getvariableinfo(self):
         variables = {}
-        for var in self.nc.variables.keys():
+        for var in self._current_variables:
             variables[var] = {}
             for attr in self.nc.variables[var].ncattrs():
                 variables[var][attr] = self.nc.variables[var].getncattr(attr)
@@ -198,12 +204,12 @@ class Dataset(object):
         self.metadata = self.nc.__dict__
     
     def gettimestep(self, var=None):
-        assert var in self.nc.variables
+        assert var in self._current_variables
         time = self.gettimevar(var)
         return time.timestep
     
     def gettimebounds(self, var=None, **kwargs):
-        assert var in self.nc.variables
+        assert var in self._current_variables
         time = self.gettimevar(var)
         if "units" in kwargs:
             u = kwargs.get("units")
@@ -214,7 +220,7 @@ class Dataset(object):
         return bounds
 
     def getdepthbounds(self, var=None, **kwargs):
-        assert var in self.nc.variables
+        assert var in self._current_variables
         depths = self.getdepthvar(var)
         if "units" in kwargs:
             if kwargs["units"] == "m":
@@ -226,23 +232,23 @@ class Dataset(object):
         return bounds
     
     def getbbox(self, var=None, **kwargs):
-        assert var in self.nc.variables
+        assert var in self._current_variables
         grid = self.getgridobj(var)
         return grid.bbox
         
     def getboundingpolygon(self, var=None, **kwargs):
-        assert var in self.nc.variables
+        assert var in self._current_variables
         # TODO: This should return a bounding polygon of the dataset
         return self.getbbox(var)
         
     def _checkcache(self, var):
-        assert var in self.nc.variables
+        assert var in self._current_variables
         test = var in self._coordcache
         return test
 
     def gettimevar(self, var=None, use_cache=True):
         #return self._timevar
-        assert var in self.nc.variables
+        assert var in self._current_variables
         timevar = None
         if use_cache == True:
             if self._checkcache(var):
@@ -261,7 +267,7 @@ class Dataset(object):
  
     def getdepthvar(self, var=None, use_cache=True):
         #return self._depthvar
-        assert var in self.nc.variables
+        assert var in self._current_variables
         depthvar = None
         if use_cache == True:
             if self._checkcache(var):
@@ -280,7 +286,7 @@ class Dataset(object):
         
     def getgridobj(self, var=None):
         #return self._gridobj
-        assert var in self.nc.variables
+        assert var in self._current_variables
         gridobj = None
         if self._checkcache(var):
             gridobj = self._coordcache[var].xy
@@ -297,7 +303,7 @@ class Dataset(object):
         return gridobj
         
     def get_tind_from_bounds(self, var, bounds, convert=False, use_cache=True):
-        assert var in self.nc.variables
+        assert var in self._current_variables
         time = self.gettimevar(var, use_cache)
         if convert:
             bounds = netCDF4.date2num(bounds, time._units + " since " + time.origin.isoformat())
@@ -305,24 +311,24 @@ class Dataset(object):
         return inds
     
     def get_zind_from_bounds(self, var, bounds, use_cache=True):
-        assert var in self.nc.variables
+        assert var in self._current_variables
         depths = self.getdepthvar(var, use_cache)
         inds = np.where(np.logical_and(depths >= bounds[0], depths <= bounds[1]))
         return inds
         
     def get_nearest_tind(self, var, point, use_cache=True):
-        assert var in self.nc.variables
+        assert var in self._current_variables
         time = self.gettimevar(var, use_cache)
         return time.nearest_index(point.time)
         
     def get_nearest_zind(self, var, point, use_cache=True):
-        assert var in self.nc.variables
+        assert var in self._current_variables
         depths = self.getdepthvar(var, use_cache)
         return depths.nearest_index(point.depth)
         
     def __str__(self):
         k = []
-        for key in self.nc.variables.viewkeys():
+        for key in self._current_variables:
             k.append(key)
         out = """
 [[ 
@@ -335,7 +341,7 @@ class Dataset(object):
         return out 
     
     def get_coord_names(self, var=None, **kwargs):
-        assert var in self.nc.variables
+        assert var in self._current_variables
         ncvar = self.nc.variables[var]
         try:
             coordinates = ncvar.coordinates.split()
@@ -425,7 +431,7 @@ class Dataset(object):
         return names
               
     def get_coord_dict(self, var=None, **kwargs):
-        assert var in self.nc.variables
+        assert var in self._current_variables
         timevar = self.gettimevar(var)
         depthvar = self.getdepthvar(var)
         gridobj = self.getgridobj(var)
@@ -436,7 +442,7 @@ class Dataset(object):
         match=None):
         var_matches = []
         if match == None:
-            for var in self.nc.variables:
+            for var in self._current_variables:
                 try:
                     sn = self.nc.variables[var].standard_name
                     if standard_name == sn:
@@ -454,7 +460,7 @@ class Dataset(object):
         
     def sub_coords(self, var, zbounds=None, bbox=None,
         timebounds=None, zinds=None, timeinds=None):
-        assert var in self.nc.variables
+        assert var in self._current_variables
         coord_dict = self.get_coord_dict(var)
         names = self.get_coord_names(var)
         x, y, z, time = None, None, None, None
@@ -494,7 +500,7 @@ class Dataset(object):
         
         
         """
-        assert var in self.nc.variables
+        assert var in self._current_variables
         ncvar = self.nc.variables[var]
         names = self.get_coord_names(var)
         # find how the shapes match up to var
@@ -588,7 +594,7 @@ class Dataset(object):
         
         
         """
-        assert var in self.nc.variables
+        assert var in self._current_variables
         ncvar = self.nc.variables[var]
         names = self.get_coord_names(var)
         # find how the shapes match up to var
@@ -699,11 +705,69 @@ class Dataset(object):
     _lat2ind = lat2ind
     _ind2lat = ind2lat
     __get_data = _get_data
-
+    
+    """
+    
+        Methods that operate on and return another Dataset object.
+        Intended to be strung together.
+    
+    """
+    def restrict_bbox(self, bbox = None, **kwargs):
+        assert bbox != None
+        assert len(bbox) == 4
+        for var in self._current_variables:
+            xinds, yinds = self.get_xyind_from_bbox(var, bbox)
+            pass
+            
+    def restrict_time(self, times = None):
+        assert times != None
+        assert len(times) == 2
+        for var in self._current_variables:
+            inds = self.get_tind_from_bounds(var, times)
+            pass
+            
+    def restrict_vars(self, varlist = None):
+        assert varlist != None
+        if type(varlist) == str:
+            varlist = (varlist,)
+        #for var in self.getvariableinfo().keys():
+        for var in varlist:
+            pass 
+            
+    def restrict_depth(self, depths = None):
+        assert depths != None
+        assert len(depths) == 2
+        for var in self._current_variables:
+            inds = self.get_zind_from_bounds(var, depths)
+            pass 
+            
+    def regrid(self, **kwargs):
+        pass 
+        
+    def nearest_point(self, point):
+        assert type(point) == paegan.transport.location4d.Location4D:
+        for var in self._current_variables:
+            xind, yind = self.get_xyind_from_point(var, point)
+            pass
+            
+    def nearest_depth(self, depth)
+        if type(depth) != paegan.transport.location4d.Location4D:
+            pass 
+        for var in self._current_variables:
+            ind = self.get_nearest_zind(var, depth)
+            pass 
+            
+    def nearest_time(self, time):
+        if type(time) != paegan.transport.location4d.Location4D:
+            pass 
+        for var in self._current_variables:
+            ind = self.get_nearest_tind(var, time)
 
 class CGridDataset(Dataset):
     """
-    CGridDataset(Dataset)
+    
+        CGridDataset(Dataset)
+    
     """
     def __init__(self, *args,**kwargs):
         super(CGridDataset,self).__init__(*args, **kwargs)
@@ -754,7 +818,9 @@ class CGridDataset(Dataset):
                 
 class RGridDataset(Dataset):
     """
-    RGridDataset(Dataset)
+    
+        RGridDataset(Dataset)
+    
     """
     def __init__(self, *args,**kwargs):
         super(RGridDataset,self).__init__(*args, **kwargs)
@@ -801,7 +867,9 @@ class RGridDataset(Dataset):
 
 class NCellDataset(Dataset):
     """
-    NCellDataset(Dataset)
+    
+        NCellDataset(Dataset)
+    
     """
     def __init__(self, *args,**kwargs):
         super(NCellDataset,self).__init__(*args, **kwargs)
@@ -847,6 +915,3 @@ class NCellDataset(Dataset):
             data = var[indarray[0], indarray[1], indarray[2], 
                        indarray[3], indarray[4], indarray[5]]
         return data
-        
-        
-        
