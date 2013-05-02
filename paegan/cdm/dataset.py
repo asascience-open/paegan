@@ -5,6 +5,7 @@ from paegan.cdm.depthvar import Depthvar
 from paegan.cdm.gridvar import Gridobj
 from paegan.cdm.variable import Coordinates as cachevar
 from paegan.cdm.variable import SubCoordinates as subs
+from paegan.transport.location4d import Location4D
 
 from paegan.logger import logger
 
@@ -713,55 +714,60 @@ class Dataset(object):
     
     """
     def restrict_bbox(self, bbox = None, **kwargs):
-        assert bbox != None
-        assert len(bbox) == 4
-        for var in self._current_variables:
-            xinds, yinds = self.get_xyind_from_bbox(var, bbox)
-            pass
+        raise NotImplementedError
             
     def restrict_time(self, times = None):
         assert times != None
         assert len(times) == 2
         for var in self._current_variables:
             inds = self.get_tind_from_bounds(var, times)
-            pass
+            time_dimension = self.gettimevar(var)
+            time_dimension[range(len(time_dimension))!=inds] = np.nan
+            self._coordcache[var].t = time_dimension
             
     def restrict_vars(self, varlist = None):
         assert varlist != None
+        coord_names = []
         if type(varlist) == str:
             varlist = (varlist,)
-        #for var in self.getvariableinfo().keys():
-        for var in varlist:
-            pass 
-            
+        for var in self._current_variables:
+            coord_names = coord_names + self.get_coord_names(var)
+        for var in self._current_variables:
+            if (var is not in varlist) and (var is not in coord_names):
+                self._current_variables.remove(var)
+         
     def restrict_depth(self, depths = None):
         assert depths != None
         assert len(depths) == 2
         for var in self._current_variables:
             inds = self.get_zind_from_bounds(var, depths)
-            pass 
+            depth_dimension = self.getdepthvar(var)
+            depth_dimension[range(len(depth_dimension))!=inds] = np.nan
+            self._coordcache[var].z = depth_dimension
             
     def regrid(self, **kwargs):
         pass 
         
     def nearest_point(self, point):
-        assert type(point) == paegan.transport.location4d.Location4D:
-        for var in self._current_variables:
-            xind, yind = self.get_xyind_from_point(var, point)
-            pass
+        raise NotImplementedError
             
-    def nearest_depth(self, depth)
-        if type(depth) != paegan.transport.location4d.Location4D:
-            pass 
+    def nearest_depth(self, depth):
+        if type(depth) != Location4D:
+            depth = Location4D(depth=depth, latitude=0, longitude=0)
         for var in self._current_variables:
             ind = self.get_nearest_zind(var, depth)
-            pass 
+            depth_dimension = self.getdepthvar(var)
+            depth_dimension[range(len(depth_dimension))!=ind] = np.nan
+            self._coordcache[var].z = depth_dimension 
             
     def nearest_time(self, time):
         if type(time) != paegan.transport.location4d.Location4D:
-            pass 
+            time = Location4D(date=time, latitude=0, longitude=0)
         for var in self._current_variables:
             ind = self.get_nearest_tind(var, time)
+            time_dimension = self.gettimevar(var)
+            time_dimension[range(len(time_dimension))!=ind] = np.nan
+            self._coordcache[var].t = time_dimension
 
 class CGridDataset(Dataset):
     """
@@ -824,6 +830,25 @@ class RGridDataset(Dataset):
     """
     def __init__(self, *args,**kwargs):
         super(RGridDataset,self).__init__(*args, **kwargs)
+        
+    def restrict_bbox(self, bbox = None, **kwargs):
+        assert bbox != None
+        assert len(bbox) == 4
+        for var in self._current_variables:
+            xinds, yinds = self.get_xyind_from_bbox(var, bbox)
+            grid = self.getgridobj(var)
+            grid._xarray[range(len(grid._xarray))!=xinds] = np.nan
+            grid._yarray[range(len(grid._yarray))!=yinds] = np.nan
+            self._coordcache[var].xy = grid
+    
+    def nearest_point(self, point):
+        assert type(point) == paegan.transport.location4d.Location4D:
+        for var in self._current_variables:
+            xind, yind = self.get_xyind_from_point(var, point)
+            grid = self.getgridobj(var)
+            grid._xarray[range(len(grid._xarray))!=xind] = np.nan
+            grid._yarray[range(len(grid._yarray))!=yind] = np.nan
+            self._coordcache[var].xy = grid
         
     def get_xyind_from_bbox(self, var, bbox):
         grid = self.getgridobj(var)
