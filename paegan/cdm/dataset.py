@@ -164,6 +164,9 @@ class Dataset(object):
         self.opennc()
         self._current_variables = list(self.nc.variables.keys())
         
+    def _copy(self):
+        raise NotImplementedError
+        
     """
     
         Methods that return data or info or something
@@ -295,7 +298,7 @@ class Dataset(object):
             self._coordcache[var] = cachevar()
         if gridobj == None:
             names = self.get_coord_names(var)
-            if names['xname'] != None or names['yname'] !=None:
+            if names['xname'] != None and names['yname'] !=None:
                 gridobj = Gridobj(self.nc, names["xname"], 
                    names["yname"])
             else:
@@ -719,31 +722,37 @@ class Dataset(object):
     def restrict_time(self, times = None):
         assert times != None
         assert len(times) == 2
-        for var in self._current_variables:
-            inds = self.get_tind_from_bounds(var, times)
-            time_dimension = self.gettimevar(var)
+        new = self._copy()
+        for var in new._current_variables:
+            inds = new.get_tind_from_bounds(var, times)
+            time_dimension = new.gettimevar(var)
             time_dimension[range(len(time_dimension))!=inds] = np.nan
-            self._coordcache[var].t = time_dimension
+            new._coordcache[var].t = time_dimension
+        return new
             
     def restrict_vars(self, varlist = None):
         assert varlist != None
         coord_names = []
+        new = self._copy()
         if type(varlist) == str:
             varlist = (varlist,)
-        for var in self._current_variables:
-            coord_names = coord_names + self.get_coord_names(var)
+        for var in new._current_variables:
+            coord_names = coord_names + new.get_coord_names(var).values()
         for var in self._current_variables:
             if (not var in set(varlist)) and (not var in set(coord_names)):
-                self._current_variables.remove(var)
+                new._current_variables.remove(var)
+        return new
          
     def restrict_depth(self, depths = None):
         assert depths != None
         assert len(depths) == 2
-        for var in self._current_variables:
-            inds = self.get_zind_from_bounds(var, depths)
-            depth_dimension = self.getdepthvar(var)
+        new = self._copy()
+        for var in new._current_variables:
+            inds = new.get_zind_from_bounds(var, depths)
+            depth_dimension = new.getdepthvar(var)
             depth_dimension[range(len(depth_dimension))!=inds] = np.nan
-            self._coordcache[var].z = depth_dimension
+            new._coordcache[var].z = depth_dimension
+        return new
             
     def regrid(self, **kwargs):
         pass 
@@ -752,22 +761,26 @@ class Dataset(object):
         raise NotImplementedError
             
     def nearest_depth(self, depth):
+        new = self._copy()
         if type(depth) != Location4D:
             depth = Location4D(depth=depth, latitude=0, longitude=0)
         for var in self._current_variables:
-            ind = self.get_nearest_zind(var, depth)
-            depth_dimension = self.getdepthvar(var)
+            ind = new.get_nearest_zind(var, depth)
+            depth_dimension = new.getdepthvar(var)
             depth_dimension[range(len(depth_dimension))!=ind] = np.nan
-            self._coordcache[var].z = depth_dimension 
+            new._coordcache[var].z = depth_dimension 
+        return new
             
     def nearest_time(self, time):
-        if type(time) != paegan.transport.location4d.Location4D:
+        new = self._copy()
+        if type(time) != Location4D:
             time = Location4D(date=time, latitude=0, longitude=0)
         for var in self._current_variables:
-            ind = self.get_nearest_tind(var, time)
-            time_dimension = self.gettimevar(var)
+            ind = new.get_nearest_tind(var, time)
+            time_dimension = new.gettimevar(var)
             time_dimension[range(len(time_dimension))!=ind] = np.nan
-            self._coordcache[var].t = time_dimension
+            new._coordcache[var].t = time_dimension
+        return new    
 
 class CGridDataset(Dataset):
     """
@@ -830,25 +843,34 @@ class RGridDataset(Dataset):
     """
     def __init__(self, *args,**kwargs):
         super(RGridDataset,self).__init__(*args, **kwargs)
+    
+    def _copy(self):
+        return RGridDataset(self._filename, self._datasettype)
         
     def restrict_bbox(self, bbox = None, **kwargs):
         assert bbox != None
         assert len(bbox) == 4
-        for var in self._current_variables:
-            xinds, yinds = self.get_xyind_from_bbox(var, bbox)
-            grid = self.getgridobj(var)
-            grid._xarray[range(len(grid._xarray))!=xinds] = np.nan
-            grid._yarray[range(len(grid._yarray))!=yinds] = np.nan
-            self._coordcache[var].xy = grid
+        new = self._copy()
+        for var in new._current_variables:
+            grid = new.getgridobj(var)
+            if grid != None:
+                xinds, yinds =  new.get_xyind_from_bbox(var, bbox)
+                grid._xarray[range(len(grid._xarray))!=xinds] = np.nan
+                grid._yarray[range(len(grid._yarray))!=yinds] = np.nan
+                new._coordcache[var].xy = grid
+        return new
     
     def nearest_point(self, point):
-        assert type(point) == paegan.transport.location4d.Location4D:
-        for var in self._current_variables:
-            xind, yind = self.get_xyind_from_point(var, point)
-            grid = self.getgridobj(var)
-            grid._xarray[range(len(grid._xarray))!=xind] = np.nan
-            grid._yarray[range(len(grid._yarray))!=yind] = np.nan
-            self._coordcache[var].xy = grid
+        assert type(point) == Location4D
+        new = self._copy()
+        for var in new._current_variables:
+            grid = new.getgridobj(var)
+            if grid != None:
+                xind, yind = new.get_xyind_from_point(var, point)
+                grid._xarray[range(len(grid._xarray))!=xind] = np.nan
+                grid._yarray[range(len(grid._yarray))!=yind] = np.nan
+                new._coordcache[var].xy = grid
+        return new
         
     def get_xyind_from_bbox(self, var, bbox):
         grid = self.getgridobj(var)
