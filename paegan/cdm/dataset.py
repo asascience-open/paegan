@@ -733,7 +733,7 @@ class Dataset(object):
         for var in self._current_variables:
             coord_names = coord_names + self.get_coord_names(var)
         for var in self._current_variables:
-            if (var is not in varlist) and (var is not in coord_names):
+            if (not var in set(varlist)) and (not var in set(coord_names)):
                 self._current_variables.remove(var)
          
     def restrict_depth(self, depths = None):
