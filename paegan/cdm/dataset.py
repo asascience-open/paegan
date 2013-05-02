@@ -171,16 +171,22 @@ class Dataset(object):
         return variables
                            
     def lon2ind(self, var=None, **kwargs):
-        pass
+        raise NotImplementedError
          
     def lat2ind(self, var=None, **kwargs):
-        pass
+        raise NotImplementedError
             
     def ind2lon(self, var=None, **kwargs):
-        pass
+        raise NotImplementedError
    
     def ind2lat(self, var=None, **kwargs):
-        pass
+        raise NotImplementedError
+    
+    def get_xyind_from_bbox(self, var, bbox):
+        raise NotImplementedError
+        
+    def get_xyind_from_point(self, var, point, **kwargs):
+        raise NotImplementedError
         
     def closenc(self):
         self.metadata = None
@@ -680,9 +686,9 @@ class Dataset(object):
             # data = None
             raise ValueError("no data inside the domian specified")
         return data
-        
+            
     def _get_data(self, var, **kwargs):
-        pass
+        raise NotImplementedError
                 
     _get_values = get_values
     _getgridobj = getgridobj
@@ -701,21 +707,8 @@ class CGridDataset(Dataset):
     """
     def __init__(self, *args,**kwargs):
         super(CGridDataset,self).__init__(*args, **kwargs)
-
-    def lon2ind(self, var=None, **kwargs):
-        pass
-         
-    def lat2ind(self, var=None, **kwargs):
-        pass
-            
-    def ind2lon(self, var=None, **kwargs):
-        pass
-   
-    def ind2lat(self, var=None, **kwargs):
-        pass
         
     def get_xyind_from_bbox(self, var, bbox, **kwargs):
- 
         grid = self.getgridobj(var)
         xbool = grid.get_xbool_from_bbox(bbox)
         ybool = grid.get_ybool_from_bbox(bbox)
@@ -734,7 +727,6 @@ class CGridDataset(Dataset):
         inds = indexc, indexr
         return inds, inds
         
-
     def _get_data(self, var, indarray, use_local=False):
         ndims = len(indarray)
         if use_local == False:
@@ -767,18 +759,6 @@ class RGridDataset(Dataset):
     def __init__(self, *args,**kwargs):
         super(RGridDataset,self).__init__(*args, **kwargs)
         
-    def lon2ind(self, var=None, **kwargs):
-        pass
-         
-    def lat2ind(self, var=None, **kwargs):
-        pass
-            
-    def ind2lon(self, var=None, **kwargs):
-        pass
-   
-    def ind2lat(self, var=None, **kwargs):
-        pass
-        
     def get_xyind_from_bbox(self, var, bbox):
         grid = self.getgridobj(var)
         xbool = grid.get_xbool_from_bbox(bbox)
@@ -796,7 +776,6 @@ class RGridDataset(Dataset):
     def _get_data(self, var, indarray, use_local=False):
         ndims = len(indarray)
         #print "this is what im trying to get", indarray
-        
         if use_local == False:
             var = self.nc.variables[var]
         else:
@@ -829,18 +808,6 @@ class NCellDataset(Dataset):
         if None in self.nc.variables:
             self._is_topology = True
             self.topology_var_name = None
-        
-    def lon2ind(self, var=None, **kwargs):
-        pass
-         
-    def lat2ind(self, var=None, **kwargs):
-        pass
-            
-    def ind2lon(self, var=None, **kwargs):
-        pass
-   
-    def ind2lat(self, var=None, **kwargs):
-        pass
         
     def get_xyind_from_bbox(self, var, bbox):
         grid = self.getgridobj(var)
