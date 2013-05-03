@@ -1,6 +1,7 @@
 from paegan.cdm.dataset import CommonDataset
-import unittest
-import os
+import unittest, os, pytz
+from datetime import datetime
+import numpy as np
 
 class DatasetTest(unittest.TestCase):
     def cgrid_init():
@@ -46,4 +47,19 @@ class DatasetTest(unittest.TestCase):
         assert names["xname"] == "lon"
         assert names["yname"] == "lat"
         pd.closenc()
+        
+    def fluid_test():
+        url = "http://thredds.axiomalaska.com/thredds/dodsC/PWS_DAS.nc"
+        pd = CommonDataset.open(url)
+        assert pd._datasettype == 'rgrid'
+        currentbbox = nc.getbbox("u")
+        newbbox = np.asarray(nc.getbbox("u"))-1
+        test = nc.restrict_vars("u").restrict_bbox(newbbox).restrict_depth((3, 50)).nearest_time(datetime(2011,5,1,0,0, tzinfo=pytz.utc))
+        assert not "v" in set(test._current_variables)
+        assert test.getbbox("u")[2] <= newbbox[2]
+        assert test.getbbox("u")[3] <= newbbox[3]
+        assert test.getdepthbounds("u")[0] >= 3
+        assert test.getdepthbounds("u")[1] <= 50
+        assert test.gettimebounds("u")[0] == datetime(2011,5,1,0,0, tzinfo=pytz.utc)
+        assert test.gettimebounds("u")[1] == datetime(2011,5,1,0,0, tzinfo=pytz.utc)
 
