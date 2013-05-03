@@ -1,5 +1,5 @@
 import numpy as np
-import netCDF4, datetime
+import netCDF4, datetime, copy
 from paegan.cdm.timevar import Timevar
 from paegan.cdm.depthvar import Depthvar
 from paegan.cdm.gridvar import Gridobj
@@ -56,7 +56,18 @@ _possibley = ["y", "Y",
            "lat_psi", "LAT_PSI",
           ]
 
-
+def sub_by_nan(data, ind):
+    """
+        Funtction to subset a dimension variable by replacing values
+        that do not appear in the index with np.nan, in order to
+        preserve the lazy data access on the full array's in the backend.
+    """
+    xtmp = -1 * np.ones_like(data)
+    xtmp[ind[0]:ind[-1]+1] = ind
+    xbool = range(len(data)) != xtmp
+    data[xbool] = np.nan
+    return data
+                
 class CommonDataset(object):
 
     @staticmethod
@@ -726,7 +737,7 @@ class Dataset(object):
         for var in new._current_variables:
             inds = new.get_tind_from_bounds(var, times)
             time_dimension = new.gettimevar(var)
-            time_dimension[range(len(time_dimension))!=inds] = np.nan
+            time_dimension = sub_by_nan(time_dimension, inds[0][0])
             new._coordcache[var].t = time_dimension
         return new
             
@@ -750,7 +761,7 @@ class Dataset(object):
         for var in new._current_variables:
             inds = new.get_zind_from_bounds(var, depths)
             depth_dimension = new.getdepthvar(var)
-            depth_dimension[range(len(depth_dimension))!=inds] = np.nan
+            depth_dimension = sub_by_nan(depth_dimension, inds[0][0])
             new._coordcache[var].z = depth_dimension
         return new
             
@@ -767,7 +778,7 @@ class Dataset(object):
         for var in self._current_variables:
             ind = new.get_nearest_zind(var, depth)
             depth_dimension = new.getdepthvar(var)
-            depth_dimension[range(len(depth_dimension))!=ind] = np.nan
+            depth_dimension = sub_by_nan(depth_dimension, ind)
             new._coordcache[var].z = depth_dimension 
         return new
             
@@ -778,7 +789,7 @@ class Dataset(object):
         for var in self._current_variables:
             ind = new.get_nearest_tind(var, time)
             time_dimension = new.gettimevar(var)
-            time_dimension[range(len(time_dimension))!=ind] = np.nan
+            time_dimension = sub_by_nan(time_dimension, ind)
             new._coordcache[var].t = time_dimension
         return new    
 
@@ -845,7 +856,10 @@ class RGridDataset(Dataset):
         super(RGridDataset,self).__init__(*args, **kwargs)
     
     def _copy(self):
-        return RGridDataset(self._filename, self._datasettype)
+        new = RGridDataset(self._filename, self._datasettype)
+        new._coordcache = copy.copy(self._coordcache)
+        new._current_variables = copy.copy(self._current_variables)
+        return new
         
     def restrict_bbox(self, bbox = None, **kwargs):
         assert bbox != None
@@ -855,8 +869,8 @@ class RGridDataset(Dataset):
             grid = new.getgridobj(var)
             if grid != None:
                 xinds, yinds =  new.get_xyind_from_bbox(var, bbox)
-                grid._xarray[range(len(grid._xarray))!=xinds] = np.nan
-                grid._yarray[range(len(grid._yarray))!=yinds] = np.nan
+                grid._xarray = sub_by_nan(grid._xarray, xinds[0][0])
+                grid._yarray = sub_by_nan(grid._yarray, yinds[0][0])
                 new._coordcache[var].xy = grid
         return new
     
@@ -867,8 +881,8 @@ class RGridDataset(Dataset):
             grid = new.getgridobj(var)
             if grid != None:
                 xind, yind = new.get_xyind_from_point(var, point)
-                grid._xarray[range(len(grid._xarray))!=xind] = np.nan
-                grid._yarray[range(len(grid._yarray))!=yind] = np.nan
+                grid._xarray = sub_by_nan(grid._xarray, xind)
+                grid._yarray = sub_by_nan(grid._yarray, yind)
                 new._coordcache[var].xy = grid
         return new
         

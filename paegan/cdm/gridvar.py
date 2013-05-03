@@ -68,10 +68,11 @@ class Gridobj:
     
     def get_bbox(self):
         if self._ndim == 2:
+            xtmp = self._xarray[np.isnan(self._xarray)==False]
             bbox = np.nanmin(self._xarray[:,0]), self.ymin, np.nanmax(self._xarray[:,-1]), self.ymax
         else:
-            bbox = self._xarray[0], self.ymin, self._xarray[-1], self.ymax
-        self.bbox = bbox
+            xtmp = self._xarray[np.isnan(self._xarray)==False]
+            bbox = xtmp[0], self.ymin, xtmp[-1], self.ymax
         return bbox
             
     def get_projectedbool(self):
