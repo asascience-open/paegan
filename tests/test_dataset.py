@@ -4,7 +4,7 @@ from datetime import datetime
 import numpy as np
 
 class DatasetTest(unittest.TestCase):
-    def cgrid_init():
+    def test_cgrid_init(self):
         url = "http://testbedapps-dev.sura.org/thredds/dodsC/estuarine_hypoxia/chesroms/agg-1991.nc"
         pd = CommonDataset.open(url)
         assert pd._datasettype == 'cgrid'
@@ -17,7 +17,7 @@ class DatasetTest(unittest.TestCase):
         assert names["yname"] == "lat_u"
         pd.closenc()
 
-    def ncell_init():
+    def test_ncell_init(self):
         url = "http://testbedapps-dev.sura.org/thredds/dodsC/in/usf/fvcom/rita/ultralite/vardrag/nowave/3d"
         pd = CommonDataset.open(url)
         assert pd._datasettype == 'ncell'
@@ -30,7 +30,7 @@ class DatasetTest(unittest.TestCase):
         assert names["yname"] == "lat"
         pd.closenc()
  
-    def slosh_test():
+    def test_slosh_test(self):
         url = "http://testbedapps-dev.sura.org/thredds/dodsC/in/und/slosh/ike/egl3/swi"
         pd = CommonDataset.open(url)
         assert pd._datasettype == 'cgrid'
@@ -48,13 +48,12 @@ class DatasetTest(unittest.TestCase):
         assert names["yname"] == "lat"
         pd.closenc()
         
-    def fluid_test():
+    def test_fluid_test(self):
         url = "http://thredds.axiomalaska.com/thredds/dodsC/PWS_DAS.nc"
         pd = CommonDataset.open(url)
         assert pd._datasettype == 'rgrid'
-        currentbbox = nc.getbbox("u")
-        newbbox = np.asarray(nc.getbbox("u"))-1
-        test = nc.restrict_vars("u").restrict_bbox(newbbox).restrict_depth((3, 50)).nearest_time(datetime(2011,5,1,0,0, tzinfo=pytz.utc))
+        newbbox = np.asarray(pd.getbbox("u"))-1
+        test = pd.restrict_vars("u").restrict_bbox(newbbox).restrict_depth((3, 50)).nearest_time(datetime(2011,5,1,0,0, tzinfo=pytz.utc))
         assert not "v" in set(test._current_variables)
         assert test.getbbox("u")[2] <= newbbox[2]
         assert test.getbbox("u")[3] <= newbbox[3]
