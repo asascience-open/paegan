@@ -62,10 +62,11 @@ def sub_by_nan(data, ind):
         that do not appear in the index with np.nan, in order to
         preserve the lazy data access on the full array's in the backend.
     """
-    xtmp = -1 * np.ones_like(data)
-    xtmp[ind[0]:ind[-1]+1] = ind
-    xbool = range(len(data)) != xtmp
-    data[xbool] = np.nan
+    if len(ind) > 0:
+        xtmp = -1 * np.ones_like(data)
+        xtmp[ind[0]:ind[-1]+1] = ind
+        xbool = range(len(data)) != xtmp
+        data[xbool] = np.nan
     return data
                 
 class CommonDataset(object):
@@ -221,17 +222,17 @@ class Dataset(object):
     def gettimestep(self, var=None):
         assert var in self._current_variables
         time = self.gettimevar(var)
-        return time.timestep
+        return time[np.isnan(time)==False].timestep
     
     def gettimebounds(self, var=None, **kwargs):
         assert var in self._current_variables
         time = self.gettimevar(var)
         if "units" in kwargs:
             u = kwargs.get("units")
-            bounds = (netCDF4.num2date(np.min(time),units=u),
-                      netCDF4.num2date(np.max(time),units=u))
+            bounds = (netCDF4.num2date(np.nanmin(time[np.isnan(time)==False]),units=u),
+                      netCDF4.num2date(np.nanmax(time[np.isnan(time)==False]),units=u))
         else:
-            bounds = (np.min(time.dates), np.max(time.dates))
+            bounds = (np.nanmin(time[np.isnan(time)==False].dates), np.nanmax(time[np.isnan(time)==False].dates))
         return bounds
 
     def getdepthbounds(self, var=None, **kwargs):
@@ -239,11 +240,11 @@ class Dataset(object):
         depths = self.getdepthvar(var)
         if "units" in kwargs:
             if kwargs["units"] == "m":
-                bounds = (np.min(depths.get_m), np.max(depths.get_m))
+                bounds = (np.nanmin(depths.get_m), np.nanmax(depths.get_m))
             else:
                 bounds = ()
         else:
-            bounds = (np.min(depths), np.max(depths))
+            bounds = (np.nanmin(depths), np.nanmax(depths))
         return bounds
     
     def getbbox(self, var=None, **kwargs):
@@ -735,10 +736,11 @@ class Dataset(object):
         assert len(times) == 2
         new = self._copy()
         for var in new._current_variables:
-            inds = new.get_tind_from_bounds(var, times)
             time_dimension = new.gettimevar(var)
-            time_dimension = sub_by_nan(time_dimension, inds[0][0])
-            new._coordcache[var].t = time_dimension
+            if time_dimension != None:
+                inds = new.get_tind_from_bounds(var, times)
+                time_dimension = sub_by_nan(time_dimension, inds[0][0])
+                new._coordcache[var].t = time_dimension
         return new
             
     def restrict_vars(self, varlist = None):
@@ -759,10 +761,11 @@ class Dataset(object):
         assert len(depths) == 2
         new = self._copy()
         for var in new._current_variables:
-            inds = new.get_zind_from_bounds(var, depths)
             depth_dimension = new.getdepthvar(var)
-            depth_dimension = sub_by_nan(depth_dimension, inds[0][0])
-            new._coordcache[var].z = depth_dimension
+            if depth_dimension != None:
+                inds = new.get_zind_from_bounds(var, depths)
+                depth_dimension = sub_by_nan(depth_dimension, inds[0])
+                new._coordcache[var].z = depth_dimension
         return new
             
     def regrid(self, **kwargs):
@@ -776,21 +779,23 @@ class Dataset(object):
         if type(depth) != Location4D:
             depth = Location4D(depth=depth, latitude=0, longitude=0)
         for var in self._current_variables:
-            ind = new.get_nearest_zind(var, depth)
             depth_dimension = new.getdepthvar(var)
-            depth_dimension = sub_by_nan(depth_dimension, ind)
-            new._coordcache[var].z = depth_dimension 
+            if depth_dimension != None:
+                ind = new.get_nearest_zind(var, depth)
+                depth_dimension = sub_by_nan(depth_dimension, ind)
+                new._coordcache[var].z = depth_dimension 
         return new
             
     def nearest_time(self, time):
         new = self._copy()
         if type(time) != Location4D:
-            time = Location4D(date=time, latitude=0, longitude=0)
+            time = Location4D(time=time, latitude=0, longitude=0)
         for var in self._current_variables:
-            ind = new.get_nearest_tind(var, time)
             time_dimension = new.gettimevar(var)
-            time_dimension = sub_by_nan(time_dimension, ind)
-            new._coordcache[var].t = time_dimension
+            if time_dimension != None:
+                ind = new.get_nearest_tind(var, time)
+                time_dimension = sub_by_nan(time_dimension, ind)
+                new._coordcache[var].t = time_dimension
         return new    
 
 class CGridDataset(Dataset):
