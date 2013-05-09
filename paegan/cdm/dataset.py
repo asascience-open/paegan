@@ -56,19 +56,39 @@ _possibley = ["y", "Y",
            "lat_psi", "LAT_PSI",
           ]
 
-def sub_by_nan(data, ind):
-    """
-        Funtction to subset a dimension variable by replacing values
-        that do not appear in the index with np.nan, in order to
-        preserve the lazy data access on the full array's in the backend.
-    """
-    if len(ind) > 0:
-        xtmp = -1 * np.ones_like(data)
-        xtmp[ind[0]:ind[-1]+1] = ind
-        xbool = range(len(data)) != xtmp
-        data[xbool] = np.nan
-    return data
-                
+def _sub_by_nan(data, ind):
+        """
+            Funtction to subset a dimension variable by replacing values
+            that do not appear in the index with np.nan, in order to
+            preserve the lazy data access on the full array's in the backend.
+        """
+        if len(ind) > 0:
+            xtmp = -1 * np.ones_like(data)
+            xtmp[ind[0]:ind[-1]+1] = ind
+            xbool = range(len(data)) != xtmp
+            data[xbool] = np.nan
+        else:
+            data = np.nan * np.ones_like(data)
+        return data
+        
+def _sub_by_nan2(data, ind):
+        """
+            Funtction to subset a dimension variable by replacing values
+            that do not appear in the index with np.nan, in order to
+            preserve the lazy data access on the full array's in the backend.
+        """
+        if (len(ind[0]) > 0) & (len(ind[1]) > 0):
+            xtmp = -1 * np.ones_like(data[1,:])
+            xtmp[ind[1][0]:ind[1][-1]+1] = ind[1]
+            xbool = range(len(data[1])) != xtmp
+            ytmp = -1 * np.ones_like(data[:,1])
+            ytmp[ind[0][0]:ind[0][-1]+1] = ind[0]
+            ybool = range(len(data[0])) != ytmp
+            data[ybool, xbool] = np.nan
+        else:
+            data = np.nan * np.ones_like(data)
+        return data
+        
 class CommonDataset(object):
 
     @staticmethod
@@ -129,8 +149,11 @@ class CommonDataset(object):
                 if testvary.shape[0] != testvarx.shape[0]:
                     datasettype = "rgrid"
                 else:
-                    if nc.cdm_data_type.lower() == "grid":
-                        datasettype = "rgrid"
+                    if "cdm_data_type" in nc.ncattrs():
+                        if nc.cdm_data_type.lower() == "grid":
+                            datasettype = "rgrid"
+                        else:
+                            datasettype = "ncell"
                     else:
                         datasettype = "ncell"
         nc.close()
@@ -739,7 +762,7 @@ class Dataset(object):
             time_dimension = new.gettimevar(var)
             if time_dimension != None:
                 inds = new.get_tind_from_bounds(var, times)
-                time_dimension = sub_by_nan(time_dimension, inds[0][0])
+                time_dimension = _sub_by_nan(time_dimension, inds[0][0])
                 new._coordcache[var].t = time_dimension
         return new
             
@@ -764,12 +787,16 @@ class Dataset(object):
             depth_dimension = new.getdepthvar(var)
             if depth_dimension != None:
                 inds = new.get_zind_from_bounds(var, depths)
-                depth_dimension = sub_by_nan(depth_dimension, inds[0])
+                depth_dimension = _sub_by_nan(depth_dimension, inds[0])
                 new._coordcache[var].z = depth_dimension
         return new
             
     def regrid(self, **kwargs):
-        pass 
+        """
+            TODO: Implement a generic regridding method.
+                  Pass in lat/lon/depth/time arrays?
+        """
+        raise NotImplementedError
         
     def nearest_point(self, point):
         raise NotImplementedError
@@ -782,7 +809,7 @@ class Dataset(object):
             depth_dimension = new.getdepthvar(var)
             if depth_dimension != None:
                 ind = new.get_nearest_zind(var, depth)
-                depth_dimension = sub_by_nan(depth_dimension, ind)
+                depth_dimension = _sub_by_nan(depth_dimension, ind)
                 new._coordcache[var].z = depth_dimension 
         return new
             
@@ -794,7 +821,7 @@ class Dataset(object):
             time_dimension = new.gettimevar(var)
             if time_dimension != None:
                 ind = new.get_nearest_tind(var, time)
-                time_dimension = sub_by_nan(time_dimension, ind)
+                time_dimension = _sub_by_nan(time_dimension, ind)
                 new._coordcache[var].t = time_dimension
         return new    
 
@@ -811,6 +838,31 @@ class CGridDataset(Dataset):
         new = CGridDataset(self._filename, self._datasettype)
         new._coordcache = copy.copy(self._coordcache)
         new._current_variables = copy.copy(self._current_variables)
+        return new
+        
+    def restrict_bbox(self, bbox = None, **kwargs):
+        assert bbox != None
+        assert len(bbox) == 4
+        new = self._copy()
+        for var in new._current_variables:
+            grid = new.getgridobj(var)
+            if grid != None:
+                inds, inds = new.get_xyind_from_bbox(var, bbox)
+                grid._xarray = _sub_by_nan2(grid._xarray, inds)
+                grid._yarray = _sub_by_nan2(grid._yarray, inds)
+                new._coordcache[var].xy = grid
+        return new
+    
+    def nearest_point(self, point):
+        assert type(point) == Location4D
+        new = self._copy()
+        for var in new._current_variables:
+            grid = new.getgridobj(var)
+            if grid != None:
+                inds, inds = new.get_xyind_from_point(var, point)
+                grid._xarray = _sub_by_nan2(grid._xarray, inds)
+                grid._yarray = _sub_by_nan2(grid._yarray, inds)
+                new._coordcache[var].xy = grid
         return new
         
     def get_xyind_from_bbox(self, var, bbox, **kwargs):
@@ -880,8 +932,8 @@ class RGridDataset(Dataset):
             grid = new.getgridobj(var)
             if grid != None:
                 xinds, yinds =  new.get_xyind_from_bbox(var, bbox)
-                grid._xarray = sub_by_nan(grid._xarray, xinds[0][0])
-                grid._yarray = sub_by_nan(grid._yarray, yinds[0][0])
+                grid._xarray = _sub_by_nan(grid._xarray, xinds[0][0])
+                grid._yarray = _sub_by_nan(grid._yarray, yinds[0][0])
                 new._coordcache[var].xy = grid
         return new
     
@@ -892,8 +944,8 @@ class RGridDataset(Dataset):
             grid = new.getgridobj(var)
             if grid != None:
                 xind, yind = new.get_xyind_from_point(var, point)
-                grid._xarray = sub_by_nan(grid._xarray, xind)
-                grid._yarray = sub_by_nan(grid._yarray, yind)
+                grid._xarray = _sub_by_nan(grid._xarray, xind)
+                grid._yarray = _sub_by_nan(grid._yarray, yind)
                 new._coordcache[var].xy = grid
         return new
         
@@ -953,6 +1005,31 @@ class NCellDataset(Dataset):
         new = NCellDataset(self._filename, self._datasettype)
         new._coordcache = copy.copy(self._coordcache)
         new._current_variables = copy.copy(self._current_variables)
+        return new
+        
+    def restrict_bbox(self, bbox = None, **kwargs):
+        assert bbox != None
+        assert len(bbox) == 4
+        new = self._copy()
+        for var in new._current_variables:
+            grid = new.getgridobj(var)
+            if grid != None:
+                inds, inds =  new.get_xyind_from_bbox(var, bbox)
+                grid._xarray = _sub_by_nan(grid._xarray, inds[0][0])
+                grid._yarray = _sub_by_nan(grid._yarray, inds[0][0])
+                new._coordcache[var].xy = grid
+        return new
+    
+    def nearest_point(self, point):
+        assert type(point) == Location4D
+        new = self._copy()
+        for var in new._current_variables:
+            grid = new.getgridobj(var)
+            if grid != None:
+                inds, inds = new.get_xyind_from_point(var, point)
+                grid._xarray = _sub_by_nan(grid._xarray, inds)
+                grid._yarray = _sub_by_nan(grid._yarray, inds)
+                new._coordcache[var].xy = grid
         return new
         
     def get_xyind_from_bbox(self, var, bbox):

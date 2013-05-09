@@ -67,6 +67,9 @@ class Gridobj:
         return np.nanmin(np.nanmin(self._yarray))
     
     def get_bbox(self):
+        """
+            TODO: Implement ncell bbox
+        """
         if self._ndim == 2:
             xtmp = self._xarray[np.isnan(self._xarray)==False]
             bbox = np.nanmin(self._xarray[:,0]), self.ymin, np.nanmax(self._xarray[:,-1]), self.ymax
@@ -96,6 +99,9 @@ class Gridobj:
         pass
     
     def near_xy(self, **kwargs):
+        """
+            TODO: Implement ncell near_xy
+        """
         point = kwargs.get("point", None)
         if point == None:
             lat = kwargs.get("lat", None)
