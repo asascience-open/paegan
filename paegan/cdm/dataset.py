@@ -807,6 +807,12 @@ class CGridDataset(Dataset):
     def __init__(self, *args,**kwargs):
         super(CGridDataset,self).__init__(*args, **kwargs)
         
+    def _copy(self):
+        new = CGridDataset(self._filename, self._datasettype)
+        new._coordcache = copy.copy(self._coordcache)
+        new._current_variables = copy.copy(self._current_variables)
+        return new
+        
     def get_xyind_from_bbox(self, var, bbox, **kwargs):
         grid = self.getgridobj(var)
         xbool = grid.get_xbool_from_bbox(bbox)
@@ -942,6 +948,12 @@ class NCellDataset(Dataset):
         if None in self.nc.variables:
             self._is_topology = True
             self.topology_var_name = None
+    
+    def _copy(self):
+        new = NCellDataset(self._filename, self._datasettype)
+        new._coordcache = copy.copy(self._coordcache)
+        new._current_variables = copy.copy(self._current_variables)
+        return new
         
     def get_xyind_from_bbox(self, var, bbox):
         grid = self.getgridobj(var)
