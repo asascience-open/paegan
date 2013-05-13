@@ -1,7 +1,0 @@
-{
-  "min": 30.0,
-  "gradient": 8.0,
-  "max": 40.0,
-  "variable": "sea_water_temperature",
-  "units": "\u00b0C"
-}

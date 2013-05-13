@@ -5,7 +5,7 @@ from paegan.cdm.depthvar import Depthvar
 from paegan.cdm.gridvar import Gridobj
 from paegan.cdm.variable import Coordinates as cachevar
 from paegan.cdm.variable import SubCoordinates as subs
-from paegan.transport.location4d import Location4D
+from paegan.location4d import Location4D
 
 from paegan.logger import logger
 

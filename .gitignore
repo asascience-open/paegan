@@ -1,7 +1,5 @@
 *.pyc
 *sublime*
-paegan/transport/_cache/*.nc
-paegan/transport/_output/*
 paegan.log
 
 tests/resources/files/*.nc

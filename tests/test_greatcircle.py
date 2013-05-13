@@ -1,9 +1,8 @@
 import math
 import unittest
-from paegan.transport.particles.particle import Particle
 from paegan.utils.asagreatcircle import AsaGreatCircle
 from paegan.utils.asamath import AsaMath
-from paegan.transport.location4d import Location4D
+from paegan.location4d import Location4D
 
 class GreatCircleTest(unittest.TestCase):
     def test_great_circle_angles(self):

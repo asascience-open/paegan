@@ -1,7 +1,7 @@
 import numpy as np
 import netCDF4
 from paegan.utils.asagreatcircle import AsaGreatCircle
-from paegan.transport.location4d import Location4D
+from paegan.location4d import Location4D
 
 class Gridobj:
     def __init__(self, nc, xname=None, yname=None,

@@ -1,9 +1,0 @@
-{
-  "plus_or_minus": "+", 
-  "min": 4.0, 
-  "max": 5.0, 
-  "hours": 4, 
-  "time": null, 
-  "type": "cycles", 
-  "cycle": "sunrise"
-}
