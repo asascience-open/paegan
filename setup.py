@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages, Command
 
 files = ["paegan/*"]
-readme = open('README.txt', 'rb').read()
+readme = open('README.md', 'rb').read()
 reqs = [line.strip() for line in open('requirements.txt')]
 
 class PyTest(Command):
