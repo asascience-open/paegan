@@ -17,7 +17,7 @@ class PyTest(Command):
 
 setup(namespace_packages = ['paegan'],
     name                = "paegan",
-    version             = "0.9.5",
+    version             = "0.9.6",
     description         = "Processing and Analysis for Numerical Data",
     long_description    = readme,
     license             = 'LICENSE.txt',
