@@ -27,7 +27,7 @@ pd.restrict_time((starting, ending))
 ```
 #####Depth
 ```python
-pd.restrict_bbox((3,50))
+pd.restrict_depth((3,50))
 ```
 #####Variables
 ```python
