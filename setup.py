@@ -1,33 +1,41 @@
-from setuptools import setup, find_packages, Command
+from __future__ import with_statement
+import sys
 
-files = ["paegan/*"]
-readme = open('README.md', 'rb').read()
+from setuptools import setup, find_packages
+from setuptools.command.test import test as TestCommand
+
+from paegan import __version__
+
+def readme():
+    with open('README.md') as f:
+        return f.read()
+
 reqs = [line.strip() for line in open('requirements.txt')]
 
-class PyTest(Command):
-    user_options = []
-    def initialize_options(self):
-        pass
+class PyTest(TestCommand):
     def finalize_options(self):
-        pass
-    def run(self):
-        import sys,subprocess
-        errno = subprocess.call([sys.executable, 'runtests.py'])
-        raise SystemExit(errno)
+        TestCommand.finalize_options(self)
+        self.test_args = []
+        self.test_suite = True
+    def run_tests(self):
+        import pytest
+        errno = pytest.main(self.test_args)
+        sys.exit(errno)
 
 setup(namespace_packages = ['paegan'],
-    name                = "paegan",
-    version             = "0.9.6",
-    description         = "Processing and Analysis for Numerical Data",
-    long_description    = readme,
-    license             = 'LICENSE.txt',
-    author              = "Kyle Wilcox",
-    author_email        = "kwilcox@sasascience.com",
-    url                 = "https://github.com/asascience-open/paegan",
-    packages            = find_packages(),
-    cmdclass            = {'test': PyTest},
-    install_requires    = reqs,
-    classifiers         = [
+    name                 = "paegan",
+    version              = __version__,
+    description          = "Processing and Analysis for Numerical Data",
+    long_description     = readme(),
+    license              = 'GPLv3',
+    author               = "Kyle Wilcox",
+    author_email         = "kwilcox@sasascience.com",
+    url                  = "https://github.com/asascience-open/paegan",
+    packages             = find_packages(),
+    install_requires     = reqs,
+    tests_require        = ['pytest'],
+    cmdclass             = {'test': PyTest},
+    classifiers          = [
             'Development Status :: 3 - Alpha',
             'Intended Audience :: Developers',
             'Intended Audience :: Science/Research',
