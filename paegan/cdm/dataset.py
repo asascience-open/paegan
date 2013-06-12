@@ -277,8 +277,8 @@ class Dataset(object):
         
     def getboundingpolygon(self, var=None, **kwargs):
         assert var in self._current_variables
-        # TODO: This should return a bounding polygon of the dataset
-        return self.getbbox(var)
+        grid = self.getgridobj(var)
+        return grid.boundingpolygon
         
     def _checkcache(self, var):
         assert var in self._current_variables

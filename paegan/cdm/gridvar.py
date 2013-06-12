@@ -2,6 +2,8 @@ import numpy as np
 import netCDF4
 from paegan.utils.asagreatcircle import AsaGreatCircle
 from paegan.location4d import Location4D
+from shapely.geometry import MultiLineString
+from shapely.ops import polygonize
 
 class Gridobj:
     def __init__(self, nc, xname=None, yname=None,
@@ -77,6 +79,43 @@ class Gridobj:
             xtmp = self._xarray[np.isnan(self._xarray)==False]
             bbox = xtmp[0], self.ymin, xtmp[-1], self.ymax
         return bbox
+
+    def get_boundingpolygon(self):
+        """
+            TODO: Implement ncell bbox
+        """
+	(nx,ny) = self._xarray.shape
+	lines = []
+	'''
+	order of lines creation (assumes 0,0 is x)
+	-----3-----
+	|         |
+	4         2
+	|         |
+	x----1-----
+	'''
+	for i in range(nx-1):
+		lines.append(((self._xarray[i][0],self._yarray[i][0]),(self._xarray[i+1][0],self._yarray[i+1][0])))
+	for j in range(ny-1):
+		lines.append(((self._xarray[nx-1][j],self._yarray[nx-1][j]),(self._xarray[nx-1][j+1],self._yarray[nx-1][j+1])))
+	for i in reversed(range(1,nx)):
+		lines.append(((self._xarray[i][ny-1],self._yarray[i][ny-1]),(self._xarray[i-1][ny-1],self._yarray[i-1][ny-1])))
+	for j in reversed(range(1,ny)):
+		lines.append(((self._xarray[0][j],self._yarray[0][j]),(self._xarray[0][j-1],self._yarray[0][j-1])))
+	m = MultiLineString(lines)
+	polygons = list(polygonize(m))
+        def compare(item1, item2):
+                area1 = item1.area
+                area2 = item2.area
+                if area1 < area2:
+                        return -1
+                elif area1 > area2:
+                        return 1
+                else:
+                        return 0
+        # -- polygonize returns a list of polygons, including interior features, the largest in area "should" be the full feature
+        polygon = sorted(polygons,cmp=compare)[-1]
+        return polygon
             
     def get_projectedbool(self):
         return self._projected
@@ -147,6 +186,7 @@ class Gridobj:
     xmin = property(get_xmin, None)
     ymin = property(get_ymin, None)
     bbox = property(get_bbox, None)
+    boundingpolygon = property(get_boundingpolygon, None)
     xunits = property(get_xunits, None)
     yunits = property(get_yunits, None)
     _findy = findy
