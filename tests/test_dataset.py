@@ -194,7 +194,6 @@ class DatasetTest(unittest.TestCase):
         assert isinstance(bp, Polygon)
         bbox = pd.getbbox("u")
         shape = box(bbox[0],bbox[1],bbox[2],bbox[3])
-        print shape.wkt
         # Shrink some and test if within bbox
         assert bp.buffer(-0.01).within(shape)
         # Expand to encompass the bbox
