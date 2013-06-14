@@ -30,6 +30,7 @@ _possiblez = ["depth", "DEPTH",
            "z", "Z",
            "siglay", "SIGLAY",
            "siglev", "SIGLEV",
+           "sigma", "SIGMA",
           ]
 _possiblex = ["x", "X",
            "lon", "LON",
