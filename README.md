@@ -121,12 +121,12 @@ python -m pytest -s
 If you want to run the dataset, timevar, depthvar, or roms tests, you will need to edit the test files with paths appropriate for your system.
 
 Some tests requires large files that are not in source control.  You can get them here:
-* ETOPO1 Global Bathymetry ([ETOPO1_Bed_g_gmt4.grd](http://paegan.s3-website-us-east-1.amazonaws.com/resources/ETOPO1_Bed_g_gmt4.grd))
-* HFRadar Gridded Sample ([maracooshfradar20120331.nc](http://paegan.s3-website-us-east-1.amazonaws.com/resources/maracooshfradar20120331.nc))
-* NCOM Gridded Surface Sample ([ncom_glb_sfc8_hind_2012033100.nc](http://paegan.s3-website-us-east-1.amazonaws.com/resources/ncom_glb_sfc8_hind_2012033100.nc))
-* POM Gridded 3D Sample ([m201310100.out3.nc](http://paegan.s3-website-us-east-1.amazonaws.com/resources/m201310100.out3.nc))
-* ROMS C-GRID 3D Sample ([ocean_avg_synoptic_seg22.nc](http://paegan.s3-website-us-east-1.amazonaws.com/resources/ocean_avg_synoptic_seg22.nc))
-* Regular Grid Sample ([pws_L2_2012040100.nc](http://paegan.s3-website-us-east-1.amazonaws.com/resources/pws_L2_2012040100.nc))
+* ETOPO1 Global Bathymetry ([ETOPO1_Bed_g_gmt4.grd](http://s3.amazonaws.com/paegan/resources/ETOPO1_Bed_g_gmt4.grd))
+* HFRadar Gridded Sample ([maracooshfradar20120331.nc](http://s3.amazonaws.com/paegan/resources/maracooshfradar20120331.nc))
+* NCOM Gridded Surface Sample ([ncom_glb_sfc8_hind_2012033100.nc](http://s3.amazonaws.com/paegan/resources/ncom_glb_sfc8_hind_2012033100.nc))
+* POM Gridded 3D Sample ([m201310100.out3.nc](http://s3.amazonaws.com/paegan/resources/m201310100.out3.nc))
+* ROMS C-GRID 3D Sample ([ocean_avg_synoptic_seg22.nc](http://s3.amazonaws.com/paegan/resources/ocean_avg_synoptic_seg22.nc))
+* Regular Grid Sample ([pws_L2_2012040100.nc](http://s3.amazonaws.com/paegan/resources/pws_L2_2012040100.nc))
 
 
 Contributors
