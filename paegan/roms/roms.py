@@ -263,3 +263,4 @@ class AverageAdjacents(threading.Thread):
 
         self.data = sumd
         return
+        
