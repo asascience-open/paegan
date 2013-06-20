@@ -92,7 +92,7 @@ NETCDF4_DIR=path HDF5_DIR=path pip install paegan
 There seems to be a problem installing numpy through `pip` so you may need to install numpy before doing any of the above:
 
 ```bash
-pip install numpy==1.6.2
+pip install numpy<=1.7.0
 ```
 
 Roadmap
