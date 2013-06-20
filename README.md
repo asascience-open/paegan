@@ -77,8 +77,9 @@ pip install paegan
 
 Paegan requires the following python libraries which will be downloaded and installed through `pip`:
 
-* numpy==1.6.2
-* netCDF4==1.0.2 (requires netcdf and hdf5 C libraries)
+* numpy>=1.7.0
+* scipy
+* netCDF4>=1.0.2 (requires netcdf and hdf5 C libraries)
 * Shapely==1.2.17 (requires geos C library)
 * pytz==2012h
 * python-dateutil==2.1
