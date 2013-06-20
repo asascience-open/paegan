@@ -1,19 +1,20 @@
-import unittest
-import os
-import netCDF4
+import unittest, os, netCDF4, pytz
 from datetime import timedelta, datetime, tzinfo
 from paegan.cdm.timevar import Timevar
 import numpy as np
 from dateutil.parser import parse
-import pytz
+
+data_path = "/data/lm/tests"
 
 class TimevarTest(unittest.TestCase):
 
     def setUp(self):
-        self.data_path = "/data/lm/tests"
+        pass
 
+    @unittest.skipIf(not os.path.exists(os.path.join(data_path, "pws_L2_2012040100.nc")) or \
+                     not os.path.exists(os.path.join(data_path, "ocean_avg_synoptic_seg22.nc")),
+                     "Resource files are missing that are required to perform the tests.")
     def test_timevar_length(self):
-
         datafile = os.path.join(self.data_path, "pws_L2_2012040100.nc")
         # Manually extract
         ds = netCDF4.Dataset(datafile)
@@ -21,7 +22,7 @@ class TimevarTest(unittest.TestCase):
         # Timevar extract
         tvar = Timevar(datafile)
         assert data.shape == tvar.shape
-
+        
         datafile = os.path.join(self.data_path, "ocean_avg_synoptic_seg22.nc")
         # Manually extract
         ds = netCDF4.Dataset(datafile)
@@ -31,9 +32,12 @@ class TimevarTest(unittest.TestCase):
         assert data.shape == tvar.shape
 
         ds.close()
-
+    
+    @unittest.skipIf(not os.path.exists(os.path.join(data_path, "pws_L2_2012040100.nc")) or \
+                     not os.path.exists(os.path.join(data_path, "ocean_avg_synoptic_seg22.nc")),
+                     "Resource files are missing that are required to perform the tests.")
     def test_timevar_roms_seconds_values(self):
-
+        
         datafile = os.path.join(self.data_path, "ocean_avg_synoptic_seg22.nc")
 
         # Manually extract
@@ -60,9 +64,12 @@ class TimevarTest(unittest.TestCase):
         assert (jds == tvar.dates).all()
 
         ds.close()
-
+    
+    @unittest.skipIf(not os.path.exists(os.path.join(data_path, "pws_L2_2012040100.nc")) or \
+                     not os.path.exists(os.path.join(data_path, "ocean_avg_synoptic_seg22.nc")),
+                     "Resource files are missing that are required to perform the tests.")
     def test_timevar_hfradar_days_values(self):
-
+        
         datafile = os.path.join(self.data_path, "marcooshfradar20120331.nc")
 
         # Manually extract
@@ -85,7 +92,7 @@ class TimevarTest(unittest.TestCase):
         assert (jds == tvar.dates).all()
 
         ds.close()
-
+            
     def test_timevar_ncom_hour_values_dap(self):
 
         datafile = "http://edac-dap3.northerngulfinstitute.org/thredds/dodsC/US_East/ncom_relo_useast_u_2011080200/ncom_relo_useast_u_2011080200_t072.nc"
