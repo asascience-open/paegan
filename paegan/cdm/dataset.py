@@ -6,6 +6,7 @@ from paegan.cdm.gridvar import Gridobj
 from paegan.cdm.variable import Coordinates as cachevar
 from paegan.cdm.variable import SubCoordinates as subs
 from paegan.location4d import Location4D
+from paegan.utils.asainterpolate import CfGeoInterpolator
 
 from paegan.logger import logger
 
@@ -737,6 +738,28 @@ class Dataset(object):
             # data = None
             raise ValueError("no data inside the domian specified")
         return data
+        
+    def get_values_on_grid(self, var, lon, lat, **kwargs):     
+        z = kwargs.get('z', None)
+        t = kwargs.get('t', None)
+        bbox = [np.min(np.min(lon)), np.min(np.min(lat)), np.max(np.max(lon)), np.max(np.max(lat))]
+        if z == None:
+            zbounds = z
+        else:
+            zbounds = (np.min(np.min(np.min(np.min(z)))), np.max(np.max(np.max(np.max(z)))),)
+        if t == None:
+            tbounds = t
+        else:
+            tbounds = (t[0], t[-1])
+        method = kwargs.get('method', 'nearest')
+        
+        raw_vals = self.get_values(var, zbounds=zbounds, bbox=bbox,
+                                   timebounds=timebounds)
+        coords_struct = sub_coords(var, zbounds=zbounds, bbox=bbox,
+                                   timebounds=timebounds)
+        interpolator = CfGeoInterpolator(raw_vals, coords_struct.x, coords_struct.y, 
+                          z=coords_struct.z, t=coords_struct, method=method)
+        return interpolator.intrpgrid(lon, lat, t=t, z=z)
             
     def _get_data(self, var, **kwargs):
         raise NotImplementedError
