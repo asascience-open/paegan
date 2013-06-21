@@ -15,7 +15,7 @@ class DepthvarTest(unittest.TestCase):
                      "Resource files are missing that are required to perform the tests.")
     def test_conversions(self):
 
-      datafile = os.path.join(self.data_path, "pws_L2_2012040100.nc")
+      datafile = os.path.join(data_path, "pws_L2_2012040100.nc")
 
       # Manually extract
       ds = netCDF4.Dataset(datafile)

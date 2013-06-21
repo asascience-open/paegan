@@ -69,7 +69,7 @@ class RomsTest(unittest.TestCase):
     def test_uv_size(self):
 
         #URL = 'http://testbedapps-dev.sura.org/thredds/dodsC/alldata/Estuarine_Hypoxia/noaa/cbofs2/synoptic/Output_Avg/ocean_avg_synoptic_seg22.nc'
-        URL = os.path.join(self.data_path, "ocean_avg_synoptic_seg22.nc")
+        URL = os.path.join(data_path, "ocean_avg_synoptic_seg22.nc")
 
         # Call the uv_to_rho to calculate the resulting complex numbers on the 
         # rho grid.

@@ -507,18 +507,48 @@ class Dataset(object):
     def sub_coords(self, var, zbounds=None, bbox=None,
         timebounds=None, zinds=None, timeinds=None):
         assert var in self._current_variables
+        ncvar = self.nc.variables[var]
         coord_dict = self.get_coord_dict(var)
         names = self.get_coord_names(var)
+        dims = ncvar.dimensions
+        ndim = ncvar.ndim
         x, y, z, time = None, None, None, None
+        positions = dict()
+        for i in names:
+            name = names[i]
+            if i == "tname":
+                common_name = "time"
+            elif i == "zname":
+                common_name = "z"
+            elif i == "xname":
+                common_name = "x"
+            elif i == "yname":
+                common_name = "y"
+            else:
+                common_name = None
+            if common_name != None:
+                positions[common_name] = None
+                if name != None:
+                    positions[common_name] = []
+                    cdims = self.nc.variables[name].dimensions
+                    for cdim in cdims:
+                        try:
+                            positions[common_name].append(dims.index(cdim))
+                        except StandardError:
+                            pass
         if names['tname'] != None:
             #tname = names['tname']
             if timebounds != None:
-                timeinds = self.get_tind_from_bounds(var, timebounds)
+                timeinds = self.get_tind_from_bounds(var, timebounds)[0]
+            elif timeinds == None:
+                timeinds = np.arange(0, ncvar.shape[positions["time"][0]]+1)
             time = coord_dict['time'][timeinds[0]:timeinds[-1]+1]
         if names['zname'] != None:
             #zname = names['zname']
             if zbounds != None:
-                zinds = self.get_zind_from_bounds(var, zbounds)
+                zinds = self.get_zind_from_bounds(var, zbounds)[0]
+            elif zinds == None:
+                zinds = np.arange(0, ncvar.shape[positions["z"][0]]+1)git c
             z = coord_dict['z'][zinds[0]:zinds[-1]+1]
         xinds, yinds = self.get_xyind_from_bbox(var, bbox)
         xy = coord_dict['xy']
@@ -526,13 +556,13 @@ class Dataset(object):
             #xname = names['xname']
             if len(xy._xarray.shape) == 2:
                 x = xy._xarray[xinds[0][0]:xinds[0][-1]+1, xinds[1][0]:xinds[1][-1]+1]
-            elif len(xy.xarray.shape) == 1:
+            elif len(xy._xarray.shape) == 1:
                 x = xy._xarray[np.squeeze(xinds)]
         if names['yname'] != None:
             #yname = names['yname']
             if len(xy._yarray.shape) == 2:
                 y = xy._yarray[yinds[0][0]:yinds[0][-1]+1, yinds[1][0]:yinds[1][-1]+1]
-            elif len(xy.yarray.shape) == 1:
+            elif len(xy._yarray.shape) == 1:
                 y = xy._yarray[np.squeeze(yinds)]
         return subs(x=x, y=y, z=z, time=time)
         
@@ -588,7 +618,7 @@ class Dataset(object):
                     if point != None:
                         tinds = np.asarray([self.get_nearest_tind(var, point)])
                     else:
-                        tinds = np.arange(0, ncvar.shape[positions["time"]]+1)
+                        tinds = [np.arange(0, ncvar.shape[positions["time"][0]]+1)]
                 else:
                     tinds = timeinds
         if positions["z"] != None:
@@ -599,11 +629,13 @@ class Dataset(object):
                     if point != None:
                         zinds = np.asarray([self.get_nearest_zind(var, point)])
                     else:
-                        zinds = np.arange(0, ncvar.shape[positions["z"]]+1)
+                        zinds = [np.arange(0, ncvar.shape[positions["z"][0]]+1)]
                 else:
                     pass
         if bbox != None:
             xinds, yinds = self.get_xyind_from_bbox(var, bbox)
+            xinds = xinds[0]
+            yinds = yinds[0]
         else:
             if point != None:
                 num = kwargs.get("num", 1)
@@ -686,9 +718,9 @@ class Dataset(object):
                     if point != None:
                         tinds = np.asarray([self.get_nearest_tind(var, point)])
                     else:
-                        tinds = np.arange(0, ncvar.shape[positions["time"]]+1)
+                        tinds = [np.arange(0, ncvar.shape[positions["time"][0]]+1)]
                 else:
-                    tinds = timeinds
+                    tinds = [timeinds]
         if positions["z"] != None:
             if zbounds != None:
                 zinds = self.get_zind_from_bounds(var, zbounds)
@@ -697,11 +729,13 @@ class Dataset(object):
                     if point != None:
                         zinds = np.asarray([self.get_nearest_zind(var, point)])
                     else:
-                        zinds = np.arange(0, ncvar.shape[positions["z"]]+1)
+                        zinds = [np.arange(0, ncvar.shape[positions["z"][0]]+1)]
                 else:
-                    pass
+                    zinds = [zinds]
         if bbox != None:
             xinds, yinds = self.get_xyind_from_bbox(var, bbox)
+            xinds = xinds[0]
+            yinds = yinds[0]
         else:
             if point != None:
                 num = kwargs.get("num", 1)
@@ -713,7 +747,7 @@ class Dataset(object):
         #    len(xinds) > 0 and len(yinds) > 0:
         # Now take time inds, z inds, x and y inds and put them 
         # into the request in the right places:
-       
+        
         indices = [None for i in range(ndim)]
         for name in positions:
             if positions[name] != None:
@@ -731,7 +765,6 @@ class Dataset(object):
                         indices[position] = xinds[i]
         
         #logger.info("Getting data for %s with indexes: %s" % (var, str(indices)))
-
         if np.all([i.size >0 for i in indices]):
             data = self._get_data(var, indices, use_local)
         else:
@@ -742,6 +775,8 @@ class Dataset(object):
     def get_values_on_grid(self, var, lon, lat, **kwargs):     
         z = kwargs.get('z', None)
         t = kwargs.get('t', None)
+        tinds = None
+        zinds = None
         bbox = [np.min(np.min(lon)), np.min(np.min(lat)), np.max(np.max(lon)), np.max(np.max(lat))]
         if z == None:
             zbounds = z
@@ -750,16 +785,19 @@ class Dataset(object):
         if t == None:
             tbounds = t
         else:
-            tbounds = (t[0], t[-1])
+            if True:
+                tbounds = None
+                timeinds = np.arange(t[0], t[-1]+1)
+            else:
+                tbounds = (t[0], t[-1])
         method = kwargs.get('method', 'nearest')
-        
         raw_vals = self.get_values(var, zbounds=zbounds, bbox=bbox,
-                                   timebounds=timebounds)
-        coords_struct = sub_coords(var, zbounds=zbounds, bbox=bbox,
-                                   timebounds=timebounds)
+                                   timeinds=tinds, zinds=zinds, timebounds=tbounds)
+        coords_struct = self.sub_coords(var, zbounds=zbounds, bbox=bbox,
+                                   timeinds=tinds, zinds=zinds, timebounds=tbounds)
         interpolator = CfGeoInterpolator(raw_vals, coords_struct.x, coords_struct.y, 
-                          z=coords_struct.z, t=coords_struct, method=method)
-        return interpolator.intrpgrid(lon, lat, t=t, z=z)
+                          z=coords_struct.z, t=coords_struct.time, method=method)
+        return interpolator.interpgrid(lon, lat, t=t, z=z)
             
     def _get_data(self, var, **kwargs):
         raise NotImplementedError

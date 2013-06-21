@@ -56,6 +56,7 @@ class CfGeoInterpolator(object):
         coords = {'lat':lat, 'lon':lon, 'z':z, 't':t}
         dimensions, ndshape = self._flatten_coords(**coords)
         dimensions = np.asarray(dimensions).T
+        print self.points.shape, self.data.shape, dimensions.shape
         f = griddata(self.points, self.data, dimensions, method=self.method)
         return np.squeeze( f.reshape( *ndshape ) )
           

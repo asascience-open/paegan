@@ -15,7 +15,7 @@ class TimevarTest(unittest.TestCase):
                      not os.path.exists(os.path.join(data_path, "ocean_avg_synoptic_seg22.nc")),
                      "Resource files are missing that are required to perform the tests.")
     def test_timevar_length(self):
-        datafile = os.path.join(self.data_path, "pws_L2_2012040100.nc")
+        datafile = os.path.join(data_path, "pws_L2_2012040100.nc")
         # Manually extract
         ds = netCDF4.Dataset(datafile)
         data = ds.variables['time'][:]
@@ -23,7 +23,7 @@ class TimevarTest(unittest.TestCase):
         tvar = Timevar(datafile)
         assert data.shape == tvar.shape
         
-        datafile = os.path.join(self.data_path, "ocean_avg_synoptic_seg22.nc")
+        datafile = os.path.join(data_path, "ocean_avg_synoptic_seg22.nc")
         # Manually extract
         ds = netCDF4.Dataset(datafile)
         data = ds.variables['ocean_time'][:]
@@ -38,7 +38,7 @@ class TimevarTest(unittest.TestCase):
                      "Resource files are missing that are required to perform the tests.")
     def test_timevar_roms_seconds_values(self):
         
-        datafile = os.path.join(self.data_path, "ocean_avg_synoptic_seg22.nc")
+        datafile = os.path.join(data_path, "ocean_avg_synoptic_seg22.nc")
 
         # Manually extract
         # ocean_time:units = "seconds since 1990-01-01 00:00:00" ;
@@ -70,7 +70,7 @@ class TimevarTest(unittest.TestCase):
                      "Resource files are missing that are required to perform the tests.")
     def test_timevar_hfradar_days_values(self):
         
-        datafile = os.path.join(self.data_path, "marcooshfradar20120331.nc")
+        datafile = os.path.join(data_path, "marcooshfradar20120331.nc")
 
         # Manually extract
         # time:units = days since 2001-01-01 00:00:00
