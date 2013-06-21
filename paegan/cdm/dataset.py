@@ -548,7 +548,7 @@ class Dataset(object):
             if zbounds != None:
                 zinds = self.get_zind_from_bounds(var, zbounds)[0]
             elif zinds == None:
-                zinds = np.arange(0, ncvar.shape[positions["z"][0]]+1)git c
+                zinds = np.arange(0, ncvar.shape[positions["z"][0]]+1)
             z = coord_dict['z'][zinds[0]:zinds[-1]+1]
         xinds, yinds = self.get_xyind_from_bbox(var, bbox)
         xy = coord_dict['xy']
