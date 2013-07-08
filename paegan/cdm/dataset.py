@@ -857,13 +857,6 @@ class Dataset(object):
                 depth_dimension = _sub_by_nan(depth_dimension, inds[0])
                 new._coordcache[var].z = depth_dimension
         return new
-            
-    def regrid(self, **kwargs):
-        """
-            TODO: Implement a generic regridding method.
-                  Pass in lat/lon/depth/time arrays?
-        """
-        raise NotImplementedError
         
     def nearest_point(self, point):
         raise NotImplementedError
@@ -891,3 +884,9 @@ class Dataset(object):
                 time_dimension = _sub_by_nan(time_dimension, ind)
                 new._coordcache[var].t = time_dimension
         return new    
+
+    def save_as_grid(self, filename, lon, lat, **kwargs):
+        pass
+
+    def save_current_as(self, filename, **kwargs):
+        pass 
