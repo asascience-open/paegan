@@ -77,8 +77,9 @@ pip install paegan
 
 Paegan requires the following python libraries which will be downloaded and installed through `pip`:
 
-* numpy==1.6.2
-* netCDF4==1.0.2 (requires netcdf and hdf5 C libraries)
+* numpy>=1.7.0
+* scipy
+* netCDF4>=1.0.2 (requires netcdf and hdf5 C libraries)
 * Shapely==1.2.17 (requires geos C library)
 * pytz==2012h
 * python-dateutil==2.1
@@ -91,7 +92,7 @@ NETCDF4_DIR=path HDF5_DIR=path pip install paegan
 There seems to be a problem installing numpy through `pip` so you may need to install numpy before doing any of the above:
 
 ```bash
-pip install numpy==1.6.2
+pip install numpy>=1.7.0
 ```
 
 Roadmap
@@ -115,8 +116,7 @@ If you are having trouble getting any of the paegan functionality to work, try r
 ```bash
 git clone git@github.com:asascience-open/paegan.git`
 cd paegan
-pip install pytest
-python -m pytest -s
+python setup.py test
 ```
 If you want to run the dataset, timevar, depthvar, or roms tests, you will need to edit the test files with paths appropriate for your system.
 
@@ -128,6 +128,7 @@ Some tests requires large files that are not in source control.  You can get the
 * ROMS C-GRID 3D Sample ([ocean_avg_synoptic_seg22.nc](http://s3.amazonaws.com/paegan/resources/ocean_avg_synoptic_seg22.nc))
 * Regular Grid Sample ([pws_L2_2012040100.nc](http://s3.amazonaws.com/paegan/resources/pws_L2_2012040100.nc))
 
+They are expected to be located in `/data/lm/tests`, if they are not you can symlink to them in that directory.
 
 Contributors
 ----------------

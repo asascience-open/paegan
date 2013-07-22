@@ -1,15 +1,13 @@
-import unittest
+import unittest, os, math, netCDF4
 import numpy as np
-import os
-import math
-import netCDF4
-
 from paegan.roms import roms as rm
+
+data_path = "/data/lm/tests"
 
 class RomsTest(unittest.TestCase):
 
     def setUp(self):
-        self.data_path = "/data/lm/tests"
+        pass 
 
     def  test_1D_average(self):            
         # array([ 0,  2,  4,  6,  8, 10, 12])
@@ -66,9 +64,12 @@ class RomsTest(unittest.TestCase):
 
         assert np.allclose(r,result_test)
 
+    @unittest.skipIf(not os.path.exists(os.path.join(data_path, "ocean_avg_synoptic_seg22.nc")),
+                     "Resource files are missing that are required to perform the tests.")
     def test_uv_size(self):
+
         #URL = 'http://testbedapps-dev.sura.org/thredds/dodsC/alldata/Estuarine_Hypoxia/noaa/cbofs2/synoptic/Output_Avg/ocean_avg_synoptic_seg22.nc'
-        URL = os.path.join(self.data_path, "ocean_avg_synoptic_seg22.nc")
+        URL = os.path.join(data_path, "ocean_avg_synoptic_seg22.nc")
 
         # Call the uv_to_rho to calculate the resulting complex numbers on the 
         # rho grid.
@@ -121,6 +122,6 @@ class RomsTest(unittest.TestCase):
         assert left_rho == uv_rho[101,101]
         # Why does the right point now work!!!?!?!?!?!?!?
         #assert right_rho == uv_rho[101,102]
-
+                 
 if __name__ == '__main__':
     unittest.main()
