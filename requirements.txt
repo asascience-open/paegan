@@ -1,5 +1,6 @@
-numpy==1.6.2
-netCDF4==1.0.2
+numpy>=1.7.0
+scipy
+netCDF4>=1.0.2
 Shapely>=1.2.15
 pytz
 python-dateutil==2.1
