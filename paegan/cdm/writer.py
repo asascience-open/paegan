@@ -1,6 +1,8 @@
 import numpy as np
 import netCDF4 as ncd
 
+FILL_VALUE = -99999
+
 def new(filename):
     '''
     Return the netcdf4-python rootgroup for a new netcdf file
@@ -18,17 +20,27 @@ def add_coordinates(nc, dict_of_dims):
     # cooresponding dict value tuple as the representative 
     # shape of the dimension.
     for dimname in dict_of_dims.iterkeys():
-        nc.createDimension(dimname, size=dict_of_dims[dimname])
-    nc.sync()
+        t = nc.createDimension(dimname, size=dict_of_dims[dimname])
+    #nc.sync()
     
-def add_variable(nc, varname, dims, data, compress=False):
+def add_variable(nc, varname, data, dims, compress=False, fill=FILL_VALUE):
     '''
     Thin wrapper for easily adding data to netcdf variable with just
     the variable name the current array of values, and a tuple with
     the cooresponding dimension names
     '''
-    nc.createVariable(varname, data.dtype, dimensions=dims, zlib=compress, fill_value=-99999) 
-    nc.sync()
+    v = nc.createVariable(varname, data.dtype, dimensions=dims, zlib=compress)#, fill_value=fill) 
+    v[:] = data
+    #nc.sync()
+
+def add_scalar(nc, varname, data, compress=False, fill=FILL_VALUE):
+    '''
+    Functionality to simply add a scalar variable to a netcdf file,
+    expects a numpy array of length 1 for the data argument.
+    '''
+    v = nc.createVariable(varname, data.dtype, zlib=compress)#, fill_value=fill)
+    v[:] = data
+    #nc.sync()
 
 def add_attribute(nc, key, value, var=None):
     '''
@@ -38,7 +50,7 @@ def add_attribute(nc, key, value, var=None):
     if var==None:
         nc.setncattr(key, value)
     else:
-        nc[var].setncattr(key, value)
+        nc.variables[var].setncattr(key, value)
 
 def add_attributes(nc, attrs, var=None):
     '''

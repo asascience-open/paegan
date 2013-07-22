@@ -56,7 +56,8 @@ class CfGeoInterpolator(object):
         coords = {'lat':lat, 'lon':lon, 'z':z, 't':t}
         dimensions, ndshape = self._flatten_coords(**coords)
         dimensions = np.asarray(dimensions).T
-        print self.points.shape, self.data.shape, dimensions.shape
+        #print self.points.shape, self.data.shape, dimensions.shape
+        #print np.histogram(self.data)
         f = griddata(self.points, self.data, dimensions, method=self.method)
         return np.squeeze( f.reshape( *ndshape ) )
           
@@ -91,10 +92,10 @@ class CfGeoInterpolator(object):
             if t == None:
                 dimensions = [lon, lat]
             else:
-                ndarray.append(t.shape[0])
+                ndshape.append(t.shape[0])
                 lat = np.meshgrid(t, lat, indexing='ij')[-1]
                 t, lon = np.meshgrid(t, lon, indexing='ij')
-                dimensions = [lon, lat, t]
+                dimensions = [lon.flatten(), lat.flatten(), t.flatten()]
         elif len(z.shape) == 4:
             assert t != None
             ndshape.append(z.shape[1])
