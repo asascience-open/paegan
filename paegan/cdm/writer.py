@@ -60,6 +60,6 @@ def add_attributes(nc, attrs, var=None):
     if var==None:
         nc.setncatts(attrs)
     else:
-        nc[var].setncatts(attrs)
+        nc.variables[var].setncatts(attrs)
     
     
