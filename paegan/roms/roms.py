@@ -391,7 +391,7 @@ def regrid_roms(newfile, filename, lon_new, lat_new, t=None, z=None):
                             [pw.add_attribute(new, at, nc.variables[key].getncattr(at), var=key) for at in nc.variables[key].ncattrs()]
                             new.variables[key].coordinates = "lat_new lon_new"
                     except:
-                        print key, var.dimensions
+                        print key, var.dimensions, "Not added to the file"
             [pw.add_attribute(new, at, nc.getncattr(at)) for at in nc.ncattrs()]
             new.history = new.history + ", regridded by Python tool 'paegan' at " + str(datetime.datetime.now())
         new.sync()
