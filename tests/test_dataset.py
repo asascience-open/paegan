@@ -225,19 +225,13 @@ class DatasetTest(unittest.TestCase):
         shape = box(bbox[0],bbox[1],bbox[2],bbox[3])
         # Shrink some and test if within bbox
         assert bp.buffer(-0.01).within(shape)
-        # Expand to encompass the bbox
-        assert bp.buffer(1).contains(shape)
 
-        """
         bp = pd.getboundingpolygon("h")
         assert isinstance(bp, Polygon)
         bbox = pd.getbbox("h")
         shape = box(bbox[0],bbox[1],bbox[2],bbox[3])
         # Shrink some and test if within bbox
         assert bp.buffer(-0.01).within(shape)
-        # Expand to encompass the bbox
-        assert bp.buffer(1).contains(shape)
-        """
 
         pd.closenc()
 
