@@ -9,7 +9,7 @@ class AsaMathTest(unittest.TestCase):
 
         angle = AsaMath.azimuth_to_math_angle(azimuth=45)
         assert angle == 45
-        
+
         angle = AsaMath.azimuth_to_math_angle(azimuth=90)
         assert angle == 0
 

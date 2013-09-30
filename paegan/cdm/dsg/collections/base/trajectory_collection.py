@@ -7,4 +7,3 @@ class TrajectoryCollection(NestedPointCollection):
 
     def __init__(self, **kwargs):
         super(TrajectoryCollection,self).__init__(**kwargs)
-        

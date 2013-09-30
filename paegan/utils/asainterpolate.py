@@ -25,7 +25,7 @@ class GenInterpolator(object):
         self.data = data.flatten()
         self.method = method
         self.numdim = len(dimensions)
-    
+
     def interpgrid(self, *dimensions):
         if len(dimensions) != self.numdim:
             raise ValueError("Please interpolate data to the same number of dimensions as source data.")
@@ -40,18 +40,18 @@ class GenInterpolator(object):
             for dim in dimensions:
                 unique.append(dim.shape[0])
             return np.squeeze( f.reshape( *unique ) )
-            
+
 class CfGeoInterpolator(object):
     def __init__(self, data, lon, lat, t=None, z=None, **kwargs):
         method = kwargs.get('method', 'nearest')
         coords = {'lat':lat, 'lon':lon, 'z':z, 't':t}
-        dimensions, ndshape = self._flatten_coords(**coords)   
+        dimensions, ndshape = self._flatten_coords(**coords)
         self.points = np.asarray(dimensions).T
         self.data = data.flatten()
         self.method = method
         self.numdim = self.points.shape[1]
         assert self.data.shape[0] == self.points.shape[0]
-        
+
     def interpgrid(self, lon, lat, t=None, z=None, **kwargs):
         coords = {'lat':lat, 'lon':lon, 'z':z, 't':t}
         dimensions, ndshape = self._flatten_coords(**coords)
@@ -60,15 +60,15 @@ class CfGeoInterpolator(object):
         #print np.histogram(self.data)
         f = griddata(self.points, self.data, dimensions, method=self.method)
         return np.squeeze( f.reshape( *ndshape ) )
-          
+
     def _flatten_coords(self, **coords):
         lat = coords.get('lat', None)
         lon = coords.get('lon', None)
         z = coords.get('z', None)
         t = coords.get('t', None)
         ndshape = []
-        
-        # Configure latitude and longitude to produce vectors of cell by 
+
+        # Configure latitude and longitude to produce vectors of cell by
         # cell coordinates
         if len(lat.shape) == 2:
             assert np.all(lat.shape==lon.shape)
@@ -86,7 +86,7 @@ class CfGeoInterpolator(object):
             latshape = lat.shape
             lon = lon.flatten()
             lat = lat.flatten()
-        
+
         # Configure the z coords to provide cell by cell z value
         if z == None:
             if t == None:
@@ -131,5 +131,5 @@ class CfGeoInterpolator(object):
                 lat = np.meshgrid(t, z, lat, indexing='ij')[-1]
                 t, z, lon = np.meshgrid(t, z, lon, indexing='ij')
                 dimensions = [lon.flatten(), lat.flatten(), z.flatten(), t.flatten()]
-        
+
         return dimensions, ndshape[::-1]

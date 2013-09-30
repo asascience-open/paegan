@@ -19,7 +19,7 @@ class EasyLogger(object):
 
         # Close any existing handlers
         self.close_handlers()
-        
+
         # Remove any existing handlers
         self.logger.handlers = []
         self.logger.setLevel(level)
@@ -55,7 +55,7 @@ class EasyLogger(object):
 
     def close_handlers(self):
         (hand.close() for hand in self.logger.handlers)
-        
+
     def close_queue(self):
         self.queue.put_nowait(StopIteration)
         self.e.set()
@@ -66,4 +66,3 @@ class EasyLogger(object):
 
     def __str__(self):
         return "Logging with MultiProcessingLogHandler in " + self.logpath
-        

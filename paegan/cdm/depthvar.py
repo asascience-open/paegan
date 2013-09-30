@@ -27,7 +27,7 @@ class Depthvar(np.ndarray):
         if type(ncfile) is str:
             ncfile = netCDF4.Dataset(ncfile)
         self._nc = ncfile
-        
+
         data = self._nc.variables[name][:]
         if units == None:
             try:
@@ -36,7 +36,7 @@ class Depthvar(np.ndarray):
                 self._units = 'meters'
         else:
             self._units = units
-               
+
         # compatibility to CF convention v1.0/udunits names:
         if self._units in ['m','meter','meters from the sea surface']:
             self._units='meters'
@@ -54,21 +54,21 @@ class Depthvar(np.ndarray):
             self._units='miles'
 
         return data.view(self)
-    
+
     def nearest_index(self, depth):
         return np.where(abs(self.meters-depth) == np.nanmin(abs(self.meters-depth)))[0]
-    
+
     def nearest(self, depth):
         """
         find nearest depth,
         input and output are meters
         """
         return self.meters[self.nearest_index(depth)][0]
-    
+
     def get_mm(self):
         fac = self._unit2meters[self._units] * self._meters2unit['millimeters']
         return self*fac
-    
+
     def get_cm(self):
         fac = self._unit2meters[self._units] * self._meters2unit['centimeters']
         return self*fac
@@ -80,7 +80,7 @@ class Depthvar(np.ndarray):
     def get_m(self):
         fac = self._unit2meters[self._units] * self._meters2unit['meters']
         return self*fac
-        
+
     meters = property(get_m, None, doc="meters")
     kilometers = property(get_km, None, doc="kilometers")
     centimeters = property(get_cm, None, doc="centimeters")

@@ -13,7 +13,7 @@ class ProgressHandler(logging.Handler):
     def __init__(self, progress_deque):
         logging.Handler.__init__(self)
         self.addFilter(OnlyProgressFilter())
-        self._progress_deque = progress_deque      
+        self._progress_deque = progress_deque
 
     def send(self, s):
         self._progress_deque.append(s)

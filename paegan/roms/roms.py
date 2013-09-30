@@ -18,7 +18,7 @@ import datetime
 #       ---------------------------------
 #       rho | u | rho | u | rho | u | rho
 #       ---------------------------------
-#       
+#
 #       Assumes:
 #       size(rho)=ny,nx;   size(u)=ny,nx-1;   size(v)=ny-1,nx
 #       coordinate dimension: t,z,y,x
@@ -32,29 +32,29 @@ def shrink(a, b):
     Ripped from Octant: https://code.google.com/p/octant
 
     Return array shrunk to fit a specified shape by triming or averaging.
-    
+
     a = shrink(array, shape)
-    
+
     array is an numpy ndarray, and shape is a tuple (e.g., from
     array.shape). a is the input array shrunk such that its maximum
     dimensions are given by shape. If shape has more dimensions than
     array, the last dimensions of shape are fit.
-    
+
     as, bs = shrink(a, b)
-    
+
     If the second argument is also an array, both a and b are shrunk to
     the dimensions of each other. The input arrays must have the same
     number of dimensions, and the resulting arrays will have the same
     shape.
-    
+
     Example
     -------
-    
+
     >>> shrink(rand(10, 10), (5, 9, 18)).shape
     (9, 10)
-    >>> map(shape, shrink(rand(10, 10, 10), rand(5, 9, 18)))        
-    [(5, 9, 10), (5, 9, 10)]   
-       
+    >>> map(shape, shrink(rand(10, 10, 10), rand(5, 9, 18)))
+    [(5, 9, 10), (5, 9, 10)]
+
     """
 
     if isinstance(b, np.ndarray):
@@ -67,9 +67,9 @@ def shrink(a, b):
 
     if isinstance(b, int):
         b = (b,)
-        
+
     if len(a.shape) == 1:                # 1D array is a special case
-        dim = b[-1]                      
+        dim = b[-1]
         while a.shape[0] > dim:          # only shrink a
             if (dim - a.shape[0]) >= 2:  # trim off edges evenly
                 a = a[1:-1]
@@ -85,7 +85,7 @@ def shrink(a, b):
                 if (a.shape[0] - dim) == 1:  # or average adjacent cells
                     a = 0.5*(a[1:,:] + a[:-1,:])
             a = a.swapaxes(0,dim_idx)        # swap working dim back
-        
+
     return a
 
 def _uv_to_rho(u_data, v_data, angle, rho_x, rho_y):
@@ -98,10 +98,10 @@ def _uv_to_rho(u_data, v_data, angle, rho_x, rho_y):
 
     # THREE IDENTICAL METHODS
     # Fill in RHO cells per diagram above.  Skip first row and first
-    # column of RHOs and leave them as numpy.nan values.  Also skip the 
+    # column of RHOs and leave them as numpy.nan values.  Also skip the
     # last row and column.
 
-    #1.) 
+    #1.)
     # Fill rho points with averages (if we can do the calculation)
     # Thread]
     #t1 = AverageAdjacents(u_data)
@@ -112,7 +112,7 @@ def _uv_to_rho(u_data, v_data, angle, rho_x, rho_y):
     #v_avg = t2.data
     #complexed = vfunc(u_avg[1:-1,:],v_avg[:,1:-1])
 
-    # 2.) 
+    # 2.)
     # Don't thread
     u_avg = average_adjacents(u_data)
     v_avg = average_adjacents(v_data,True)
@@ -124,12 +124,12 @@ def _uv_to_rho(u_data, v_data, angle, rho_x, rho_y):
     #u_avg = shrink(u_data, data_U)
     #v_avg = shrink(v_data, data_U)
     #complexed = vfunc(u_avg,v_avg)
-    
+
     # Only pull the U and V values that can contribute to the averaging (see diagram).
     # This means we lost the first and last row and the first and last column of both
-    # U and V.   
+    # U and V.
     U[1:rho_y-1, 1:rho_x-1] = complexed
- 
+
     # We need the rotated point, so rotate by the "angle"
     return rotate_complex_by_angle(U,angle)
 
@@ -170,7 +170,7 @@ def rotate_complex_by_angle(points,angles):
         whose angle with the positive X axis is the angle we need to rotate by.
 
         np.exp(1J*angle)  creates an array the same size of U filled with complex numbers
-                          that represent the angled points from X axis.                    
+                          that represent the angled points from X axis.
     """
     return points * np.exp(1j*angles)
 
@@ -202,7 +202,7 @@ def average_adjacents(a, by_column=False):
             >>> a_avg = average_adjacents(a)
             >>> a_avg
             array([  1.,   3.,   5.,   7.,   9.,  11.])
-            
+
 
             # 2D Array
             >>> a = np.arange(0,30,2).reshape(3,5)
@@ -214,7 +214,7 @@ def average_adjacents(a, by_column=False):
             >>> a_avg
             array([[  1,  3,  5,  7],
                    [ 11, 13, 15, 17],
-                   [ 21, 23, 25, 27]])  
+                   [ 21, 23, 25, 27]])
 
 
             # 2D Array, by column
@@ -243,7 +243,7 @@ def average_adjacents(a, by_column=False):
         sumd = 0.5 * (a[0:n-1] + a[1:n]) # Single row
     else:
         sumd = 0.5 * (a[:,0:n-1] + a[:,1:n]) # By row
-    
+
     return sumd
 
 def regrid_roms(newfile, filename, lon_new, lat_new, t=None, z=None):
@@ -266,17 +266,17 @@ def regrid_roms(newfile, filename, lon_new, lat_new, t=None, z=None):
             depth_w   = nc.variables["s_w"][:]
             if t == None:
                 t = time
-            # Put dimensions into the new netcdf file, should only be for 
+            # Put dimensions into the new netcdf file, should only be for
             # time, rhos, psis (not sure what to do about w yet)
             if len(depth_rho.shape) == 4:
                 s_rho = depth_rho.shape[1]
             else:
                 s_rho = depth_rho.shape[0]
             if len(lon_new.shape) == 2 and len(lon_new.shape) == 2:
-                eta_new = lat_new.shape[0] 
+                eta_new = lat_new.shape[0]
                 xi_new = lon_new.shape[1]
             elif len(lon_new.shape) == 1 and len(lon_new.shape) == 1:
-                eta_new = lat_new.shape[0] 
+                eta_new = lat_new.shape[0]
                 xi_new = lon_new.shape[0]
             else:
                 raise ValueError("New lat and lon have invalid shapes or don't match in shape.")
@@ -285,7 +285,7 @@ def regrid_roms(newfile, filename, lon_new, lat_new, t=None, z=None):
             s_new = z.shape[0]
             time_new = t.shape[0]
             [pw.add_attribute(new, at, new.getncattr(at)) for at in new.ncattrs()]
-            pw.add_coordinates(new, OrderedDict([("time_new",time_new),("s_new",s_new),("eta_new",eta_new),("xi_new",xi_new)])) 
+            pw.add_coordinates(new, OrderedDict([("time_new",time_new),("s_new",s_new),("eta_new",eta_new),("xi_new",xi_new)]))
             pw.add_variable(new, "ocean_time", t, ("time_new",))
             pw.add_variable(new, "s_new", z, ("s_new",))
             if len(lon_new.shape) == 2 and len(lat_new.shape) == 2:
@@ -423,4 +423,4 @@ class AverageAdjacents(threading.Thread):
 
         self.data = sumd
         return
-        
+
