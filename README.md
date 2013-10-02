@@ -80,9 +80,9 @@ Paegan requires the following python libraries which will be downloaded and inst
 * numpy>=1.7.0
 * scipy
 * netCDF4>=1.0.2 (requires netcdf and hdf5 C libraries)
-* Shapely==1.2.17 (requires geos C library)
-* pytz==2012h
-* python-dateutil==2.1
+* Shapely>=1.2.15 (requires geos C library)
+* pytz
+* python-dateutil>=1.5
 
 If your NetCDF4 and HDF5 libraries are in non-typical locations, you will need to pass the locations to the `pip` command:
 ```bash
@@ -92,7 +92,7 @@ NETCDF4_DIR=path HDF5_DIR=path pip install paegan
 There seems to be a problem installing numpy through `pip` so you may need to install numpy before doing any of the above:
 
 ```bash
-pip install numpy>=1.7.0
+pip install numpy==1.7.0
 ```
 
 Roadmap
