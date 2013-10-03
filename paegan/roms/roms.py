@@ -263,7 +263,7 @@ def regrid_roms(newfile, filename, lon_new, lat_new, t=None, z=None):
             lat_rho = nc.variables["lat_rho"][:]
             rho_y, rho_x = lat_rho.shape
             depth_rho = nc.variables["s_rho"][:]
-            depth_w   = nc.variables["s_w"][:]
+            #depth_w   = nc.variables["s_w"][:]
             if t == None:
                 t = time
             # Put dimensions into the new netcdf file, should only be for
@@ -284,8 +284,11 @@ def regrid_roms(newfile, filename, lon_new, lat_new, t=None, z=None):
                 z = depth_rho
             s_new = z.shape[0]
             time_new = t.shape[0]
-            [pw.add_attribute(new, at, new.getncattr(at)) for at in new.ncattrs()]
+
+            #[pw.add_attribute(new, at, new.getncattr(at)) for at in new.ncattrs()]
             pw.add_coordinates(new, OrderedDict([("time_new",time_new),("s_new",s_new),("eta_new",eta_new),("xi_new",xi_new)]))
+            #print "Coordinates " + str([("time_new",time_new),("s_new",s_new),("eta_new",eta_new),("xi_new",xi_new)])
+
             pw.add_variable(new, "ocean_time", t, ("time_new",))
             pw.add_variable(new, "s_new", z, ("s_new",))
             if len(lon_new.shape) == 2 and len(lat_new.shape) == 2:
@@ -316,84 +319,113 @@ def regrid_roms(newfile, filename, lon_new, lat_new, t=None, z=None):
                 except AttributeError:
                     grid_type = None
                 if grid_type != None and grid_type != "psi":
-                    if key in set( ["u", "w", "ubar", "mask_u", "mask_v"] ):
+                    if key in set([ "sustr", "bustr", "DU_avg1", "DU_avg2", "u", "w", "ubar", "mask_u", "mask_v", "mask_psi", "mask_rho" ]):
                         pass
-                    elif key == "vbar":
-                        for i in xrange(var.shape[0]):
-                            complex_uv = _uv_to_rho(nc.variables["ubar"][i,:,:], var[i,:,:], nc.variables["angle"][:], rho_x, rho_y)
-                            if i == 0:
-                                u, v = complex_uv.real[np.newaxis,:], complex_uv.imag[np.newaxis,:]
-                            else:
-                                u = np.vstack((u, complex_uv.real[np.newaxis,:]))
-                                v = np.vstack((v, complex_uv.imag[np.newaxis,:]))
-                        values = {"ubar":u, "vbar":v}
-                        for new_key in values:
-                            interpolator = CfGeoInterpolator(values[new_key], lon_rho, lat_rho, t=time)
-                            values_interp = interpolator.interpgrid(lon_new, lat_new, t=t)
-                            pw.add_variable(new, new_key, values_interp, ("time_new", "eta_new", "xi_new",))
-                    elif key == "v":
-                        for i in xrange(var.shape[0]):
-                            for j in xrange(var.shape[1]):
-                                complex_uv = _uv_to_rho(nc.variables["u"][i,j,:,:], var[i,j,:,:], nc.variables["angle"][:], rho_x, rho_y)
-                                if j == 0:
-                                    uz, vz = complex_uv.real[np.newaxis,:], complex_uv.imag[np.newaxis,:]
+                    elif grid_type == "v":
+                        var_dimensionality = len(var.shape)
+                        if "sv" in key or "bv" in key or "DV" in key or key == "vbar" or key == "v":
+                            paired_vector = {"svstr":"sustr", 
+                                             "bvstr":"bustr", 
+                                             "DV_avg1":"DU_avg1", 
+                                             "DV_avg2":"DU_avg2",
+                                             "vbar":"ubar",
+                                             "v":"u"}
+                            for i in xrange(var.shape[0]):
+                                if var_dimensionality == 3:
+                                    complex_uv = _uv_to_rho(nc.variables[paired_vector[key]][i,:,:], var[i,:,:], nc.variables["angle"][:], rho_x, rho_y)
+                                    uz, vz = complex_uv.real, complex_uv.imag
+                                elif var_dimensionality == 4:
+                                    for j in xrange(var.shape[1]):
+                                        complex_uv = _uv_to_rho(nc.variables["u"][i,j,:,:], var[i,j,:,:], nc.variables["angle"][:], rho_x, rho_y)
+                                        if j == 0:
+                                            uz, vz = complex_uv.real[np.newaxis,:], complex_uv.imag[np.newaxis,:]
+                                        else:
+                                            uz = np.vstack((uz, complex_uv.real[np.newaxis,:]))
+                                            vz = np.vstack((vz, complex_uv.imag[np.newaxis,:]))
+                                if i == 0:
+                                    u, v = uz[np.newaxis,:], vz[np.newaxis,:]
                                 else:
-                                    uz = np.vstack((uz, complex_uv.real[np.newaxis,:]))
-                                    vz = np.vstack((vz, complex_uv.imag[np.newaxis,:]))
-                            if i == 0:
-                                u, v = uz[np.newaxis,:], vz[np.newaxis,:]
-                            else:
-                                u = np.vstack((u, uz[np.newaxis,:]))
-                                v = np.vstack((v, vz[np.newaxis,:]))
-                        values = {"u":u, "v":v}
-                        for new_key in values:
-                            interpolator = CfGeoInterpolator(values[new_key], lon_rho, lat_rho, t=time, z=depth_rho)
-                            values_interp = interpolator.interpgrid(lon_new, lat_new, t=t, z=z)
-                            pw.add_variable(new, new_key, values_interp, ("time_new", "s_new", "eta_new", "xi_new",))
+                                    u = np.vstack((u, uz[np.newaxis,:]))
+                                    v = np.vstack((v, vz[np.newaxis,:]))
+                            values = {paired_vector[key]:u, key:v}
+                            for new_key in values:
+                                values_interp[:, np.where(nc.variables["mask_rho"]==0)] = np.nan
+                                if var_dimensionality == 3:
+                                    interpolator = CfGeoInterpolator(values[new_key], lon_rho, lat_rho, t=time)
+                                    values_interp = interpolator.interpgrid(lon_new, lat_new, t=t)
+                                    coordtuple = ("time_new", "eta_new", "xi_new",)
+                                    coordattr = "ocean_time lat_new lon_new"
+                                elif var_dimensionality == 4:
+                                    interpolator = CfGeoInterpolator(values[new_key], lon_rho, lat_rho, t=time, z=depth_rho)
+                                    values_interp = interpolator.interpgrid(lon_new, lat_new, t=t, z=z)
+                                    coordtuple = ("time_new", "s_new", "eta_new", "xi_new",)
+                                    coordattr = "ocean_time s_new lat_new lon_new"
+                                values_interp = np.ma.MaskedArray(values_interp, mask=values_interp==np.nan)
+                                pw.add_variable(new, new_key, values_interp, coordtuple)
+                                [pw.add_attribute(new, at, nc.variables[new_key].getncattr(at), var=new_key) for at in nc.variables[new_key].ncattrs()]
+                                pw.add_attribute(new, "coordinates", coordattr, var=new_key)
                     else:
                         var_dimensionality = len(var.shape)
+                        vartmp = var[:]
                         if var_dimensionality == 4:
-                            interpolator = CfGeoInterpolator(var[:], lon_rho, lat_rho, t=time, z=depth_rho)
+                            vartmp[:,:, np.where(nc.variables["mask_rho"]==0)] = np.nan
+                            interpolator = CfGeoInterpolator(vartmp, lon_rho, lat_rho, t=time, z=depth_rho)
                             values_interp = interpolator.interpgrid(lon_new, lat_new, t=t, z=z)
                             pw.add_variable(new, key, values_interp, ("time_new", "s_new", "eta_new", "xi_new",))
+                            [pw.add_attribute(new, at, nc.variables[key].getncattr(at), var=key) for at in nc.variables[key].ncattrs()]
+                            pw.add_attribute(new, "coordinates", "ocean_time s_new lat_new lon_new", var=key)
                         elif var_dimensionality == 3:
+                            vartmp[:, np.where(nc.variables["mask_rho"]==0)] = np.nan
                             if var.shape[0] == time.shape[0]:
-                                interpolator = CfGeoInterpolator(var[:], lon_rho, lat_rho, t=time)
-                                values_interp = interpolator.interpgrid(lon_new, lat_new, t=t)
-                                pw.add_variable(new, key, values_interp, ("time_new", "eta_new", "xi_new",))
+                                try:
+                                    interpolator = CfGeoInterpolator(vartmp, lon_rho, lat_rho, t=time)
+                                    values_interp = interpolator.interpgrid(lon_new, lat_new, t=t)
+                                    values_interp = np.ma.MaskedArray(values_interp, mask=values_interp==np.nan)
+                                    pw.add_variable(new, key, values_interp, ("time_new", "eta_new", "xi_new",))
+                                    [pw.add_attribute(new, at, nc.variables[key].getncattr(at), var=key) for at in nc.variables[key].ncattrs()]
+                                    pw.add_attribute(new, "coordinates", "ocean_time lat_new lon_new", var=key)
+                                except:
+                                    print key, vartmp.shape, lon_rho.shape, lat_rho.shape, time.shape
                             elif var.shape[0] == depth_rho.shape[0]:
-                                interpolator = CfGeoInterpolator(var[:], lon_rho, lat_rho, z=depth_rho)
+                                interpolator = CfGeoInterpolator(vartmp, lon_rho, lat_rho, z=depth_rho)
                                 values_interp = interpolator.interpgrid(lon_new, lat_new, z=z)
+                                values_interp = np.ma.MaskedArray(values_interp, mask=values_interp==np.nan)
                                 pw.add_variable(new, key, values_interp, ("depth_new", "eta_new", "xi_new",))
+                                [pw.add_attribute(new, at, nc.variables[key].getncattr(at), var=key) for at in nc.variables[key].ncattrs()]
+                                pw.add_attribute(new, "coordinates", "s_new lat_new lon_new", var=key)
                             else:
-                                raise ValueError("Unsure about what dimension this varaible varies with in addition to lat/lon.")
+                                raise valueerror("unsure about what dimension this varaible varies with in addition to lat/lon.")
                         elif var_dimensionality == 2:
-                            interpolator = CfGeoInterpolator(var[:], lon_rho, lat_rho)
+                            vartmp[np.where(nc.variables["mask_rho"]==0)] = np.nan
+                            interpolator = CfGeoInterpolator(vartmp, lon_rho, lat_rho)
                             values_interp = interpolator.interpgrid(lon_new, lat_new)
+                            values_interp = np.ma.MaskedArray(values_interp, mask=values_interp==np.nan)
                             pw.add_variable(new, key, values_interp, ("eta_new", "xi_new",))
+                            [pw.add_attribute(new, at, nc.variables[key].getncattr(at), var=key) for at in nc.variables[key].ncattrs()]
+                            pw.add_attribute(new, "coordinates", "lat_new lon_new", var=key)
                         else:
-                            # TODO If 1-d check for which dimension it matches and interp based on that...
-                            #      if 5+ D, only interpolate to the 4d dimensions that we can specify I guess...
-                            raise ValueError("Sort of confused about the dimensionality of the variable I am attempting to regrid...")
+                            # todo if 1-d check for which dimension it matches and interp based on that...
+                            #      if 5+ d, only interpolate to the 4d dimensions that we can specify i guess...
+                            raise valueerror("sort of confused about the dimensionality of the variable i am attempting to regrid...")
+                elif grid_type == "psi":
+                    pass
                 else:
                     if len(var.dimensions) == 0:
                         pw.add_scalar(new, key, var[:])
-                        #[pw.add_attribute(new, at, var.getncattr(at)) for at in var.ncattrs()]
+                        [pw.add_attribute(new, at, nc.variables[key].getncattr(at), var=key) for at in nc.variables[key].ncattrs()]
+
+            # Add time attributes
             for key in nc.variables:
                 var = nc.variables[key]
-                if len(var.dimensions) == 0:
-                    [pw.add_attribute(new, at, nc.variables[key].getncattr(at), var=key) for at in nc.variables[key].ncattrs()]
-                elif key == "ocean_time":
-                    [pw.add_attribute(new, at, nc.variables[key].getncattr(at), var=key) for at in nc.variables[key].ncattrs()]
-                elif len(var.dimensions) >= 2:
-                    try:
-                        if "coordinates" in set(var.ncattrs()):
-                            [pw.add_attribute(new, at, nc.variables[key].getncattr(at), var=key) for at in nc.variables[key].ncattrs()]
-                            new.variables[key].coordinates = "lat_new lon_new"
-                    except:
-                        print key, var.dimensions
+                if "time" in key:
+                    [pw.add_attribute(new, at, nc.variables[key].getncattr(at), var="ocean_time") for at in nc.variables[key].ncattrs()]
+
+            # Add global attributes to the file
             [pw.add_attribute(new, at, nc.getncattr(at)) for at in nc.ncattrs()]
-            new.history = new.history + ", regridded by Python tool 'paegan' at " + str(datetime.datetime.now())
+            try:
+                new.history = new.history + ", regridded by Python tool 'paegan' at " + str(datetime.datetime.now())
+            except:
+                new.history = "regridded by Python tool 'paegan' at " + str(datetime.datetime.now())
         new.sync()
 
 # Threaded instance for speed testing on enormous grids.
