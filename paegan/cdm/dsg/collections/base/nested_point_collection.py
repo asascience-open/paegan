@@ -22,7 +22,7 @@ class NestedPointCollection(FeatureCollection):
 
             If the collection already knows its bbox; time_range; and/or size,
             they are recomputed.
-        """ 
+        """
         single_point_collection = PointCollection(elements=list(AsaList.flatten(self)))
         single_point_collection.calculate_bounds()
         self.bbox = single_point_collection.bbox
@@ -30,7 +30,7 @@ class NestedPointCollection(FeatureCollection):
         self.depth_range = single_point_collection.depth_range
         self._point_size = single_point_collection.size
         self.size = len(self._elements)
-        
+
 
     def flatten(self):
         """

@@ -11,7 +11,7 @@ class Station(PointCollection):
         self._type = "timeSeries"
         self._properties = dict()
         self.uid = None
-        self.name = None        
+        self.name = None
         self.description = None
 
     def get_location(self):
@@ -25,7 +25,7 @@ class Station(PointCollection):
                 assert p.location is not None
             except:
                 p.location = self._location
-        
+
     location = property(get_location, set_location)
 
     def get_uid(self):
@@ -76,7 +76,7 @@ class Station(PointCollection):
 
             If the collection already knows its bbox; time_range; and/or size,
             they are recomputed.
-        """ 
+        """
         self.location = self._location # To set locations for all points that don't have one
         stuff = map(lambda x: [x.time, x.location], self._elements)
         self.time_range = sorted(map(lambda x: x[0], stuff))

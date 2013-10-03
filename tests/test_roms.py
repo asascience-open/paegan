@@ -7,16 +7,16 @@ data_path = "/data/lm/tests"
 class RomsTest(unittest.TestCase):
 
     def setUp(self):
-        pass 
+        pass
 
-    def  test_1D_average(self):            
+    def  test_1D_average(self):
         # array([ 0,  2,  4,  6,  8, 10, 12])
         a = np.arange(0,13,2)
         a_avg = rm.average_adjacents(a)
 
         # array([  1.,   3.,   5.,   7.,   9.,  11.])
         result_test = np.arange(1,12,2)
-       
+
         assert np.allclose(a_avg,result_test)
 
     def test_2D_row_average(self):
@@ -49,7 +49,7 @@ class RomsTest(unittest.TestCase):
         #        [ 3, 13, 23],
         #        [ 5, 15, 25],
         #        [ 7, 17, 27]])
-    
+
         assert np.allclose(a_avg,result_test)
 
     def test_angle_rotation(self):
@@ -71,7 +71,7 @@ class RomsTest(unittest.TestCase):
         #URL = 'http://testbedapps-dev.sura.org/thredds/dodsC/alldata/Estuarine_Hypoxia/noaa/cbofs2/synoptic/Output_Avg/ocean_avg_synoptic_seg22.nc'
         URL = os.path.join(data_path, "ocean_avg_synoptic_seg22.nc")
 
-        # Call the uv_to_rho to calculate the resulting complex numbers on the 
+        # Call the uv_to_rho to calculate the resulting complex numbers on the
         # rho grid.
         uv_rho = rm.uv_to_rho(URL)
 
@@ -122,6 +122,6 @@ class RomsTest(unittest.TestCase):
         assert left_rho == uv_rho[101,101]
         # Why does the right point now work!!!?!?!?!?!?!?
         #assert right_rho == uv_rho[101,102]
-                 
+
 if __name__ == '__main__':
     unittest.main()

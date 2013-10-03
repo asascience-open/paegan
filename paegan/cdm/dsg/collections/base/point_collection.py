@@ -30,7 +30,7 @@ class PointCollection(FeatureCollection):
 
             If the collection already knows its bbox; time_range; and/or size,
             they are recomputed.
-        """ 
+        """
         stuff = map(lambda x: [x.time, x.location], self._elements)
         self.time_range = sorted(map(lambda x: x[0], stuff))
         points = map(lambda x: x[1], stuff)
@@ -45,7 +45,7 @@ class PointCollection(FeatureCollection):
             self.bbox = MultiPoint(points).envelope
         except:
             self.bbox = None
-            
+
         self.size = len(self._elements)
 
 

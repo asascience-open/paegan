@@ -22,7 +22,7 @@ class Interpolator(object):
         self.data = data.flatten()
         self.method = method
         self.numdim = len(dimensions)
-    
+
     def interpgrid(self, *dimensions):
         if len(dimensions) != self.numdim:
             raise ValueError("Please interpolate data to the same number of dimensions as source data.")
@@ -35,5 +35,5 @@ class Interpolator(object):
             for dim in dimensions:
                 unique.append(dim.shape)
             unique = np.asarray(unique).unique()
-            return np.squeeze( f.reshape( *unique ) ) 
+            return np.squeeze( f.reshape( *unique ) )
 

@@ -60,14 +60,14 @@ class AsaGreatCircle(object):
         f = (rmajor - rminor) / rmajor
 
         if start_point != None and end_point != None:
-            distance, angle, reverse_angle = GreatCircle.vinc_dist(f, rmajor, math.radians(start_point.latitude), 
-                                                                   math.radians(start_point.longitude), 
-                                                                   math.radians(end_point.latitude), 
+            distance, angle, reverse_angle = GreatCircle.vinc_dist(f, rmajor, math.radians(start_point.latitude),
+                                                                   math.radians(start_point.longitude),
+                                                                   math.radians(end_point.latitude),
                                                                    math.radians(end_point.longitude))
         else:
             vector_dist = np.vectorize(GreatCircle.vinc_dist)
             distance, angle, reverse_angle = vector_dist(f, rmajor, np.radians(start_lat), np.radians(start_lon),
                                                          np.radians(end_lat), np.radians(end_lon))
         return {'distance': distance, 'azimuth': np.degrees(angle), 'reverse_azimuth': np.degrees(reverse_angle)}
-        
-        
+
+

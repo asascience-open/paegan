@@ -11,11 +11,11 @@ class Location4D(object):
             * location (Location4d Object)
             OR
             * point (Shapely Point Object)
-            OR 
+            OR
             * latitude (DD)
             * longitude (DD)
 
-            Optional named arguments: 
+            Optional named arguments:
             * depth (meters)
             * time (DateTime Object)
         """
@@ -27,12 +27,12 @@ class Location4D(object):
             self.time = deepcopy(loc.time)
         elif "point" in kwargs:
             self.point = kwargs.pop('point')
-            self.time = kwargs.pop('time', None) 
+            self.time = kwargs.pop('time', None)
         elif "latitude" and "longitude" in kwargs:
             self.latitude = kwargs.pop('latitude')
             self.longitude = kwargs.pop('longitude')
             self.depth = kwargs.pop('depth', None)
-            self.time = kwargs.pop('time', None) 
+            self.time = kwargs.pop('time', None)
         else:
             raise TypeError( "must provide a location4d object, a point geometry object, or a latitude and longitude" )
 

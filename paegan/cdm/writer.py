@@ -9,15 +9,15 @@ def new(filename):
     for writing.
     '''
     return ncd.Dataset(filename, 'w', clobber=False)
-    
+
 def add_coordinates(nc, dict_of_dims):
     '''
     Create dimensions in netcdf file nc.
 
     >> add_coordinates(nc, {"time", (5040,)})
     '''
-    # Loop through keys, and add each as a dimension, with the 
-    # cooresponding dict value tuple as the representative 
+    # Loop through keys, and add each as a dimension, with the
+    # cooresponding dict value tuple as the representative
     # shape of the dimension.
     for dimname in dict_of_dims.iterkeys():
         t = nc.createDimension(dimname, size=dict_of_dims[dimname])
@@ -44,7 +44,7 @@ def add_scalar(nc, varname, data, compress=False, fill=FILL_VALUE):
 
 def add_attribute(nc, key, value, var=None):
     '''
-    Take in a single attname:value pair and write into the global 
+    Take in a single attname:value pair and write into the global
     or variable namespace
     '''
     if var==None:
@@ -64,4 +64,3 @@ def add_attributes(nc, attrs, var=None):
     else:
         nc.variables[var].setncatts(attrs)
     nc.sync()
-    

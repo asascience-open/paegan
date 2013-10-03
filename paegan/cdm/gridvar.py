@@ -11,7 +11,7 @@ class Gridobj:
         self._projected = projected
         if type(nc) is str:
             nc = netCDF4.Dataset(nc)
-        
+
         self._nc = nc
         self._xname = xname
         self._yname = yname
@@ -19,14 +19,14 @@ class Gridobj:
         self._ymesh = None
         self._xmesh = None
         self._type = None
-        
+
         if self._xname != None:
             self._x_nc = self._nc.variables[self._xname]
             self._xarray = np.asarray(self._x_nc[:])
             if self.xmax <= 360 and self.xmin >= 0:
                 self._xarray[np.where(self._xarray > 180)] = \
                     self._xarray[np.where(self._xarray > 180)] - 360
-            
+
         else:
             self._xarray = np.asarray((),)
         if self._yname !=None:
@@ -35,39 +35,39 @@ class Gridobj:
         else:
             self._yarray = np.asarray((),)
 
-    
+
     def get_xbool_from_bbox(self, bbox):
-        return np.logical_and(self._xarray<=bbox[2],                
+        return np.logical_and(self._xarray<=bbox[2],
                               self._xarray>=bbox[0])
-        
+
     def get_ybool_from_bbox(self, bbox):
-        return np.logical_and(self._yarray<=bbox[3],                
+        return np.logical_and(self._yarray<=bbox[3],
                               self._yarray>=bbox[1])
-        
+
     def getydata(self):
         pass
-        
+
     def getxdata(self):
         pass
-        
+
     def findx(self):
         pass
-        
+
     def findy(self):
         pass
-    
+
     def get_xmax(self):
         return np.nanmax(np.nanmax(self._xarray))
-        
+
     def get_ymax(self):
         return np.nanmax(np.nanmax(self._yarray))
-        
+
     def get_xmin(self):
         return np.nanmin(np.nanmin(self._xarray))
-        
+
     def get_ymin(self):
         return np.nanmin(np.nanmin(self._yarray))
-    
+
     def get_bbox(self):
         """
             TODO: Implement ncell bbox
@@ -111,27 +111,27 @@ class Gridobj:
         # -- polygonize returns a list of polygons, including interior features, the largest in area "should" be the full feature
         polygon = sorted(polygons, key=lambda x: x.area)[-1]
         return polygon
-            
+
     def get_projectedbool(self):
         return self._projected
-    
+
     def get_xunits(self):
         try:
             units = self._nc.variables[self._xname].units
         except StandardError:
             units = None
         return units
-        
+
     def get_yunits(self):
         try:
             units = self._nc.variables[self._yname].units
         except StandardError:
             units = None
         return units
-        
+
     def bbox_to_wkt(self):
         pass
-    
+
     def near_xy(self, **kwargs):
         """
             TODO: Implement ncell near_xy
@@ -172,9 +172,9 @@ class Gridobj:
                 yinds = np.where(np.abs(self._yarray - point.latitude) <= lat_cutoff)
                 xinds = np.where(np.abs(self._xarray - point.longitude) <= lon_cutoff)
 
-        return yinds, xinds 
+        return yinds, xinds
 
-        
+
     is_projected = property(get_projectedbool, None)
     xmax = property(get_xmax, None)
     ymax = property(get_ymax, None)
@@ -188,5 +188,5 @@ class Gridobj:
     _findx = findx
     _getxdata = getxdata
     _getydata = getydata
-    
-    
+
+

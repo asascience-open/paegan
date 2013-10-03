@@ -13,7 +13,7 @@ class CfInterpolator(unittest.TestCase):
         i = CfGeoInterpolator(data, lon, lat, method='nearest')
         data2 = i.interpgrid(lon, lat)
         assert np.all(data==data2)
-        
+
     def test_interpolator_2dmesh(self):
         lonbounds = [-70, -60]
         latbounds = [40, 50]
@@ -24,7 +24,7 @@ class CfInterpolator(unittest.TestCase):
         i = CfGeoInterpolator(data, lon, lat, method='nearest')
         data2 = i.interpgrid(lon, lat)
         assert np.all(data==data2)
-        
+
     def test_interpolator_3d_1dz_2dll(self):
         lonbounds = [-70, -60]
         latbounds = [40, 50]
@@ -36,7 +36,7 @@ class CfInterpolator(unittest.TestCase):
         i = CfGeoInterpolator(data, lon, lat, z=z, method='nearest')
         data2 = i.interpgrid(lon, lat, z=z)
         assert np.all(data==data2)
-        
+
     def test_interpolator_3d_3dz_2dll(self):
         lonbounds = [-70, -60]
         latbounds = [40, 50]
@@ -48,7 +48,7 @@ class CfInterpolator(unittest.TestCase):
         i = CfGeoInterpolator(data, lon, lat, z=z, method='nearest')
         data2 = i.interpgrid(lon, lat, z=z)
         assert np.all(data==data2)
-        
+
     def test_interpolator_3d_1dz_1dll(self):
         lonbounds = [-70, -60]
         latbounds = [40, 50]
@@ -59,7 +59,7 @@ class CfInterpolator(unittest.TestCase):
         i = CfGeoInterpolator(data, lon, lat, z=z, method='nearest')
         data2 = i.interpgrid(lon, lat, z=z)
         assert np.all(data==data2)
-        
+
     def test_interpolator_3d_3dz_1dll(self):
         lonbounds = [-70, -60]
         latbounds = [40, 50]
@@ -70,7 +70,7 @@ class CfInterpolator(unittest.TestCase):
         i = CfGeoInterpolator(data, lon, lat, z=z, method='nearest')
         data2 = i.interpgrid(lon, lat, z=z)
         assert np.all(data==data2)
-        
+
     def test_interpolator_3d_1dt_3dz_1dll(self):
         lonbounds = [-70, -60]
         latbounds = [40, 50]
@@ -82,7 +82,7 @@ class CfInterpolator(unittest.TestCase):
         i = CfGeoInterpolator(data, lon, lat, z=z, t=t, method='nearest')
         data2 = i.interpgrid(lon, lat, z=z, t=t)
         assert np.all(data==data2)
-        
+
     def test_interpolator_3d_1dt_1dz_1dll(self):
         lonbounds = [-70, -60]
         latbounds = [40, 50]
@@ -94,7 +94,7 @@ class CfInterpolator(unittest.TestCase):
         i = CfGeoInterpolator(data, lon, lat, z=z, t=t, method='nearest')
         data2 = i.interpgrid(lon, lat, z=z, t=t)
         assert np.all(data==data2)
-        
+
     def test_interpolator_3d_1dt_4dz_1dll(self):
         lonbounds = [-70, -60]
         latbounds = [40, 50]
@@ -106,7 +106,7 @@ class CfInterpolator(unittest.TestCase):
         i = CfGeoInterpolator(data, lon, lat, z=z, t=t, method='nearest')
         data2 = i.interpgrid(lon, lat, z=z, t=t)
         assert np.all(data==data2)
-        
+
 class GeneralInterpolator(unittest.TestCase):
     def test_interpolator_2d(self):
         lonbounds = [-70, -60]
@@ -117,7 +117,7 @@ class GeneralInterpolator(unittest.TestCase):
         i = GenInterpolator(data, lat, lon, method='nearest')
         data2 = i.interpgrid(lat, lon)
         assert np.all(data==data2)
-        
+
 class AsaCreateGrid(unittest.TestCase):
     def test_create_grid(self):
         lonbounds = [-70, -60]
@@ -130,4 +130,4 @@ class AsaCreateGrid(unittest.TestCase):
         assert lat[-1] == latbounds[1]
         assert lon.shape[0] == nx
         assert lat.shape[0] == ny
-        
+
