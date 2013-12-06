@@ -1,5 +1,8 @@
 Paegan - The Python CDM for Met/Ocean data
 ===========
+
+[![Build Status](https://travis-ci.org/asascience-open/paegan.png?branch=master)](https://travis-ci.org/asascience-open/paegan)
+
 Paegan attempts to fill the need for a high level common data model (CDM) library for array based met/ocean data stored in netCDF files or distributed over OPeNDAP.
 
 
