@@ -14,13 +14,13 @@ def create_grid(lonmin, lonmax, latmin, latmax, **kwargs):
     return lon_grid, lat_grid
 
 class Interpolator(object):
-    def __init__(self, *dimensions, method='nearest'):
+    def __init__(self, *dimensions, **kwargs):
         dimensions = [dim.flatten() for dim in dimensions]
         points = [dim.flatten() for dim in np.meshgrid(*dimensions)]
         points = np.asarray(points).T
         self.points = points
         self.data = data.flatten()
-        self.method = method
+        self.method = kwargs.get('method', 'nearest')
         self.numdim = len(dimensions)
 
     def interpgrid(self, *dimensions):
