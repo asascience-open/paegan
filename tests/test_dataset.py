@@ -286,3 +286,13 @@ class DatasetTest(unittest.TestCase):
 
         pd.closenc()
         assert np.all(data1 == data2)
+
+
+    @unittest.skipIf(not os.path.exists(os.path.join(data_path, "pws_L2_2012040100.nc")),
+                     "Resource files are missing that are required to perform the tests.")
+    def test_rgrid_get_values(self):
+        datafile = os.path.join(data_path, "pws_L2_2012040100.nc")
+        pd = CommonDataset.open(datafile)
+        assert pd._datasettype == 'rgrid'
+        values = pd.get_values(var="u", bbox=[-149, 59, -144, 61.5], timeinds=0)
+        assert values.size > 0

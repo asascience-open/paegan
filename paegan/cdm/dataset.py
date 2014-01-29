@@ -720,7 +720,7 @@ class Dataset(object):
                     else:
                         tinds = [np.arange(0, ncvar.shape[positions["time"][0]]+1)]
                 else:
-                    tinds = [timeinds]
+                    tinds = np.asarray([timeinds])
         if positions["z"] != None:
             if zbounds != None:
                 zinds = self.get_zind_from_bounds(var, zbounds)
@@ -765,7 +765,7 @@ class Dataset(object):
                         indices[position] = xinds[i]
 
         #logger.info("Getting data for %s with indexes: %s" % (var, str(indices)))
-        if np.all([i.size >0 for i in indices]):
+        if np.all([ i.size > 0 for i in indices]):
             data = self._get_data(var, indices, use_local)
         else:
             # data = None
