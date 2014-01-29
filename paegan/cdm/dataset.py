@@ -259,10 +259,10 @@ class Dataset(object):
         time = self.gettimevar(var)
         if "units" in kwargs:
             u = kwargs.get("units")
-            bounds = (netCDF4.num2date(np.nanmin(time[np.isnan(time)==False]),units=u),
-                      netCDF4.num2date(np.nanmax(time[np.isnan(time)==False]),units=u))
+            bounds = (netCDF4.num2date(np.min(time[np.isnan(time)==False]),units=u),
+                      netCDF4.num2date(np.max(time[np.isnan(time)==False]),units=u))
         else:
-            bounds = (np.nanmin(time[np.isnan(time)==False].dates), np.nanmax(time[np.isnan(time)==False].dates))
+            bounds = (np.min(time[np.isnan(time)==False].dates), np.max(time[np.isnan(time)==False].dates))
         return bounds
 
     def getdepthbounds(self, var=None, **kwargs):
