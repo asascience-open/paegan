@@ -123,7 +123,7 @@ class CommonDataset(object):
         elif isinstance(ncfile, Dataset):
             # Passed in paegan Dataset object
             nc = ncfile.nc
-        elif isinstance(ncile, netCDF4.Dataset):
+        elif isinstance(ncfile, netCDF4.Dataset):
             # Passed in a netCDF4 Dataset object
             nc = ncfile
 
