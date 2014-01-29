@@ -618,7 +618,7 @@ class Dataset(object):
                     if point != None:
                         tinds = np.asarray([self.get_nearest_tind(var, point)])
                     else:
-                        tinds = [np.arange(0, ncvar.shape[positions["time"][0]]+1)]
+                        tinds = np.asarray([np.arange(0, ncvar.shape[positions["time"][0]]+1)])
                 else:
                     tinds = timeinds
         if positions["z"] != None:
@@ -629,7 +629,7 @@ class Dataset(object):
                     if point != None:
                         zinds = np.asarray([self.get_nearest_zind(var, point)])
                     else:
-                        zinds = [np.arange(0, ncvar.shape[positions["z"][0]]+1)]
+                        zinds = np.asarray([np.arange(0, ncvar.shape[positions["z"][0]]+1)])
                 else:
                     pass
         if bbox != None:
@@ -641,8 +641,8 @@ class Dataset(object):
                 num = kwargs.get("num", 1)
                 xinds, yinds = self.get_xyind_from_point(var, point, num=num)
             else:
-                xinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["x"]]
-                yinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["y"]]
+                xinds = np.asarray([np.arange(0, ncvar.shape[pos]+1) for pos in positions["x"]])
+                yinds = np.asarray([np.arange(0, ncvar.shape[pos]+1) for pos in positions["y"]])
 
         indices = [None for i in range(ndim)]
         for name in positions:
@@ -720,7 +720,12 @@ class Dataset(object):
                     else:
                         tinds = [np.arange(0, ncvar.shape[positions["time"][0]]+1)]
                 else:
-                    tinds = np.asarray([timeinds])
+                    if isinstance(timeinds, list) or isinstance(timeinds, tuple):
+                        tinds = np.asarray(timeinds)
+                    elif isinstance(timeinds, np.ndarray):
+                        tinds = timeinds
+                    else:
+                        tinds = np.asarray([timeinds])
         if positions["z"] != None:
             if zbounds != None:
                 zinds = self.get_zind_from_bounds(var, zbounds)
@@ -731,7 +736,12 @@ class Dataset(object):
                     else:
                         zinds = [np.arange(0, ncvar.shape[positions["z"][0]]+1)]
                 else:
-                    zinds = [zinds]
+                    if isinstance(zinds, list) or isinstance(zinds, tuple):
+                        zinds = np.asarray(zinds)
+                    elif isinstance(zinds, np.ndarray):
+                        zinds = zinds
+                    else:
+                        zinds = np.asarray([zinds])
         if bbox != None:
             xinds, yinds = self.get_xyind_from_bbox(var, bbox)
             xinds = xinds[0]
@@ -741,8 +751,8 @@ class Dataset(object):
                 num = kwargs.get("num", 1)
                 xinds, yinds = self.get_xyind_from_point(var, point, num=num)
             else:
-                xinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["x"]]
-                yinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["y"]]
+                xinds = np.asarray([np.arange(0, ncvar.shape[pos]+1) for pos in positions["x"]])
+                yinds = np.asarray([np.arange(0, ncvar.shape[pos]+1) for pos in positions["y"]])
         #if len(tinds) > 0 and len(zinds) > 0 and \
         #    len(xinds) > 0 and len(yinds) > 0:
         # Now take time inds, z inds, x and y inds and put them
@@ -764,8 +774,8 @@ class Dataset(object):
                     for i,position in enumerate(positions[name]):
                         indices[position] = xinds[i]
 
-        #logger.info("Getting data for %s with indexes: %s" % (var, str(indices)))
-        if np.all([ i.size > 0 for i in indices]):
+        # logger.info("Getting data for %s with indexes: %s" % (var, str(indices)))
+        if np.all([ i.size > 0 for i in indices ]):
             data = self._get_data(var, indices, use_local)
         else:
             # data = None
