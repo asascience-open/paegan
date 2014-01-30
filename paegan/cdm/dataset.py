@@ -58,7 +58,6 @@ _possibley = ["y", "Y",
               "lat_psi", "LAT_PSI",
              ]
 
-
 def _sub_by_nan(data, ind):
         """
             Funtction to subset a dimension variable by replacing values
@@ -102,21 +101,21 @@ class CommonDataset(object):
         if isinstance(ncfile, basestring):
             try:
                 return netCDF4.Dataset(ncfile)
-            except RuntimeError:
+            except (IOError, RuntimeError, IndexError):
                 # Are we a set of files?
                 try:
                     return netCDF4.MFDataset(ncfile)
-                except (IOError, RuntimeError):
+                except (IOError, RuntimeError, IndexError):
                     try:
                         return netCDF4.MFDataset(ncfile, aggdim=tname)
-                    except (IOError, RuntimeError), e:
+                    except (IOError, RuntimeError, IndexError):
                         try:
                             # Unicode isn't working sometimes?
                             return netCDF4.MFDataset(str(ncfile), aggdim=tname)
                         except Exception, e:
                             logger.exception("Can not open %s" % ncfile, e)
                             raise
-            except StandardError, e:
+            except Exception, e:
                 logger.exception("Can not open %s" % ncfile, e)
                 raise
         elif isinstance(ncfile, Dataset):
