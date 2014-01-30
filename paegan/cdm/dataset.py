@@ -11,52 +11,53 @@ from paegan.utils.asainterpolate import CfGeoInterpolator
 from paegan.logger import logger
 
 _possiblet = ["time", "TIME", "Time",
-           "t", "T",
-           "ocean_time", "OCEAN_TIME",
-           "jd", "JD",
-           "dn", "DN",
-           "times", "TIMES", "Times",
-           "mt", "MT",
-           "dt", "DT",
-          ]
+              "t", "T",
+              "ocean_time", "OCEAN_TIME",
+              "jd", "JD",
+              "dn", "DN",
+              "times", "TIMES", "Times",
+              "mt", "MT",
+              "dt", "DT",
+             ]
 _possiblez = ["depth", "DEPTH",
-           "depths", "DEPTHS",
-           "height", "HEIGHT",
-           "altitude", "ALTITUDE",
-           "alt", "ALT",
-           "Alt", "Altitude",
-           "h", "H",
-           "s_rho", "S_RHO",
-           "s_w", "S_W",
-           "z", "Z",
-           "siglay", "SIGLAY",
-           "siglev", "SIGLEV",
-           "sigma", "SIGMA",
-          ]
+              "depths", "DEPTHS",
+              "height", "HEIGHT",
+              "altitude", "ALTITUDE",
+              "alt", "ALT",
+              "Alt", "Altitude",
+              "h", "H",
+              "s_rho", "S_RHO",
+              "s_w", "S_W",
+              "z", "Z",
+              "siglay", "SIGLAY",
+              "siglev", "SIGLEV",
+              "sigma", "SIGMA",
+             ]
 _possiblex = ["x", "X",
-           "lon", "LON",
-           "xlon", "XLON",
-           "lonx", "lonx",
-           "lon_u", "LON_U",
-           "lon_v", "LON_V",
-           "lonc", "LONC",
-           "Lon", "Longitude",
-           "longitude", "LONGITUDE",
-           "lon_rho", "LON_RHO",
-           "lon_psi", "LON_PSI",
-          ]
+              "lon", "LON",
+              "xlon", "XLON",
+              "lonx", "lonx",
+              "lon_u", "LON_U",
+              "lon_v", "LON_V",
+              "lonc", "LONC",
+              "Lon", "Longitude",
+              "longitude", "LONGITUDE",
+              "lon_rho", "LON_RHO",
+              "lon_psi", "LON_PSI",
+             ]
 _possibley = ["y", "Y",
-           "lat", "LAT",
-           "ylat", "YLAT",
-           "laty", "laty",
-           "lat_u", "LAT_U",
-           "lat_v", "LAT_V",
-           "latc", "LATC",
-           "Lat", "Latitude",
-           "latitude", "LATITUDE",
-           "lat_rho", "LAT_RHO",
-           "lat_psi", "LAT_PSI",
-          ]
+              "lat", "LAT",
+              "ylat", "YLAT",
+              "laty", "laty",
+              "lat_u", "LAT_U",
+              "lat_v", "LAT_V",
+              "latc", "LATC",
+              "Lat", "Latitude",
+              "latitude", "LATITUDE",
+              "lat_rho", "LAT_RHO",
+              "lat_psi", "LAT_PSI",
+             ]
+
 
 def _sub_by_nan(data, ind):
         """
@@ -73,6 +74,7 @@ def _sub_by_nan(data, ind):
             data = np.nan * np.ones_like(data)
         return data
 
+
 def _sub_by_nan2(data, ind):
         """
             Funtction to subset a dimension variable by replacing values
@@ -80,16 +82,17 @@ def _sub_by_nan2(data, ind):
             preserve the lazy data access on the full array's in the backend.
         """
         if (len(ind[0]) > 0) & (len(ind[1]) > 0):
-            xtmp = -1 * np.ones_like(data[1,:])
+            xtmp = -1 * np.ones_like(data[1, :])
             xtmp[ind[1][0]:ind[1][-1]+1] = ind[1]
             xbool = range(len(data[1])) != xtmp
-            ytmp = -1 * np.ones_like(data[:,1])
+            ytmp = -1 * np.ones_like(data[:, 1])
             ytmp[ind[0][0]:ind[0][-1]+1] = ind[0]
             ybool = range(len(data[0])) != ytmp
             data[ybool, xbool] = np.nan
         else:
             data = np.nan * np.ones_like(data)
         return data
+
 
 class CommonDataset(object):
 
@@ -123,7 +126,7 @@ class CommonDataset(object):
         elif isinstance(ncfile, Dataset):
             # Passed in paegan Dataset object
             nc = ncfile.nc
-        elif isinstance(ncile, netCDF4.Dataset):
+        elif isinstance(ncfile, netCDF4.Dataset):
             # Passed in a netCDF4 Dataset object
             nc = ncfile
 
@@ -168,13 +171,13 @@ class CommonDataset(object):
 
         if datasettype == 'ncell':
             dataobj = NCellDataset(filename, datasettype,
-                zname=zname, tname=tname, xname=xname, yname=yname)
+                                   zname=zname, tname=tname, xname=xname, yname=yname)
         elif datasettype == 'rgrid':
             dataobj = RGridDataset(filename, datasettype,
-                zname=zname, tname=tname, xname=xname, yname=yname)
+                                   zname=zname, tname=tname, xname=xname, yname=yname)
         elif datasettype == 'cgrid':
             dataobj = CGridDataset(filename, datasettype,
-                zname=zname, tname=tname, xname=xname, yname=yname)
+                                   zname=zname, tname=tname, xname=xname, yname=yname)
         else:
             dataobj = None
 
@@ -183,7 +186,7 @@ class CommonDataset(object):
 
 class Dataset(object):
     def __init__(self, filename, datasettype, xname='lon', yname='lat',
-        zname='z', tname='time'):
+                 zname='z', tname='time'):
         self.nc = None
         self._coordcache = dict()
         self._filename = filename
@@ -259,10 +262,10 @@ class Dataset(object):
         time = self.gettimevar(var)
         if "units" in kwargs:
             u = kwargs.get("units")
-            bounds = (netCDF4.num2date(np.nanmin(time[np.isnan(time)==False]),units=u),
-                      netCDF4.num2date(np.nanmax(time[np.isnan(time)==False]),units=u))
+            bounds = (netCDF4.num2date(np.min(time[np.isnan(time)==False]),units=u),
+                      netCDF4.num2date(np.max(time[np.isnan(time)==False]),units=u))
         else:
-            bounds = (np.nanmin(time[np.isnan(time)==False].dates), np.nanmax(time[np.isnan(time)==False].dates))
+            bounds = (np.min(time[np.isnan(time)==False].dates), np.max(time[np.isnan(time)==False].dates))
         return bounds
 
     def getdepthbounds(self, var=None, **kwargs):
@@ -296,18 +299,18 @@ class Dataset(object):
         #return self._timevar
         assert var in self._current_variables
         timevar = None
-        if use_cache == True:
+        if use_cache is True:
             if self._checkcache(var):
                 timevar = self._coordcache[var].time
             else:
                 self._coordcache[var] = cachevar()
-        if timevar == None:
+        if timevar is None:
             names = self.get_coord_names(var)
-            if names['tname'] != None:
+            if names['tname'] is not None:
                 timevar = Timevar(self.nc, names["tname"])
             else:
                 timevar = None
-            if use_cache == True:
+            if use_cache is True:
                 self._coordcache[var].time = timevar
         return timevar
 
@@ -315,18 +318,18 @@ class Dataset(object):
         #return self._depthvar
         assert var in self._current_variables
         depthvar = None
-        if use_cache == True:
+        if use_cache is True:
             if self._checkcache(var):
                 depthvar = self._coordcache[var].z
             else:
                 self._coordcache[var] = cachevar()
-        if depthvar == None:
+        if depthvar is None:
             names = self.get_coord_names(var)
-            if names['zname'] != None:
+            if names['zname'] is not None:
                 depthvar = Depthvar(self.nc, names["zname"])
             else:
                 depthvar = None
-            if use_cache == True:
+            if use_cache is True:
                 self._coordcache[var].add_z(depthvar)
         return depthvar
 
@@ -338,11 +341,10 @@ class Dataset(object):
             gridobj = self._coordcache[var].xy
         else:
             self._coordcache[var] = cachevar()
-        if gridobj == None:
+        if gridobj is None:
             names = self.get_coord_names(var)
-            if names['xname'] != None and names['yname'] !=None:
-                gridobj = Gridobj(self.nc, names["xname"],
-                   names["yname"])
+            if names['xname'] is not None and names['yname'] is not None:
+                gridobj = Gridobj(self.nc, names["xname"], names["yname"])
             else:
                 gridobj = None
             self._coordcache[var].add_xy(gridobj)
@@ -427,18 +429,17 @@ class Dataset(object):
                 tname = tname[0]
             else:
                 tname = None
-        names = {"tname":tname, "zname":zname,
-                 "xname":xname, "yname":yname}
+        names = {"tname" : tname, "zname" : zname,
+                 "xname" : xname, "yname" : yname}
         # find how the shapes match up to var
         # (should i use dim names or just sizes to figure out?)
         # I'm going to use dim names
         dims = ncvar.dimensions
         ndim = ncvar.ndim
-        shape = ncvar.shape
         total = []
         for i in names:
             name = names[i]
-            if name != None:
+            if name is not None:
                 cdims = self.nc.variables[name].dimensions
                 for cdim in cdims:
                     try:
@@ -463,7 +464,7 @@ class Dataset(object):
                         name2 = "tname"
                     else:
                         name2 = None
-                    if name2 != None:
+                    if name2 is not None:
                         names[name2] = missing_dim
         # Need to add next check if there are any dims left
         # to find variables with different names that use soley
@@ -481,13 +482,11 @@ class Dataset(object):
         timevar = self.gettimevar(var)
         depthvar = self.getdepthvar(var)
         gridobj = self.getgridobj(var)
-        return {"time":timevar, "z":depthvar, "xy":gridobj}
+        return {"time" : timevar, "z" : depthvar, "xy" : gridobj}
 
-
-    def get_varname_from_stdname(self, standard_name=None,
-        match=None):
+    def get_varname_from_stdname(self, standard_name=None, match=None):
         var_matches = []
-        if match == None:
+        if match is None:
             for var in self._current_variables:
                 try:
                     sn = self.nc.variables[var].standard_name
@@ -504,14 +503,12 @@ class Dataset(object):
             ", dataset_type='" + self._datasettype + "')"
         return s
 
-    def sub_coords(self, var, zbounds=None, bbox=None,
-        timebounds=None, zinds=None, timeinds=None):
+    def sub_coords(self, var, zbounds=None, bbox=None, timebounds=None, zinds=None, timeinds=None):
         assert var in self._current_variables
         ncvar = self.nc.variables[var]
         coord_dict = self.get_coord_dict(var)
         names = self.get_coord_names(var)
         dims = ncvar.dimensions
-        ndim = ncvar.ndim
         x, y, z, time = None, None, None, None
         positions = dict()
         for i in names:
@@ -526,9 +523,9 @@ class Dataset(object):
                 common_name = "y"
             else:
                 common_name = None
-            if common_name != None:
+            if common_name is not None:
                 positions[common_name] = None
-                if name != None:
+                if name is not None:
                     positions[common_name] = []
                     cdims = self.nc.variables[name].dimensions
                     for cdim in cdims:
@@ -536,29 +533,29 @@ class Dataset(object):
                             positions[common_name].append(dims.index(cdim))
                         except StandardError:
                             pass
-        if names['tname'] != None:
+        if names['tname'] is not None:
             #tname = names['tname']
-            if timebounds != None:
+            if timebounds is not None:
                 timeinds = self.get_tind_from_bounds(var, timebounds)[0]
-            elif timeinds == None:
+            elif timeinds is None:
                 timeinds = np.arange(0, ncvar.shape[positions["time"][0]]+1)
             time = coord_dict['time'][timeinds[0]:timeinds[-1]+1]
-        if names['zname'] != None:
+        if names['zname'] is not None:
             #zname = names['zname']
-            if zbounds != None:
+            if zbounds is not None:
                 zinds = self.get_zind_from_bounds(var, zbounds)[0]
-            elif zinds == None:
+            elif zinds is None:
                 zinds = np.arange(0, ncvar.shape[positions["z"][0]]+1)
             z = coord_dict['z'][zinds[0]:zinds[-1]+1]
         xinds, yinds = self.get_xyind_from_bbox(var, bbox)
         xy = coord_dict['xy']
-        if names['xname'] != None:
+        if names['xname'] is not None:
             #xname = names['xname']
             if len(xy._xarray.shape) == 2:
                 x = xy._xarray[xinds[0][0]:xinds[0][-1]+1, xinds[1][0]:xinds[1][-1]+1]
             elif len(xy._xarray.shape) == 1:
                 x = xy._xarray[np.squeeze(xinds)]
-        if names['yname'] != None:
+        if names['yname'] is not None:
             #yname = names['yname']
             if len(xy._yarray.shape) == 2:
                 y = xy._yarray[yinds[0][0]:yinds[0][-1]+1, yinds[1][0]:yinds[1][-1]+1]
@@ -566,9 +563,8 @@ class Dataset(object):
                 y = xy._yarray[np.squeeze(yinds)]
         return subs(x=x, y=y, z=z, time=time)
 
-    def get_indices(self, var, zbounds=None, bbox=None,
-        timebounds=None, zinds=None, timeinds=None,
-        point=None, use_local=False, **kwargs):
+    def get_indices(self, var, zbounds=None, bbox=None, timebounds=None, zinds=None, timeinds=None,
+                    point=None, use_local=False, **kwargs):
         """
 
         Get smallest chunck of data that encompasses the 4-d
@@ -583,10 +579,8 @@ class Dataset(object):
         # (should i use dim names or just sizes to figure out?)
         # I'm going to use dim names
         dims = ncvar.dimensions
-        ndim = ncvar.ndim
-        shape = ncvar.shape
         positions = dict()
-        total = []
+        ndim = ncvar.ndim
         for i in names:
             name = names[i]
             if i == "tname":
@@ -599,9 +593,9 @@ class Dataset(object):
                 common_name = "y"
             else:
                 common_name = None
-            if common_name != None:
+            if common_name is not None:
                 positions[common_name] = None
-                if name != None:
+                if name is not None:
                     positions[common_name] = []
                     cdims = self.nc.variables[name].dimensions
                     for cdim in cdims:
@@ -610,61 +604,60 @@ class Dataset(object):
                         except StandardError:
                             pass
 
-        if positions["time"] != None:
-            if timebounds != None:
+        if positions["time"] is not None:
+            if timebounds is not None:
                 tinds = self.get_tind_from_bounds(var, timebounds)
             else:
-                if timeinds == None:
-                    if point != None:
+                if timeinds is None:
+                    if point is not None:
                         tinds = np.asarray([self.get_nearest_tind(var, point)])
                     else:
-                        tinds = [np.arange(0, ncvar.shape[positions["time"][0]]+1)]
+                        tinds = np.asarray([np.arange(0, ncvar.shape[positions["time"][0]]+1)])
                 else:
                     tinds = timeinds
-        if positions["z"] != None:
-            if zbounds != None:
+        if positions["z"] is not None:
+            if zbounds is not None:
                 zinds = self.get_zind_from_bounds(var, zbounds)
             else:
-                if zinds == None:
-                    if point != None:
+                if zinds is None:
+                    if point is not None:
                         zinds = np.asarray([self.get_nearest_zind(var, point)])
                     else:
-                        zinds = [np.arange(0, ncvar.shape[positions["z"][0]]+1)]
+                        zinds = np.asarray([np.arange(0, ncvar.shape[positions["z"][0]]+1)])
                 else:
                     pass
-        if bbox != None:
+        if bbox is not None:
             xinds, yinds = self.get_xyind_from_bbox(var, bbox)
             xinds = xinds[0]
             yinds = yinds[0]
         else:
-            if point != None:
+            if point is not None:
                 num = kwargs.get("num", 1)
                 xinds, yinds = self.get_xyind_from_point(var, point, num=num)
             else:
-                xinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["x"]]
-                yinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["y"]]
+                xinds = np.asarray([np.arange(0, ncvar.shape[pos]+1) for pos in positions["x"]])
+                yinds = np.asarray([np.arange(0, ncvar.shape[pos]+1) for pos in positions["y"]])
 
         indices = [None for i in range(ndim)]
         for name in positions:
-            if positions[name] != None:
+            if positions[name] is not None:
                 if name == "time":
-                    for i,position in enumerate(positions[name]):
+                    for i, position in enumerate(positions[name]):
                         indices[position] = tinds[i]
                 elif name == "z":
-                    for i,position in enumerate(positions[name]):
+                    for i, position in enumerate(positions[name]):
                         indices[position] = zinds[i]
                 elif name == "y":
-                    for i,position in enumerate(positions[name]):
+                    for i, position in enumerate(positions[name]):
                         indices[position] = yinds[i]
                 elif name == "x":
-                    for i,position in enumerate(positions[name]):
+                    for i, position in enumerate(positions[name]):
                         indices[position] = xinds[i]
 
         return indices
 
-    def get_values(self, var, zbounds=None, bbox=None,
-        timebounds=None, zinds=None, timeinds=None,
-        point=None, use_local=False, **kwargs):
+    def get_values(self, var, zbounds=None, bbox=None, timebounds=None, zinds=None, timeinds=None,
+                   point=None, use_local=False, **kwargs):
         """
 
         Get smallest chunck of data that encompasses the 4-d
@@ -680,9 +673,8 @@ class Dataset(object):
         # I'm going to use dim names
         dims = ncvar.dimensions
         ndim = ncvar.ndim
-        shape = ncvar.shape
         positions = dict()
-        total = []
+
         for i in names:
             name = names[i]
             if i == "tname":
@@ -695,9 +687,9 @@ class Dataset(object):
                 common_name = "y"
             else:
                 common_name = None
-            if common_name != None:
+            if common_name is not None:
                 positions[common_name] = None
-                if name != None:
+                if name is not None:
                     positions[common_name] = []
                     cdims = self.nc.variables[name].dimensions
                     for cdim in cdims:
@@ -710,39 +702,49 @@ class Dataset(object):
         # zinds = [[1,],]
         # xinds = [[50,], [50,]]
         # yinds = [[50,], [50,]]
-        if positions["time"] != None:
-            if timebounds != None:
+        if positions["time"] is not None:
+            if timebounds is not None:
                 tinds = self.get_tind_from_bounds(var, timebounds)
             else:
-                if timeinds == None:
-                    if point != None:
+                if timeinds is None:
+                    if point is not None:
                         tinds = np.asarray([self.get_nearest_tind(var, point)])
                     else:
-                        tinds = [np.arange(0, ncvar.shape[positions["time"][0]]+1)]
+                        tinds = np.asarray([np.arange(0, ncvar.shape[positions["time"][0]]+1)])
                 else:
-                    tinds = [timeinds]
-        if positions["z"] != None:
-            if zbounds != None:
+                    if isinstance(timeinds, list) or isinstance(timeinds, tuple):
+                        tinds = np.asarray(timeinds)
+                    elif isinstance(timeinds, np.ndarray):
+                        tinds = timeinds
+                    else:
+                        tinds = np.asarray([timeinds])
+        if positions["z"] is not None:
+            if zbounds is not None:
                 zinds = self.get_zind_from_bounds(var, zbounds)
             else:
-                if zinds == None:
-                    if point != None:
+                if zinds is None:
+                    if point is not None:
                         zinds = np.asarray([self.get_nearest_zind(var, point)])
                     else:
-                        zinds = [np.arange(0, ncvar.shape[positions["z"][0]]+1)]
+                        zinds = np.asarray([np.arange(0, ncvar.shape[positions["z"][0]]+1)])
                 else:
-                    zinds = [zinds]
-        if bbox != None:
+                    if isinstance(zinds, list) or isinstance(zinds, tuple):
+                        zinds = np.asarray(zinds)
+                    elif isinstance(zinds, np.ndarray):
+                        zinds = zinds
+                    else:
+                        zinds = np.asarray([zinds])
+        if bbox is not None:
             xinds, yinds = self.get_xyind_from_bbox(var, bbox)
             xinds = xinds[0]
             yinds = yinds[0]
         else:
-            if point != None:
+            if point is not None:
                 num = kwargs.get("num", 1)
                 xinds, yinds = self.get_xyind_from_point(var, point, num=num)
             else:
-                xinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["x"]]
-                yinds = [np.arange(0, ncvar.shape[pos]+1) for pos in positions["y"]]
+                xinds = np.asarray([np.arange(0, ncvar.shape[pos]+1) for pos in positions["x"]])
+                yinds = np.asarray([np.arange(0, ncvar.shape[pos]+1) for pos in positions["y"]])
         #if len(tinds) > 0 and len(zinds) > 0 and \
         #    len(xinds) > 0 and len(yinds) > 0:
         # Now take time inds, z inds, x and y inds and put them
@@ -750,22 +752,22 @@ class Dataset(object):
 
         indices = [None for i in range(ndim)]
         for name in positions:
-            if positions[name] != None:
+            if positions[name] is not None:
                 if name == "time":
-                    for i,position in enumerate(positions[name]):
+                    for i, position in enumerate(positions[name]):
                         indices[position] = tinds[i]
                 elif name == "z":
-                    for i,position in enumerate(positions[name]):
+                    for i, position in enumerate(positions[name]):
                         indices[position] = zinds[i]
                 elif name == "y":
-                    for i,position in enumerate(positions[name]):
+                    for i, position in enumerate(positions[name]):
                         indices[position] = yinds[i]
                 elif name == "x":
-                    for i,position in enumerate(positions[name]):
+                    for i, position in enumerate(positions[name]):
                         indices[position] = xinds[i]
 
-        #logger.info("Getting data for %s with indexes: %s" % (var, str(indices)))
-        if np.all([i.size >0 for i in indices]):
+        # logger.info("Getting data for %s with indexes: %s" % (var, str(indices)))
+        if np.all([ i.size > 0 for i in indices ]):
             data = self._get_data(var, indices, use_local)
         else:
             # data = None
@@ -778,11 +780,11 @@ class Dataset(object):
         tinds = None
         zinds = None
         bbox = [np.min(np.min(lon)), np.min(np.min(lat)), np.max(np.max(lon)), np.max(np.max(lat))]
-        if z == None:
+        if z is None:
             zbounds = z
         else:
             zbounds = (np.min(np.min(np.min(np.min(z)))), np.max(np.max(np.max(np.max(z)))),)
-        if t == None:
+        if t is None:
             tbounds = t
         else:
             if True:
@@ -794,9 +796,9 @@ class Dataset(object):
         raw_vals = self.get_values(var, zbounds=zbounds, bbox=bbox,
                                    timeinds=tinds, zinds=zinds, timebounds=tbounds)
         coords_struct = self.sub_coords(var, zbounds=zbounds, bbox=bbox,
-                                   timeinds=tinds, zinds=zinds, timebounds=tbounds)
+                                        timeinds=tinds, zinds=zinds, timebounds=tbounds)
         interpolator = CfGeoInterpolator(raw_vals, coords_struct.x, coords_struct.y,
-                          z=coords_struct.z, t=coords_struct.time, method=method)
+                                         z=coords_struct.z, t=coords_struct.time, method=method)
         return interpolator.interpgrid(lon, lat, t=t, z=z)
 
     def _get_data(self, var, **kwargs):
@@ -822,19 +824,19 @@ class Dataset(object):
         raise NotImplementedError
 
     def restrict_time(self, times = None):
-        assert times != None
+        assert times is not None
         assert len(times) == 2
         new = self._copy()
         for var in new._current_variables:
             time_dimension = new.gettimevar(var)
-            if time_dimension != None:
+            if time_dimension is not None:
                 inds = new.get_tind_from_bounds(var, times)
                 time_dimension = _sub_by_nan(time_dimension, inds[0][0])
                 new._coordcache[var].t = time_dimension
         return new
 
     def restrict_vars(self, varlist = None):
-        assert varlist != None
+        assert varlist is not None
         coord_names = []
         new = self._copy()
         if type(varlist) == str:
@@ -847,12 +849,12 @@ class Dataset(object):
         return new
 
     def restrict_depth(self, depths = None):
-        assert depths != None
+        assert depths is not None
         assert len(depths) == 2
         new = self._copy()
         for var in new._current_variables:
             depth_dimension = new.getdepthvar(var)
-            if depth_dimension != None:
+            if depth_dimension is not None:
                 inds = new.get_zind_from_bounds(var, depths)
                 depth_dimension = _sub_by_nan(depth_dimension, inds[0])
                 new._coordcache[var].z = depth_dimension
@@ -867,7 +869,7 @@ class Dataset(object):
             depth = Location4D(depth=depth, latitude=0, longitude=0)
         for var in self._current_variables:
             depth_dimension = new.getdepthvar(var)
-            if depth_dimension != None:
+            if depth_dimension is not None:
                 ind = new.get_nearest_zind(var, depth)
                 depth_dimension = _sub_by_nan(depth_dimension, ind)
                 new._coordcache[var].z = depth_dimension
@@ -879,7 +881,7 @@ class Dataset(object):
             time = Location4D(time=time, latitude=0, longitude=0)
         for var in self._current_variables:
             time_dimension = new.gettimevar(var)
-            if time_dimension != None:
+            if time_dimension is not None:
                 ind = new.get_nearest_tind(var, time)
                 time_dimension = _sub_by_nan(time_dimension, ind)
                 new._coordcache[var].t = time_dimension
