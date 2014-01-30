@@ -710,7 +710,7 @@ class Dataset(object):
                     if point is not None:
                         tinds = np.asarray([self.get_nearest_tind(var, point)])
                     else:
-                        tinds = [np.arange(0, ncvar.shape[positions["time"][0]]+1)]
+                        tinds = np.asarray([np.arange(0, ncvar.shape[positions["time"][0]]+1)])
                 else:
                     if isinstance(timeinds, list) or isinstance(timeinds, tuple):
                         tinds = np.asarray(timeinds)
@@ -726,7 +726,7 @@ class Dataset(object):
                     if point is not None:
                         zinds = np.asarray([self.get_nearest_zind(var, point)])
                     else:
-                        zinds = [np.arange(0, ncvar.shape[positions["z"][0]]+1)]
+                        zinds = np.asarray([np.arange(0, ncvar.shape[positions["z"][0]]+1)])
                 else:
                     if isinstance(zinds, list) or isinstance(zinds, tuple):
                         zinds = np.asarray(zinds)
