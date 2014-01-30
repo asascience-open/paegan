@@ -15,7 +15,7 @@ class CGridDataset(Dataset):
         super(CGridDataset,self).__init__(*args, **kwargs)
 
     def _copy(self):
-        new = CGridDataset(self._filename, self._datasettype)
+        new = CGridDataset(self._filepath, self._datasettype)
         new._coordcache = copy.copy(self._coordcache)
         new._current_variables = copy.copy(self._current_variables)
         return new

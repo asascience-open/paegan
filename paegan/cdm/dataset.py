@@ -97,6 +97,32 @@ def _sub_by_nan2(data, ind):
 class CommonDataset(object):
 
     @staticmethod
+    def nc_object(ncfile, tname='time'):
+
+        if isinstance(ncfile, basestring):
+            try:
+                return netCDF4.Dataset(ncfile)
+            except RuntimeError:
+                # Are we a set of files?
+                try:
+                    return netCDF4.MFDataset(ncfile)
+                except (IOError, RuntimeError):
+                    try:
+                        return netCDF4.MFDataset(ncfile, aggdim="time")
+                    except Exception, e:
+                        logger.exception("Can not open %s" % ncfile, e)
+                        raise
+            except StandardError, e:
+                logger.exception("Can not open %s" % ncfile, e)
+                raise
+        elif isinstance(ncfile, Dataset):
+            # Passed in paegan Dataset object
+            return ncfile.nc
+        elif isinstance(ncfile, netCDF4.Dataset) or isinstance(ncfile, netCDF4.MFDataset):
+            # Passed in a netCDF4 Dataset object
+            return ncfile
+
+    @staticmethod
     def open(ncfile, xname='lon', yname='lat', zname='z', tname='time', **kwargs):
         """
         Initialize paegan dataset object, which uses specific
@@ -110,27 +136,8 @@ class CommonDataset(object):
         >> dataset = CommonDataset.open(url, dataset_type="cgrid")
         """
 
-        nc = None
-        filename = None
-
-        if isinstance(ncfile, str):
-            ncfile = unicode(ncfile.strip())
-
-        if isinstance(ncfile, unicode):
-            try:
-                nc = netCDF4.Dataset(ncfile)
-                filename = ncfile
-            except StandardError:
-                logger.error(ncfile)
-                raise
-        elif isinstance(ncfile, Dataset):
-            # Passed in paegan Dataset object
-            nc = ncfile.nc
-        elif isinstance(ncfile, netCDF4.Dataset):
-            # Passed in a netCDF4 Dataset object
-            nc = ncfile
-
-        datasettype = kwargs.get('dataset_type', None)
+        nc = CommonDataset.nc_object(ncfile)
+        filepath = ncfile
 
         # Find the coordinate variables for testing, unknown if not found
         keys = set(nc.variables)
@@ -147,6 +154,7 @@ class CommonDataset(object):
             testvarx = nc.variables[xmatches[0]]
 
         # Test the shapes of the coordinate variables to determine the grid type
+        datasettype = kwargs.get('dataset_type', None)
         if datasettype is None:
             if testvary.ndim > 1:
                 datasettype = "cgrid"
@@ -170,13 +178,13 @@ class CommonDataset(object):
         from paegan.cdm.grids.r_grid import RGridDataset
 
         if datasettype == 'ncell':
-            dataobj = NCellDataset(filename, datasettype,
+            dataobj = NCellDataset(filepath, datasettype,
                                    zname=zname, tname=tname, xname=xname, yname=yname)
         elif datasettype == 'rgrid':
-            dataobj = RGridDataset(filename, datasettype,
+            dataobj = RGridDataset(filepath, datasettype,
                                    zname=zname, tname=tname, xname=xname, yname=yname)
         elif datasettype == 'cgrid':
-            dataobj = CGridDataset(filename, datasettype,
+            dataobj = CGridDataset(filepath, datasettype,
                                    zname=zname, tname=tname, xname=xname, yname=yname)
         else:
             dataobj = None
@@ -185,11 +193,9 @@ class CommonDataset(object):
 
 
 class Dataset(object):
-    def __init__(self, filename, datasettype, xname='lon', yname='lat',
+    def __init__(self, filepath, datasettype, xname='lon', yname='lat',
                  zname='z', tname='time'):
-        self.nc = None
         self._coordcache = dict()
-        self._filename = filename
         self._datasettype = datasettype
 
         self._possiblet = _possiblet
@@ -206,8 +212,10 @@ class Dataset(object):
         if tname not in self._possiblet:
             self._possiblet.append(tname)
 
-        self.opennc()
+        self.nc = CommonDataset.nc_object(filepath)
+        self.metadata = self.nc.__dict__
         self._current_variables = list(self.nc.variables.keys())
+        self._filepath = filepath
 
     def _copy(self):
         raise NotImplementedError
@@ -247,10 +255,6 @@ class Dataset(object):
         self.metadata = None
         self.nc.close()
         self.nc = None
-
-    def opennc(self):
-        self.nc = netCDF4.Dataset(self._filename)
-        self.metadata = self.nc.__dict__
 
     def gettimestep(self, var=None):
         assert var in self._current_variables
@@ -382,7 +386,7 @@ class Dataset(object):
 [[
   <Paegan Dataset Object>
   Dataset Type: """ + self._datasettype + """
-  Resource: """ + self._filename + """
+  Resource: """ + self._filepath + """
   Variables:
   """ + str(k) + """
 ]]"""
@@ -499,7 +503,7 @@ class Dataset(object):
         return var_matches
 
     def __repr__(self):
-        s = "CommonDataset(" + self._filename + \
+        s = "CommonDataset(" + self._filepath + \
             ", dataset_type='" + self._datasettype + "')"
         return s
 
