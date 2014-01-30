@@ -112,11 +112,11 @@ class CommonDataset(object):
                         try:
                             # Unicode isn't working sometimes?
                             return netCDF4.MFDataset(str(ncfile), aggdim=tname)
-                        except Exception, e:
-                            logger.exception("Can not open %s" % ncfile, e)
+                        except Exception:
+                            logger.exception("Can not open %s" % ncfile)
                             raise
-            except Exception, e:
-                logger.exception("Can not open %s" % ncfile, e)
+            except Exception:
+                logger.exception("Can not open %s" % ncfile)
                 raise
         elif isinstance(ncfile, Dataset):
             # Passed in paegan Dataset object
