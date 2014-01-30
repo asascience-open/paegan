@@ -215,10 +215,9 @@ class Dataset(object):
         if tname not in self._possiblet:
             self._possiblet.append(tname)
 
-        self.nc = CommonDataset.nc_object(filepath)
-        self.metadata = self.nc.__dict__
-        self._current_variables = list(self.nc.variables.keys())
         self._filepath = filepath
+        self.opennc()
+        self._current_variables = list(self.nc.variables.keys())
 
     def _copy(self):
         raise NotImplementedError
@@ -253,6 +252,10 @@ class Dataset(object):
 
     def get_xyind_from_point(self, var, point, **kwargs):
         raise NotImplementedError
+
+    def opennc(self):
+        self.nc = CommonDataset.nc_object(self._filepath)
+        self.metadata = self.nc.__dict__
 
     def closenc(self):
         self.metadata = None
