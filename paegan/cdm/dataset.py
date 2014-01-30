@@ -230,7 +230,7 @@ class Dataset(object):
         for var in self._current_variables:
             variables[var] = {}
             for attr in self.nc.variables[var].ncattrs():
-                variables[var][attr] = self.nc.variables[var].getncattr(attr)
+                variables[var][attr] = getattr(self.nc.variables[var], attr)
         return variables
 
     def lon2ind(self, var=None, **kwargs):
