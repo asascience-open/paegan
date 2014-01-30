@@ -108,10 +108,14 @@ class CommonDataset(object):
                     return netCDF4.MFDataset(ncfile)
                 except (IOError, RuntimeError):
                     try:
-                        return netCDF4.MFDataset(ncfile, aggdim="time")
-                    except Exception, e:
-                        logger.exception("Can not open %s" % ncfile, e)
-                        raise
+                        return netCDF4.MFDataset(ncfile, aggdim=tname)
+                    except (IOError, RuntimeError), e:
+                        try:
+                            # Unicode isn't working sometimes?
+                            return netCDF4.MFDataset(str(ncfile), aggdim=tname)
+                        except Exception, e:
+                            logger.exception("Can not open %s" % ncfile, e)
+                            raise
             except StandardError, e:
                 logger.exception("Can not open %s" % ncfile, e)
                 raise
