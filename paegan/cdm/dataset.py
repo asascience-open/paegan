@@ -254,13 +254,24 @@ class Dataset(object):
         raise NotImplementedError
 
     def opennc(self):
-        self.nc = CommonDataset.nc_object(self._filepath)
-        self.metadata = self.nc.__dict__
+        try:
+            # Open if if it None
+            assert self.nc is not None
+            # Raises an exception when the dataset has alrady been closed
+            self.nc.__str__()
+        except StandardError:
+            self.nc = CommonDataset.nc_object(self._filepath)
+            self.metadata = self.nc.__dict__
 
     def closenc(self):
-        self.metadata = None
-        self.nc.close()
-        self.nc = None
+        try:
+            # close will raise an error if the Dataset is already closed
+            self.nc.close()
+        except StandardError:
+            pass
+        finally:
+            self.metadata = None
+            self.nc = None
 
     def gettimestep(self, var=None):
         assert var in self._current_variables
