@@ -18,7 +18,7 @@ class NCellDataset(Dataset):
             self.topology_var_name = None
 
     def _copy(self):
-        new = NCellDataset(self._filename, self._datasettype)
+        new = NCellDataset(self._filepath, self._datasettype)
         new._coordcache = copy.copy(self._coordcache)
         new._current_variables = copy.copy(self._current_variables)
         return new

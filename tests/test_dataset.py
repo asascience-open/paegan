@@ -296,3 +296,13 @@ class DatasetTest(unittest.TestCase):
         assert pd._datasettype == 'rgrid'
         values = pd.get_values(var="u", bbox=[-149, 59, -144, 61.5], timeinds=0)
         assert values.size > 0
+
+
+    @unittest.skipIf(not os.path.exists(os.path.join(data_path, "pws_das_2014012600.nc")),
+                     "Resource files are missing that are required to perform the tests.")
+    def test_aggregated_dataset(self):
+        datafile = os.path.join(data_path, "pws_das_20140126*.nc")
+        pd = CommonDataset.open(datafile)
+        assert pd._datasettype == 'rgrid'
+        values = pd.get_values(var="u", bbox=[-149, 59, -144, 61.5], timeinds=0)
+        assert values.size > 0
