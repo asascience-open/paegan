@@ -115,6 +115,10 @@ class CommonDataset(object):
                         except Exception:
                             logger.exception("Can not open %s" % ncfile)
                             raise
+                except ValueError:
+                    # Probably a DAP endpoint
+                    logger.exception("Can not open %s" % ncfile)
+                    raise
             except Exception:
                 logger.exception("Can not open %s" % ncfile)
                 raise
