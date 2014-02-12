@@ -98,17 +98,17 @@ class Timevar(np.ndarray):
             except TypeError:
                 return np.asarray([bisect.bisect(self.datenum, to)-1])
 
-    def nearest(self, dateo):
+    def nearest(self, dateo, select='nearest'):
         """
         find nearest model timestep,
         input and output are datetime objects
         """
         # one might choose the second value for
         #if len(self.nearest_index(dateo)) == 1:
-        #    res=self.jd[self.nearest_index(dateo)][0]
+        #    res=self.jd[self.nearest_index(dateo, nearest)][0]
         #else:
-        #    res=self.jd[self.nearest_index(dateo)][1]
-        return self.dates[self.nearest_index(dateo)][0]
+        #    res=self.jd[self.nearest_index(dateo, nearest)][1]
+        return self.dates[self.nearest_index(dateo, nearest)][0]
 
     def get_seconds(self):
         fac = self._unit2sec[self._units] * self._sec2unit['seconds']
