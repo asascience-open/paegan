@@ -162,7 +162,7 @@ class CommonDataset(object):
             if testvary.ndim > 1:
                 datasettype = "cgrid"
             else:
-                if testvary.shape[0] != testvarx.shape[0]:
+                if len(testvary.shape) > 0 and len(testvarx.shape) > 0 and testvary.shape[0] != testvarx.shape[0]:
                     datasettype = "rgrid"
                 else:
                     if "cdm_data_type" in nc.ncattrs():
