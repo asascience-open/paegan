@@ -155,11 +155,16 @@ class CommonDataset(object):
         elif len(xmatches) > 0:
             testvary = nc.variables[ymatches[0]]
             testvarx = nc.variables[xmatches[0]]
+        else:
+            testvary = None
+            testvarx = None
 
         # Test the shapes of the coordinate variables to determine the grid type
         datasettype = kwargs.get('dataset_type', None)
         if datasettype is None:
-            if testvary.ndim > 1:
+            if testvary is None or testvarx is None:
+                datasettype = "ncell"
+            elif testvary.ndim > 1:
                 datasettype = "cgrid"
             else:
                 if len(testvary.shape) > 0 and len(testvarx.shape) > 0 and testvary.shape[0] != testvarx.shape[0]:
