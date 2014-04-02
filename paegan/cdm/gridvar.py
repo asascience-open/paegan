@@ -109,6 +109,7 @@ class Gridobj:
 
         polygons = list(polygonize(m))
         # -- polygonize returns a list of polygons, including interior features, the largest in area "should" be the full feature
+        assert len(polygons) > 0, "Could not determine a polygon"
         polygon = sorted(polygons, key=lambda x: x.area)[-1]
         return polygon
 
