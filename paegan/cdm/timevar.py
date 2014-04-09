@@ -105,10 +105,10 @@ class Timevar(np.ndarray):
         """
         # one might choose the second value for
         #if len(self.nearest_index(dateo)) == 1:
-        #    res=self.jd[self.nearest_index(dateo, nearest)][0]
+        #    res=self.jd[self.nearest_index(dateo, select)][0]
         #else:
-        #    res=self.jd[self.nearest_index(dateo, nearest)][1]
-        return self.dates[self.nearest_index(dateo, nearest)][0]
+        #    res=self.jd[self.nearest_index(dateo, select)][1]
+        return self.dates[self.nearest_index(dateo, select)][0]
 
     def get_seconds(self):
         fac = self._unit2sec[self._units] * self._sec2unit['seconds']
