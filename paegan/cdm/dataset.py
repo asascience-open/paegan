@@ -312,12 +312,12 @@ class Dataset(object):
 
     def getbbox(self, var=None, **kwargs):
         assert var in self._current_variables
-        grid = self.getgridobj(var)
+        grid = self.getgridobj(var, **kwargs)
         return grid.bbox
 
     def getboundingpolygon(self, var=None, **kwargs):
         assert var in self._current_variables
-        grid = self.getgridobj(var)
+        grid = self.getgridobj(var, **kwargs)
         return grid.boundingpolygon
 
     def _checkcache(self, var):
@@ -363,7 +363,7 @@ class Dataset(object):
                 self._coordcache[var].add_z(depthvar)
         return depthvar
 
-    def getgridobj(self, var=None):
+    def getgridobj(self, var=None, **kwargs):
         #return self._gridobj
         assert var in self._current_variables
         gridobj = None
@@ -372,7 +372,7 @@ class Dataset(object):
         else:
             self._coordcache[var] = cachevar()
         if gridobj is None:
-            names = self.get_coord_names(var)
+            names = self.get_coord_names(var, **kwargs)
             if names['xname'] is not None and names['yname'] is not None:
                 gridobj = Gridobj(self.nc, names["xname"], names["yname"])
             else:
