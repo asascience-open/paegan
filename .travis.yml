@@ -1,13 +1,43 @@
 language: python
 python:
   - "2.7"
-virtualenv:
-  system_site_packages: true
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install -qq python-numpy python-scipy libhdf5-serial-dev libgdal1-dev libblas-dev liblapack-dev gfortran
+  # Install miniconda
+  # -----------------
+  - export CONDA_BASE=http://repo.continuum.io/miniconda/Miniconda
+  - if [[ "$TRAVIS_PYTHON_VERSION" == 2* ]]; then
+      wget ${CONDA_BASE}-3.7.0-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget ${CONDA_BASE}3-3.7.0-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+
+  # Create the basic testing environment
+  # ------------------------------------
+  - conda config --set always_yes yes --set changeps1 no
+  - conda config --set show_channel_urls True
+  - conda update --quiet conda
+  - ENV_NAME='test-environment'
+  - conda create --quiet -n $ENV_NAME python=$TRAVIS_PYTHON_VERSION
+  - source activate $ENV_NAME
+
 install:
-  - pip install -r requirements.txt
+  # Customise the testing environment
+  # ---------------------------------
+  - conda install --channel https://conda.binstar.org/binstar --file requirements.txt
+  - conda install pytest
+  - conda install setuptools
+
+  # Grab external dataset files for testing
+  - sudo mkdir -p /data/lm/tests
+  - sudo chown -R $USER /data/lm/tests
+  - wget http://s3.amazonaws.com/paegan/resources/ETOPO1_Bed_g_gmt4.grd -O /data/lm/tests/ETOPO1_Bed_g_gmt4.grd
+  - wget https://s3.amazonaws.com/paegan/resources/marcooshfradar20120331.nc -O /data/lm/tests/marcooshfradar20120331.nc
+  - wget http://s3.amazonaws.com/paegan/resources/ncom_glb_sfc8_hind_2012033100.nc -O /data/lm/tests/ncom_glb_sfc8_hind_2012033100.nc
+  - wget http://s3.amazonaws.com/paegan/resources/m201310100.out3.nc -O /data/lm/tests/m201310100.out3.nc
+  - wget http://s3.amazonaws.com/paegan/resources/ocean_avg_synoptic_seg22.nc -O /data/lm/tests/ocean_avg_synoptic_seg22.nc
+  - wget http://s3.amazonaws.com/paegan/resources/pws_L2_2012040100.nc -O /data/lm/tests/pws_L2_2012040100.nc
 script:
   - PYTHONPATH=`pwd` py.test
 notifications:
